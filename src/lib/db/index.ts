@@ -203,7 +203,8 @@ export async function getNotes(projectId: string): Promise<Note[]> {
 }
 
 export async function getAllNotes(): Promise<Note[]> {
-	return db.notes.orderBy('updatedAt').reverse().toArray();
+	// Sort by createdAt (indexed) instead of updatedAt (not indexed)
+	return db.notes.orderBy('createdAt').reverse().toArray();
 }
 
 export async function getNotesByTag(tag: string): Promise<Note[]> {

@@ -19,10 +19,11 @@
 	let clearing = false;
 
 	onMount(async () => {
-		// Load current settings
-		const currentSettings = settings.get();
-		apiKey = currentSettings.groqApiKey || '';
-		dummyDataToggle = currentSettings.dummyDataEnabled || false;
+		// Load current settings using store subscription
+		const unsubscribe = settings.subscribe((currentSettings) => {
+			apiKey = currentSettings.groqApiKey || '';
+			dummyDataToggle = currentSettings.dummyDataEnabled || false;
+		});
 		
 		// Initialize backend and get current config
 		const result = await initializeBackend();
@@ -31,9 +32,13 @@
 		
 		// Load dummy count
 		dummyCount = await countDummyItems();
+		
+		// Cleanup subscription
+		return unsubscribe;
 	});
 
 	async function toggleDummyData() {
+		// Update the store first
 		dummyDataEnabled.set(dummyDataToggle);
 		
 		if (dummyDataToggle) {
@@ -43,7 +48,13 @@
 				await generateDummyData();
 			}
 			dummyCount = await countDummyItems();
+		} else {
+			// When turning OFF, update count
+			dummyCount = await countDummyItems();
 		}
+		
+		// Refresh the page to show/hide dummy data
+		window.location.reload();
 	}
 	
 	async function clearDummyData() {

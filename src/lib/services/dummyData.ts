@@ -54,7 +54,7 @@ export async function generateDummyData(): Promise<void> {
 		isDummy: true,
 		createdAt: now,
 		updatedAt: now
-	} as any);
+	});
 	
 	// Link subtask to parent task
 	await createLink({
@@ -119,7 +119,7 @@ export async function generateDummyData(): Promise<void> {
 		isDummy: true,
 		createdAt: now,
 		updatedAt: now
-	} as any);
+	});
 	
 	// 8. Create Dummy Diagram
 	await db.notes.add({
@@ -131,7 +131,7 @@ export async function generateDummyData(): Promise<void> {
 		isDummy: true,
 		createdAt: now,
 		updatedAt: now
-	} as any);
+	});
 	
 	// 9. Create Dummy Voice Note
 	await db.notes.add({
@@ -142,11 +142,10 @@ export async function generateDummyData(): Promise<void> {
 		tags: ['dummy', 'sample', 'test', 'voice'],
 		type: 'voice',
 		projectId: projectId,
-		taskId: taskId,
 		isDummy: true,
 		createdAt: now,
 		updatedAt: now
-	} as any);
+	});
 	
 	// 10. Create Dummy Chat History
 	const chatHistory = [
