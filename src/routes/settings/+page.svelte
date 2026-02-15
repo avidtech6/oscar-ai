@@ -3,7 +3,7 @@
 	import { settings, type Settings, dummyDataEnabled } from '$lib/stores/settings';
 	import { initializeBackend, configurePocketBase, getBackendType, getPocketBaseUrl } from '$lib/services/backend';
 	import { db, countDummyItems, deleteAllDummyData } from '$lib/db';
-	import { generateDummyData, isDummyDataEnabled } from '$lib/services/dummyData';
+	import { insertDummyData, removeDummyData } from '$lib/dummy/dummyData';
 
 	let apiKey = '';
 	let pbUrl = '';
@@ -42,14 +42,12 @@
 		dummyDataEnabled.set(dummyDataToggle);
 		
 		if (dummyDataToggle) {
-			// Generate dummy data if none exists
-			const count = await countDummyItems();
-			if (count.projects === 0) {
-				await generateDummyData();
-			}
+			// Insert static dummy dataset
+			await insertDummyData();
 			dummyCount = await countDummyItems();
 		} else {
-			// When turning OFF, update count
+			// Remove all dummy data when turning OFF
+			await removeDummyData();
 			dummyCount = await countDummyItems();
 		}
 		
@@ -62,7 +60,7 @@
 		
 		clearing = true;
 		try {
-			await deleteAllDummyData();
+			await removeDummyData();
 			dummyDataToggle = false;
 			dummyDataEnabled.set(false);
 			dummyCount = { projects: 0, tasks: 0, notes: 0, trees: 0, reports: 0 };
