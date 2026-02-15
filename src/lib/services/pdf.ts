@@ -1,0 +1,224 @@
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import type { Project, Tree } from '$lib/db';
+
+export type ReportType = 'bs5837' | 'impact' | 'method';
+
+export async function generatePDF(
+	project: Project,
+	trees: Tree[],
+	type: ReportType
+): Promise<Blob> {
+	const doc = new jsPDF();
+	const pageWidth = doc.internal.pageSize.getWidth();
+	const margin = 20;
+	let y = margin;
+
+	// Title
+	doc.setFontSize(20);
+	doc.setFont('helvetica', 'bold');
+	doc.text(getReportTitle(type), pageWidth / 2, y, { align: 'center' });
+	y += 15;
+
+	// Project Details
+	doc.setFontSize(12);
+	doc.setFont('helvetica', 'normal');
+	doc.text(`Project: ${project.name}`, margin, y);
+	y += 7;
+	doc.text(`Location: ${project.location}`, margin, y);
+	y += 7;
+	doc.text(`Client: ${project.client}`, margin, y);
+	y += 7;
+	doc.text(`Date: ${new Date().toLocaleDateString()}`, margin, y);
+	y += 15;
+
+	// Tree Data Table
+	if (trees.length > 0) {
+		const tableData = trees.map(tree => [
+			tree.number,
+			tree.species,
+			tree.scientificName || '-',
+			tree.DBH ? `${tree.DBH}mm` : '-',
+			tree.height ? `${tree.height}m` : '-',
+			tree.category || '-',
+			tree.condition || '-'
+		]);
+
+		autoTable(doc, {
+			startY: y,
+			head: [['No.', 'Species', 'Scientific Name', 'DBH', 'Height', 'Category', 'Condition']],
+			body: tableData,
+			theme: 'striped',
+			headStyles: { fillColor: [59, 130, 246] },
+			styles: { fontSize: 8 },
+			columnStyles: {
+				0: { cellWidth: 15 },
+				1: { cellWidth: 30 },
+				2: { cellWidth: 35 },
+				3: { cellWidth: 20 },
+				4: { cellWidth: 20 },
+				5: { cellWidth: 20 },
+				6: { cellWidth: 30 }
+			}
+		});
+	}
+
+	// Add BS5837 specific content
+	if (type === 'bs5837') {
+		doc.addPage();
+		y = margin;
+		
+		doc.setFontSize(16);
+		doc.setFont('helvetica', 'bold');
+		doc.text('BS 5837:2012 Survey Summary', margin, y);
+		y += 10;
+
+		doc.setFontSize(11);
+		doc.setFont('helvetica', 'normal');
+		
+		// Category counts
+		const categoryCounts = trees.reduce((acc, tree) => {
+			const cat = tree.category || 'U';
+			acc[cat] = (acc[cat] || 0) + 1;
+			return acc;
+		}, {} as Record<string, number>);
+
+		doc.text('Tree Category Summary:', margin, y);
+		y += 7;
+		doc.text(`Category A (High Quality): ${categoryCounts['A'] || 0} trees`, margin + 5, y);
+		y += 6;
+		doc.text(`Category B (Moderate Quality): ${categoryCounts['B'] || 0} trees`, margin + 5, y);
+		y += 6;
+		doc.text(`Category C (Low Quality): ${categoryCounts['C'] || 0} trees`, margin + 5, y);
+		y += 6;
+		doc.text(`Category U (Remove): ${categoryCounts['U'] || 0} trees`, margin + 5, y);
+		y += 15;
+
+		doc.setFontSize(10);
+		doc.text('This report has been prepared in accordance with BS 5837:2012 "Trees in relation to', margin, y);
+		y += 5;
+		doc.text('design, demolition and construction - Recommendations".', margin, y);
+	}
+
+	// Impact Assessment specific content
+	if (type === 'impact') {
+		doc.addPage();
+		y = margin;
+		
+		doc.setFontSize(16);
+		doc.setFont('helvetica', 'bold');
+		doc.text('Tree Impact Assessment', margin, y);
+		y += 10;
+
+		doc.setFontSize(11);
+		doc.setFont('helvetica', 'normal');
+		doc.text('This assessment considers the potential impacts of the proposed development on', margin, y);
+		y += 7;
+		doc.text('trees within and adjacent to the site.', margin, y);
+		y += 15;
+
+		doc.setFontSize(12);
+		doc.setFont('helvetica', 'bold');
+		doc.text('Recommendations:', margin, y);
+		y += 8;
+		doc.setFontSize(10);
+		doc.setFont('helvetica', 'normal');
+		doc.text('• All trees to be retained should be protected in accordance with BS 5837', margin, y);
+		y += 6;
+		doc.text('• Root protection areas should be established and maintained throughout construction', margin, y);
+		y += 6;
+		doc.text('• Any tree surgery should be carried out by a qualified arboriculturist', margin, y);
+	}
+
+	// Method Statement specific content
+	if (type === 'method') {
+		doc.addPage();
+		y = margin;
+		
+		doc.setFontSize(16);
+		doc.setFont('helvetica', 'bold');
+		doc.text('Arboricultural Method Statement', margin, y);
+		y += 10;
+
+		doc.setFontSize(11);
+		doc.setFont('helvetica', 'normal');
+		doc.text('This method statement outlines the procedures for tree protection during', margin, y);
+		y += 7;
+		doc.text('construction works.', margin, y);
+		y += 15;
+
+		doc.setFontSize(12);
+		doc.setFont('helvetica', 'bold');
+		doc.text('Methodology:', margin, y);
+		y += 8;
+		doc.setFontSize(10);
+		doc.setFont('helvetica', 'normal');
+		doc.text('1. Install tree protection fencing before any site works commence', margin, y);
+		y += 6;
+		doc.text('2. No excavation or grading within root protection areas', margin, y);
+		y += 6;
+		doc.text('3. All services should be routed outside root protection areas', margin, y);
+		y += 6;
+		doc.text('4. Supervise works within RPA by qualified arboriculturist', margin, y);
+	}
+
+	// Footer
+	const pageCount = doc.getNumberOfPages();
+	for (let i = 1; i <= pageCount; i++) {
+		doc.setPage(i);
+		doc.setFontSize(8);
+		doc.text(
+			`Generated by Oscar AI - Page ${i} of ${pageCount}`,
+			pageWidth / 2,
+			doc.internal.pageSize.getHeight() - 10,
+			{ align: 'center' }
+		);
+	}
+
+	return doc.output('blob');
+}
+
+function getReportTitle(type: ReportType): string {
+	switch (type) {
+		case 'bs5837':
+			return 'BS 5837:2012 Tree Survey';
+		case 'impact':
+			return 'Tree Impact Assessment';
+		case 'method':
+			return 'Arboricultural Method Statement';
+		default:
+			return 'Tree Survey Report';
+	}
+}
+
+export function downloadPDF(blob: Blob, filename: string): void {
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
+// Mobile-friendly share
+export async function sharePDF(blob: Blob, filename: string): Promise<void> {
+	const file = new File([blob], filename, { type: 'application/pdf' });
+	
+	if (navigator.share && navigator.canShare?.({ files: [file] })) {
+		try {
+			await navigator.share({
+				files: [file],
+				title: filename,
+				text: 'Oscar AI Report'
+			});
+			return;
+		} catch (e) {
+			// User cancelled or error, fall back to download
+		}
+	}
+	
+	// Fall back to download
+	downloadPDF(blob, filename);
+}

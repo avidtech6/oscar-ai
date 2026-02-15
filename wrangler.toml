@@ -1,0 +1,11 @@
+name = "oscar-ai"
+compatibility_date = "2024-04-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "build"
+
+[vars]
+PUBLIC_APP_NAME = "Oscar AI"
+PUBLIC_APP_DESCRIPTION = "Personal Arboricultural Notebook + Assistant"
+
+# These will be set via Cloudflare Dashboard Environment Variables
+# DO NOT hardcode values here - use Cloudflare Secrets

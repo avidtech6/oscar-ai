@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+	--forest-500: #3d8962;
+	--forest-600: #2f6b4d;
+	--oak-600: #8b5a2b;
+}
+
+html {
+	font-family: 'Inter', system-ui, sans-serif;
+}
+
+body {
+	@apply bg-gray-50 text-gray-900 antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	@apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+	@apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	@apply bg-gray-400;
+}
+
+/* Focus states */
+:focus-visible {
+	@apply outline-none ring-2 ring-forest-500 ring-offset-2;
+}
+
+/* Button styles */
+.btn {
+	@apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200;
+}
+
+.btn-primary {
+	@apply bg-forest-600 text-white hover:bg-forest-700 active:bg-forest-800;
+}
+
+.btn-secondary {
+	@apply bg-oak-600 text-white hover:bg-oak-700 active:bg-oak-800;
+}
+
+.btn-outline {
+	@apply border-2 border-forest-600 text-forest-600 hover:bg-forest-50 active:bg-forest-100;
+}
+
+.btn-ghost {
+	@apply text-gray-600 hover:bg-gray-100 active:bg-gray-200;
+}
+
+/* Card styles */
+.card {
+	@apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden;
+}
+
+.card-hover {
+	@apply hover:shadow-md hover:border-gray-200 transition-all duration-200;
+}
+
+/* Input styles */
+.input {
+	@apply w-full px-4 py-2 rounded-lg border border-gray-200 bg-white;
+	@apply focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20;
+	@apply transition-all duration-200;
+}
+
+.input-error {
+	@apply border-red-500 focus:border-red-500 focus:ring-red-500/20;
+}
+
+/* Report typography */
+.report-content {
+	font-family: 'Merriweather', Georgia, serif;
+}
+
+.report-content h1 {
+	@apply text-2xl font-bold mb-4 text-forest-800;
+}
+
+.report-content h2 {
+	@apply text-xl font-bold mb-3 text-forest-700;
+}
+
+.report-content h3 {
+	@apply text-lg font-semibold mb-2 text-gray-800;
+}
+
+.report-content p {
+	@apply mb-4 text-gray-700 leading-relaxed;
+}
+
+.report-content ul, .report-content ol {
+	@apply mb-4 ml-6;
+}
+
+.report-content li {
+	@apply mb-2;
+}
+
+.report-content table {
+	@apply w-full mb-4 border-collapse;
+}
+
+.report-content th, .report-content td {
+	@apply px-3 py-2 text-left border border-gray-200;
+}
+
+.report-content th {
+	@apply bg-gray-50 font-semibold;
+}
+
+/* Animations */
+@keyframes pulse-recording {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+.recording {
+	animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+/* Oscar Chat */
+.oscar-message {
+	@apply bg-forest-50 border-forest-200 text-gray-800;
+}
+
+.user-message {
+	@apply bg-oak-50 border-oak-200 text-gray-800;
+}
