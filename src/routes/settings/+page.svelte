@@ -38,14 +38,15 @@
 	});
 
 	async function toggleDummyData() {
-		alert('toggleDummyData called! dummyDataToggle: ' + dummyDataToggle);
-		console.log('toggleDummyData called, dummyDataToggle:', dummyDataToggle);
+		// The checkbox state hasn't been updated yet, so we need to use the opposite value
+		const newValue = !dummyDataToggle;
+		console.log('toggleDummyData called, current:', dummyDataToggle, 'new:', newValue);
 		
 		// Update the store first
-		dummyDataEnabled.set(dummyDataToggle);
+		dummyDataEnabled.set(newValue);
 		
 		try {
-			if (dummyDataToggle) {
+			if (newValue) {
 				console.log('Inserting dummy data...');
 				// Insert static dummy dataset
 				await insertDummyData();
@@ -62,8 +63,14 @@
 		} catch (error) {
 			console.error('Error in toggleDummyData:', error);
 			alert('Failed to toggle dummy data: ' + (error instanceof Error ? error.message : 'Unknown error'));
+			// Revert the toggle on error
+			dummyDataToggle = !newValue;
+			dummyDataEnabled.set(!newValue);
 			return;
 		}
+		
+		// Update the local variable to match the new state
+		dummyDataToggle = newValue;
 		
 		// Refresh the page to show/hide dummy data
 		console.log('Refreshing page...');
@@ -477,12 +484,14 @@
 					<h3 class="font-medium">Enable Dummy Data</h3>
 					<p class="text-sm text-gray-600">Show dummy data in the app for testing</p>
 				</div>
-				<label class="relative inline-flex items-center cursor-pointer" on:click={() => {
-					dummyDataToggle = !dummyDataToggle;
-					toggleDummyData();
-				}}>
-					<input type="checkbox" bind:checked={dummyDataToggle} class="sr-only peer">
-					<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all {dummyDataToggle ? 'peer-checked:bg-forest-600' : ''}"></div>
+				<label class="relative inline-flex items-center cursor-pointer">
+					<input
+						type="checkbox"
+						bind:checked={dummyDataToggle}
+						on:click={toggleDummyData}
+						class="sr-only peer"
+					>
+					<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-forest-600"></div>
 				</label>
 			</div>
 			

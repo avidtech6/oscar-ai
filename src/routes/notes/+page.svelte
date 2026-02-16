@@ -538,7 +538,7 @@ Please respond to the user's request about this specific note.`
 						<h3 class="font-semibold text-gray-900 truncate flex-1 cursor-pointer" on:click={() => openEditForm(note)}>{note.title}</h3>
 						<div class="flex gap-1">
 							<button
-								on:click|stopPropagation={() => openAIPrompt(note.id!)}
+								on:click|stopPropagation={() => note.id && openAIPrompt(note.id)}
 								class="text-gray-400 hover:text-forest-600 p-1"
 								title="Ask AI about this note"
 							>
@@ -751,8 +751,8 @@ Please respond to the user's request about this specific note.`
 			
 			<!-- Content -->
 			<div class="flex-1 overflow-y-auto p-6 space-y-4">
-				{#let note = notes.find(n => n.id === aiPromptForNote)}
-					{#if note}
+				{#if aiPromptForNote}
+					{#each notes.filter(n => n.id === aiPromptForNote) as note}
 						<div class="bg-gray-50 p-4 rounded-lg mb-4">
 							<h3 class="font-medium text-gray-900 mb-2">{note.title}</h3>
 							<p class="text-sm text-gray-600 whitespace-pre-wrap">{note.content}</p>
@@ -763,8 +763,8 @@ Please respond to the user's request about this specific note.`
 								{/if}
 							</div>
 						</div>
-					{/if}
-				{/let}
+					{/each}
+				{/if}
 				
 				<div>
 					<label for="aiPrompt" class="block text-sm font-medium text-gray-700 mb-1">

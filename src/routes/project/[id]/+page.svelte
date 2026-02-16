@@ -14,6 +14,7 @@
 	let loading = true;
 	let saving = false;
 	let error = '';
+	
 
 	// Tree form
 	let newTree = {
@@ -513,9 +514,9 @@
 									<div class="flex-1 min-w-0">
 										<div class="flex items-center gap-2 mb-1">
 											<h3 class="text-lg font-medium text-gray-900">{note.title}</h3>
-											<span class="px-2 py-0.5 text-xs rounded-full 
-												{note.type === 'field' ? 'bg-green-100 text-green-800' : 
-												 note.type === 'voice' ? 'bg-purple-100 text-purple-800' : 
+											<span class="px-2 py-0.5 text-xs rounded-full
+												{note.type === 'field' ? 'bg-green-100 text-green-800' :
+												 note.type === 'voice' ? 'bg-purple-100 text-purple-800' :
 												 'bg-gray-100 text-gray-800'}">
 												{note.type}
 											</span>
@@ -524,6 +525,7 @@
 										<p class="text-xs text-gray-400 mt-2">
 											{new Date(note.createdAt).toLocaleString()}
 										</p>
+										
 									</div>
 									<button
 										on:click={() => note.id && deleteNote(note.id)}

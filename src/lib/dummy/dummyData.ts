@@ -1,4 +1,5 @@
 import type { Project, Task, Note, Report, Tree } from '../db/index.js';
+import { db, createProject, createTask, createNote, saveReport, createTree, deleteAllDummyData, countDummyItems } from '../db/index.js';
 
 // Static dummy dataset matching the real schema exactly
 // All items include isDummy: true and all required fields
@@ -162,8 +163,6 @@ export async function insertDummyData(): Promise<void> {
 	console.log('insertDummyData: Starting...');
 	
 	try {
-		const { db, createProject, createTask, createNote, saveReport, createTree, deleteAllDummyData } = await import('../db/index.js');
-		
 		// First delete any existing dummy data
 		console.log('insertDummyData: Deleting existing dummy data...');
 		await deleteAllDummyData();
@@ -223,13 +222,11 @@ export async function insertDummyData(): Promise<void> {
 
 // Helper function to remove all dummy data
 export async function removeDummyData(): Promise<void> {
-	const { deleteAllDummyData } = await import('../db/index.js');
 	await deleteAllDummyData();
 }
 
 // Helper function to check if dummy data exists
 export async function hasDummyData(): Promise<boolean> {
-	const { countDummyItems } = await import('../db/index.js');
 	const count = await countDummyItems();
 	return count.projects > 0 || count.tasks > 0 || count.notes > 0 || count.trees > 0 || count.reports > 0;
 }
