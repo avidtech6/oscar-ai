@@ -38,13 +38,14 @@
 		return unsubscribe;
 	});
 
-	async function toggleDummyData() {
-		// Debug: show alert to confirm function is called
-		alert('toggleDummyData called! Current: ' + dummyDataToggle);
+	async function toggleDummyData(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const newValue = target.checked;
 		
-		// The checkbox state hasn't been updated yet, so we need to use the opposite value
-		const newValue = !dummyDataToggle;
-		console.log('toggleDummyData called, current:', dummyDataToggle, 'new:', newValue);
+		// Debug: show alert to confirm function is called
+		alert('toggleDummyData called! New value: ' + newValue);
+		
+		console.log('toggleDummyData called, new:', newValue);
 		
 		// Update the store first
 		dummyDataEnabled.set(newValue);
@@ -491,8 +492,8 @@
 				<label class="relative inline-flex items-center cursor-pointer">
 					<input
 						type="checkbox"
-						bind:checked={dummyDataToggle}
-						on:click={toggleDummyData}
+						checked={dummyDataToggle}
+						on:change={toggleDummyData}
 						class="sr-only peer"
 					>
 					<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-forest-600"></div>
