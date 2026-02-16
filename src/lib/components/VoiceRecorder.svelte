@@ -35,17 +35,21 @@
 
 	async function startRecording() {
 		error = '';
+		console.log('VoiceRecorder: Starting recording...');
 		
 		try {
-			stream = await navigator.mediaDevices.getUserMedia({ 
+			console.log('VoiceRecorder: Requesting microphone access...');
+			stream = await navigator.mediaDevices.getUserMedia({
 				audio: {
 					echoCancellation: true,
 					noiseSuppression: true,
 					autoGainControl: true
-				} 
+				}
 			});
+			console.log('VoiceRecorder: Microphone access granted');
 
 			const mimeType = getSupportedMimeType();
+			console.log('VoiceRecorder: Using mimeType:', mimeType);
 			mediaRecorder = new MediaRecorder(stream, { mimeType });
 
 			audioChunks = [];
@@ -53,11 +57,14 @@
 			mediaRecorder.ondataavailable = (event) => {
 				if (event.data.size > 0) {
 					audioChunks.push(event.data);
+					console.log('VoiceRecorder: Data chunk received, size:', event.data.size);
 				}
 			};
 
 			mediaRecorder.onstop = async () => {
+				console.log('VoiceRecorder: Recording stopped, audio chunks:', audioChunks.length);
 				const audioBlob = new Blob(audioChunks, { type: mimeType });
+				console.log('VoiceRecorder: Audio blob created, size:', audioBlob.size);
 				await processAudio(audioBlob);
 			};
 
@@ -72,6 +79,7 @@
 			mediaRecorder.start(100); // Collect data every 100ms
 			isRecording = true;
 			recordingTime = 0;
+			console.log('VoiceRecorder: Recording started successfully');
 
 			// Start timer
 			timerInterval = setInterval(() => {
@@ -83,7 +91,7 @@
 			}, 1000);
 
 		} catch (err) {
-			console.error('Failed to start recording:', err);
+			console.error('VoiceRecorder: Failed to start recording:', err);
 			if (err instanceof Error) {
 				if (err.name === 'NotAllowedError') {
 					error = 'Microphone access denied. Please allow microphone access in your browser settings.';
@@ -122,18 +130,24 @@
 	}
 
 	async function processAudio(audioBlob: Blob) {
+		console.log('VoiceRecorder: Processing audio, blob size:', audioBlob.size);
 		if (audioChunks.length === 0 || audioBlob.size < 100) {
 			error = 'Recording too short. Please try again.';
+			console.log('VoiceRecorder: Recording too short');
 			return;
 		}
 
 		isProcessing = true;
 		error = '';
+		console.log('VoiceRecorder: Starting transcription...');
 
 		try {
+			console.log('VoiceRecorder: Calling transcribeAudio...');
 			const result = await transcribeAudio(audioBlob);
+			console.log('VoiceRecorder: Transcription result:', result);
 			
 			if (result.text && result.text.trim()) {
+				console.log('VoiceRecorder: Transcription successful, text length:', result.text.length);
 				// Dispatch the transcribed text to parent
 				dispatch('transcript', {
 					text: result.text.trim(),
@@ -141,17 +155,20 @@
 				});
 			} else {
 				error = 'No speech detected in recording. Please try again.';
+				console.log('VoiceRecorder: No speech detected');
 			}
 		} catch (err) {
-			console.error('Transcription error:', err);
+			console.error('VoiceRecorder: Transcription error:', err);
 			if (err instanceof Error) {
 				error = err.message;
+				console.log('VoiceRecorder: Error message:', err.message);
 			} else {
 				error = 'Transcription failed. Please try again.';
 			}
 		} finally {
 			isProcessing = false;
 			recordingTime = 0;
+			console.log('VoiceRecorder: Processing complete');
 		}
 	}
 

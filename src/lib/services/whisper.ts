@@ -9,9 +9,12 @@ export interface TranscriptionResult {
 }
 
 export async function transcribeAudio(audioBlob: Blob): Promise<TranscriptionResult> {
+	console.log('Whisper: Starting transcription, blob size:', audioBlob.size, 'type:', audioBlob.type);
 	const apiKey = get(groqApiKey);
+	console.log('Whisper: API key available:', !!apiKey, 'length:', apiKey ? apiKey.length : 0);
 	
 	if (!apiKey) {
+		console.error('Whisper: No API key found');
 		throw new Error('Groq API key not configured. Please add it in Settings.');
 	}
 
@@ -19,6 +22,7 @@ export async function transcribeAudio(audioBlob: Blob): Promise<TranscriptionRes
 	const audioFile = new File([audioBlob], 'recording.webm', {
 		type: audioBlob.type || 'audio/webm'
 	});
+	console.log('Whisper: Audio file created, size:', audioFile.size);
 
 	// Create FormData
 	const formData = new FormData();
@@ -26,7 +30,9 @@ export async function transcribeAudio(audioBlob: Blob): Promise<TranscriptionRes
 	formData.append('model', 'whisper-large-v3');
 	formData.append('temperature', '0');
 	formData.append('response_format', 'json');
+	console.log('Whisper: FormData created');
 
+	console.log('Whisper: Sending request to Groq API...');
 	const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
 		method: 'POST',
 		headers: {
@@ -35,13 +41,16 @@ export async function transcribeAudio(audioBlob: Blob): Promise<TranscriptionRes
 		body: formData
 	});
 
+	console.log('Whisper: Response status:', response.status, response.statusText);
 	if (!response.ok) {
 		const errorData = await response.json().catch(() => ({}));
 		const errorMessage = errorData.error?.message || `Transcription failed: ${response.status}`;
+		console.error('Whisper: API error:', errorMessage, errorData);
 		throw new Error(errorMessage);
 	}
 
 	const data = await response.json();
+	console.log('Whisper: Transcription successful, text length:', data.text ? data.text.length : 0);
 	
 	return {
 		text: data.text || '',
