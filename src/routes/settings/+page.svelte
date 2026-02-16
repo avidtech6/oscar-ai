@@ -4,6 +4,7 @@
 	import { initializeBackend, configurePocketBase, getBackendType, getPocketBaseUrl } from '$lib/services/backend';
 	import { db, countDummyItems, deleteAllDummyData } from '$lib/db';
 	import { insertDummyData, removeDummyData } from '$lib/dummy/dummyData';
+	import { getVersionInfo } from '../../version';
 
 	let apiKey = '';
 	let pbUrl = '';
@@ -537,11 +538,13 @@
 	<div class="card p-6 mb-6">
 		<h2 class="text-lg font-semibold mb-4">About Oscar AI</h2>
 		<div class="space-y-2 text-sm text-gray-600">
-			<p><strong>Version:</strong> 1.0.0 (Dev)</p>
+			<p><strong>Version:</strong> {getVersionInfo().full}</p>
+			<p><strong>Commit:</strong> {getVersionInfo().commit}</p>
+			<p><strong>Built:</strong> {new Date(getVersionInfo().timestamp).toLocaleString()}</p>
 			<p><strong>Platform:</strong> Cloudflare Pages (Static)</p>
 			<p><strong>Storage:</strong> IndexedDB (Browser Local)</p>
 			<p class="pt-2">
-				Oscar AI is a personal arboricultural notebook and assistant for UK tree surveyors 
+				Oscar AI is a personal arboricultural notebook and assistant for UK tree surveyors
 				and arboricultural consultants. This is the development version with local-only data storage.
 			</p>
 		</div>
