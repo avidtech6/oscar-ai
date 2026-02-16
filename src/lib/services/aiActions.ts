@@ -3,6 +3,7 @@ import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { db, type Project, type Tree, type Note } from '$lib/db';
 import { groqApiKey, settings } from '$lib/stores/settings';
+import { chatContext, type ChatMode, needsConfirmation } from '$lib/stores/chatContext';
 
 // Types for AI actions
 export interface ActionResult {
@@ -40,9 +41,17 @@ export async function getAIContext(): Promise<AIContext> {
 		};
 	}
 
+	const currentChatContext = get(chatContext);
 	const currentSettings = get(settings);
 	const projects = await db.projects.orderBy('updatedAt').reverse().toArray();
-	const selectedProjectId = currentSettings.currentProjectId || '';
+	
+	// Use chat context project ID if in project mode, otherwise use settings for backward compatibility
+	let selectedProjectId = '';
+	if (currentChatContext.mode === 'project' && currentChatContext.selectedProjectId) {
+		selectedProjectId = currentChatContext.selectedProjectId;
+	} else {
+		selectedProjectId = currentSettings.currentProjectId || '';
+	}
 
 	let currentProject: Project | null = null;
 	let trees: Tree[] = [];
@@ -87,15 +96,29 @@ export async function getAIContext(): Promise<AIContext> {
 // Format context for AI system prompt
 export function formatContextForAI(context: AIContext): string {
 	let contextText = '';
+	
+	// Chat mode info
+	const currentChatContext = get(chatContext);
+	contextText += `\nCHAT MODE: ${currentChatContext.mode.toUpperCase()}`;
+	
+	if (currentChatContext.mode === 'general') {
+		contextText += '\n- General Chat: No automatic database writes. Offer conversion options after generating content.';
+	} else if (currentChatContext.mode === 'global') {
+		contextText += '\n- Global Workspace: Cross-project operations allowed.';
+	} else if (currentChatContext.mode === 'project') {
+		contextText += '\n- Project Mode: All created items will be tagged to the current project.';
+	}
 
 	// Current project info
 	if (context.currentProject) {
-		contextText += `\nCURRENT PROJECT: ${context.currentProject.name}`;
+		contextText += `\n\nCURRENT PROJECT: ${context.currentProject.name}`;
 		contextText += `\n- Location: ${context.currentProject.location}`;
 		contextText += `\n- Client: ${context.currentProject.client}`;
 		contextText += `\n- Description: ${context.currentProject.description}`;
+	} else if (currentChatContext.mode === 'project') {
+		contextText += '\n\nNo project is currently selected. Please select a project or switch to General Chat.';
 	} else {
-		contextText += '\nNo project is currently selected.';
+		contextText += '\n\nNo project is currently selected.';
 	}
 
 	// Trees in current project
@@ -438,6 +461,26 @@ export function detectActionRequest(userMessage: string): {
 
 // Execute action based on type
 export async function executeAction(action: string, data: any, context: AIContext): Promise<ActionResult> {
+	const currentChatContext = get(chatContext);
+	const mode = currentChatContext.mode;
+	
+	// Check if we need confirmation for this action in current mode
+	if (needsConfirmation(mode, action)) {
+		// Set pending action for confirmation
+		chatContext.setPendingAction({
+			type: action,
+			data: data,
+			projectId: context.selectedProjectId
+		});
+		
+		return {
+			success: false,
+			message: `This action requires confirmation in General Chat mode. Please confirm to proceed.`,
+			action: 'needsConfirmation',
+			data: { action, data, mode }
+		};
+	}
+	
 	// Ensure we have a project context for most actions
 	const projectId = context.selectedProjectId;
 
@@ -511,6 +554,42 @@ export async function executeAction(action: string, data: any, context: AIContex
 		default:
 			return { success: false, message: 'Unknown action requested.' };
 	}
+}
+
+// Confirm pending action
+export async function confirmPendingAction(): Promise<ActionResult> {
+	const currentChatContext = get(chatContext);
+	const pendingAction = currentChatContext.pendingAction;
+	
+	if (!pendingAction) {
+		return { success: false, message: 'No pending action to confirm.' };
+	}
+	
+	// Clear pending action first
+	chatContext.confirmPendingAction();
+	
+	// Get context for the action
+	const context = await getAIContext();
+	
+	// Execute the action
+	return await executeAction(pendingAction.type, pendingAction.data, context);
+}
+
+// Get conversion options for General Chat
+export function getConversionOptions(content: string, context: AIContext) {
+	const topProjects = context.projects.slice(0, 3);
+	const options = [
+		{ type: 'note', label: 'Save as Note', icon: '📝' },
+		{ type: 'report', label: 'Save as Report', icon: '📄' },
+		{ type: 'blog', label: 'Save as Blog Post', icon: '📰' },
+		{ type: 'task', label: 'Save as Task', icon: '📋' }
+	];
+	
+	return {
+		content,
+		options,
+		projects: topProjects.map(p => ({ id: p.id, name: p.name }))
+	};
 }
 
 // Navigate to URL after action

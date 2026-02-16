@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
+	import { goto } from '$app/navigation';
 	import { groqApiKey, settings } from '$lib/stores/settings';
+	import { chatContext } from '$lib/stores/chatContext';
 	import MarkdownRenderer from '$lib/components/MarkdownRenderer.svelte';
 	import MicButton from '$lib/components/MicButton.svelte';
-	import { 
-		getAIContext, 
+	import ContextPicker from '$lib/components/chat/ContextPicker.svelte';
+	import {
+		getAIContext,
 		formatContextForAI,
-		type AIContext 
+		confirmPendingAction,
+		getConversionOptions,
+		type AIContext
 	} from '$lib/services/aiActions';
 	import {
 		classifyIntent,
@@ -16,6 +21,12 @@
 		type IntentType,
 		type ActionResult
 	} from '$lib/services/intentEngine';
+	import {
+		inferProjectFromMessage,
+		proposeContextSwitch,
+		resolvePronounReference,
+		getContextSwitchOptions
+	} from '$lib/services/contextInference';
 	import { saveChatMessage, getChatHistory, clearChatHistory, type ChatMessage } from '$lib/db';
 
 	let apiKey = '';
@@ -42,6 +53,13 @@
 	let currentContext: AIContext | null = null;
 	let isLoadingHistory = false;
 	let isRealTimeTranscribing = false;
+	
+	// Context inference state
+	let contextInferenceResult: any = null;
+	let showContextSwitchPrompt = false;
+	let pendingConfirmation = false;
+	let conversionOptions: any = null;
+	let showConversionOptions = false;
 
 	// FAQ data - more concise
 	const faqs = [
@@ -117,15 +135,29 @@
 
 		sending = true;
 		error = '';
+		
+		// Reset context inference state
+		showContextSwitchPrompt = false;
+		contextInferenceResult = null;
+		showConversionOptions = false;
+		conversionOptions = null;
 
 		currentContext = await getAIContext();
 		const contextInfo = formatContextForAI(currentContext);
 		const userMessageText = inputMessage.trim();
 		
+		// Resolve pronoun references
+		const currentChatContext = get(chatContext);
+		const resolvedMessage = resolvePronounReference(
+			userMessageText,
+			currentChatContext.lastAIMessage,
+			currentChatContext.lastReferencedItem
+		);
+		
 		// Add user message
 		const userMessage: Message = {
 			role: 'user',
-			content: userMessageText,
+			content: resolvedMessage,
 			timestamp: new Date().toISOString()
 		};
 		messages = [...messages, userMessage];
@@ -134,7 +166,7 @@
 		try {
 			const savedId = await saveChatMessage({
 				role: 'user',
-				content: userMessageText,
+				content: resolvedMessage,
 				actionUrl: userMessage.actionUrl,
 				actionType: userMessage.actionType,
 				actionResult: userMessage.actionResult,
@@ -148,8 +180,19 @@
 		inputMessage = '';
 
 		try {
+			// First, check for context inference
+			const inference = await inferProjectFromMessage(resolvedMessage);
+			if (inference.shouldSwitch && inference.projectId) {
+				contextInferenceResult = inference;
+				showContextSwitchPrompt = true;
+				
+				// Don't proceed with AI response yet - wait for user decision
+				sending = false;
+				return;
+			}
+			
 			// First, classify the intent
-			const intent = classifyIntent(userMessageText);
+			const intent = classifyIntent(resolvedMessage);
 			
 			let actionResult: ActionResult | null = null;
 			
@@ -217,9 +260,10 @@ Provide concise, accurate guidance.`;
 			}
 
 			const data = await response.json();
+			const aiResponse = data.choices[0].message.content;
 			const assistantMessage: Message = {
 				role: 'oscar',
-				content: data.choices[0].message.content,
+				content: aiResponse,
 				timestamp: new Date().toISOString(),
 				actionUrl: actionResult?.success ? actionResult.redirectUrl : undefined,
 				actionType: actionResult?.intentType,
@@ -231,7 +275,7 @@ Provide concise, accurate guidance.`;
 			try {
 				const savedId = await saveChatMessage({
 					role: 'oscar',
-					content: assistantMessage.content,
+					content: aiResponse,
 					actionUrl: assistantMessage.actionUrl,
 					actionType: assistantMessage.actionType as any,
 					actionResult: assistantMessage.actionResult,
@@ -243,6 +287,20 @@ Provide concise, accurate guidance.`;
 			}
 			
 			messages = [...messages, assistantMessage];
+			
+			// Update chat context with last AI message
+			chatContext.setLastAIMessage(aiResponse);
+			if (actionResult?.objects && actionResult.objects.length > 0) {
+				chatContext.setLastReferencedItem(actionResult.objects[0]);
+			}
+			
+			// Check if we should show conversion options (General Chat mode)
+			const currentChatContext = get(chatContext);
+			if (currentChatContext.mode === 'general' && !actionResult) {
+				// Show conversion options for content generated in General Chat
+				conversionOptions = getConversionOptions(aiResponse, currentContext!);
+				showConversionOptions = true;
+			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to send message';
 			console.error(e);
@@ -329,6 +387,229 @@ Provide concise, accurate guidance.`;
 			inputMessage += (inputMessage ? ' ' : '') + transcriptText;
 		}
 	}
+	
+	// Handle context switch confirmation
+	async function handleContextSwitch(option: 'yes' | 'choose' | 'general') {
+		if (!contextInferenceResult || !contextInferenceResult.projectId) return;
+		
+		showContextSwitchPrompt = false;
+		
+		if (option === 'yes') {
+			// Switch to project mode
+			chatContext.setProject(contextInferenceResult.projectId);
+			
+			// Show confirmation message
+			const confirmationMessage: Message = {
+				role: 'oscar',
+				content: `Switched to project: **${contextInferenceResult.projectName}**. All new items will be saved here.`,
+				timestamp: new Date().toISOString()
+			};
+			messages = [...messages, confirmationMessage];
+			
+			// Save confirmation message
+			try {
+				await saveChatMessage({
+					role: 'oscar',
+					content: confirmationMessage.content
+				});
+			} catch (e) {
+				console.error('Failed to save confirmation message:', e);
+			}
+			
+			// Continue with the original message
+			await sendMessage();
+		} else if (option === 'general') {
+			// Stay in General Chat
+			const confirmationMessage: Message = {
+				role: 'oscar',
+				content: `Staying in General Chat mode. No automatic database writes.`,
+				timestamp: new Date().toISOString()
+			};
+			messages = [...messages, confirmationMessage];
+			
+			try {
+				await saveChatMessage({
+					role: 'oscar',
+					content: confirmationMessage.content
+				});
+			} catch (e) {
+				console.error('Failed to save confirmation message:', e);
+			}
+			
+			// Continue with the original message
+			await sendMessage();
+		} else if (option === 'choose') {
+			// Let user choose another project (could open project selector)
+			// For now, just stay in current mode
+			showContextSwitchPrompt = false;
+			sending = false;
+		}
+	}
+	
+	// Handle conversion option selection
+	async function handleConversionOption(type: string, projectId?: string) {
+		showConversionOptions = false;
+		
+		// Create appropriate action based on type
+		let actionResult: ActionResult | null = null;
+		const currentChatContext = get(chatContext);
+		const lastMessage = messages[messages.length - 1];
+		
+		if (lastMessage.role === 'oscar') {
+			const content = lastMessage.content;
+			
+			switch (type) {
+				case 'note':
+					actionResult = await executeIntent({
+						type: 'note',
+						action: 'createNote',
+						data: {
+							title: 'Converted from Chat',
+							content: content,
+							projectId: projectId || undefined
+						},
+						confidence: 1
+					});
+					break;
+					
+				case 'report':
+					actionResult = await executeIntent({
+						type: 'report',
+						action: 'createReport',
+						data: {
+							title: 'Report from Chat',
+							type: 'bs5837',
+							content: content,
+							projectId: projectId || undefined
+						},
+						confidence: 1
+					});
+					break;
+					
+				case 'blog':
+					actionResult = await executeIntent({
+						type: 'blog',
+						action: 'createBlogPost',
+						data: {
+							title: 'Blog Post from Chat',
+							content: content,
+							projectId: projectId || undefined
+						},
+						confidence: 1
+					});
+					break;
+					
+				case 'task':
+					actionResult = await executeIntent({
+						type: 'task',
+						action: 'createTask',
+						data: {
+							title: 'Task from Chat',
+							content: content,
+							projectId: projectId || undefined
+						},
+						confidence: 1
+					});
+					break;
+			}
+		}
+		
+		if (actionResult) {
+			// Add action result message
+			const resultMessage: Message = {
+				role: 'oscar',
+				content: `✓ ${actionResult.message}`,
+				timestamp: new Date().toISOString(),
+				actionResult: actionResult
+			};
+			messages = [...messages, resultMessage];
+			
+			// Save result message
+			try {
+				await saveChatMessage({
+					role: 'oscar',
+					content: resultMessage.content,
+					actionResult: actionResult
+				});
+			} catch (e) {
+				console.error('Failed to save result message:', e);
+			}
+		}
+	}
+	
+	// Handle pending action confirmation
+	async function handleConfirmPendingAction() {
+		const result = await confirmPendingAction();
+		
+		if (result.success) {
+			// Add success message
+			const successMessage: Message = {
+				role: 'oscar',
+				content: `✓ ${result.message}`,
+				timestamp: new Date().toISOString(),
+				actionResult: result
+			};
+			messages = [...messages, successMessage];
+			
+			// Save message
+			try {
+				await saveChatMessage({
+					role: 'oscar',
+					content: successMessage.content,
+					actionResult: result
+				});
+			} catch (e) {
+				console.error('Failed to save confirmation message:', e);
+			}
+		} else {
+			// Add error message
+			const errorMessage: Message = {
+				role: 'oscar',
+				content: `✗ ${result.message}`,
+				timestamp: new Date().toISOString(),
+				actionResult: result
+			};
+			messages = [...messages, errorMessage];
+			
+			try {
+				await saveChatMessage({
+					role: 'oscar',
+					content: errorMessage.content,
+					actionResult: result
+				});
+			} catch (e) {
+				console.error('Failed to save error message:', e);
+			}
+		}
+		
+		pendingConfirmation = false;
+	}
+	
+	// Handle cancel pending action
+	function handleCancelPendingAction() {
+		chatContext.clearPendingAction();
+		pendingConfirmation = false;
+		
+		// Add cancellation message
+		const cancelMessage: Message = {
+			role: 'oscar',
+			content: 'Action cancelled.',
+			timestamp: new Date().toISOString()
+		};
+		messages = [...messages, cancelMessage];
+		
+		try {
+			saveChatMessage({
+				role: 'oscar',
+				content: cancelMessage.content
+			});
+		} catch (e) {
+			console.error('Failed to save cancellation message:', e);
+		}
+	}
+	
+	// Check for pending actions
+	$: pendingConfirmation = $chatContext.requiresConfirmation;
 </script>
 
 <svelte:head>
@@ -343,32 +624,45 @@ Provide concise, accurate guidance.`;
 				<h1 class="text-xl font-bold text-gray-900">Oscar AI</h1>
 				<p class="text-sm text-gray-600">Tree Consultant Assistant</p>
 			</div>
-			<div class="flex gap-2">
-				<button
-					on:click={refreshChat}
-					class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1.5"
-					title="Refresh chat"
-				>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-					</svg>
-					Refresh
-				</button>
-				<button
-					on:click={saveAndRefresh}
-					class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1.5"
-					title="Save transcript and refresh"
-				>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-					</svg>
-					Save & Refresh
-				</button>
+			<div class="flex items-center gap-3">
+				<!-- Context Picker -->
+				<ContextPicker />
+				
+				<div class="flex gap-2">
+					<button
+						on:click={refreshChat}
+						class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1.5"
+						title="Refresh chat"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+						</svg>
+						Refresh
+					</button>
+					<button
+						on:click={saveAndRefresh}
+						class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1.5"
+						title="Save transcript and refresh"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+						</svg>
+						Save & Refresh
+					</button>
+				</div>
 			</div>
 		</div>
-		{#if currentContext?.currentProject}
+		{#if $chatContext.mode === 'project' && currentContext?.currentProject}
 			<p class="text-xs text-green-700 mt-2 bg-green-50 inline-block px-2 py-1 rounded">
-				Project: {currentContext.currentProject.name}
+				Working in: <strong>{currentContext.currentProject.name}</strong> - All new items will be saved to this project.
+			</p>
+		{:else if $chatContext.mode === 'general'}
+			<p class="text-xs text-blue-700 mt-2 bg-blue-50 inline-block px-2 py-1 rounded">
+				General Chat mode - No automatic database writes. Use conversion buttons to save content.
+			</p>
+		{:else if $chatContext.mode === 'global'}
+			<p class="text-xs text-purple-700 mt-2 bg-purple-50 inline-block px-2 py-1 rounded">
+				Global Workspace - Cross-project operations allowed.
 			</p>
 		{/if}
 	</div>
@@ -499,6 +793,128 @@ Provide concise, accurate guidance.`;
 								<span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms;"></span>
 								<span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms;"></span>
 								<span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms;"></span>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+			
+			<!-- Context Switch Prompt -->
+			{#if showContextSwitchPrompt && contextInferenceResult}
+				<div class="flex justify-start">
+					<div class="max-w-3xl bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+						<div class="flex items-start gap-3">
+							<span class="text-xl">🔄</span>
+							<div class="flex-1 min-w-0">
+								<p class="text-yellow-800 font-medium mb-2">
+									{proposeContextSwitch(contextInferenceResult)}
+								</p>
+								<p class="text-yellow-700 text-sm mb-3">
+									{contextInferenceResult.reason}
+								</p>
+								<div class="flex gap-2">
+									<button
+										on:click={() => handleContextSwitch('yes')}
+										class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+									>
+										Yes, switch to {contextInferenceResult.projectName}
+									</button>
+									<button
+										on:click={() => handleContextSwitch('general')}
+										class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+									>
+										Keep in General Chat
+									</button>
+									<button
+										on:click={() => handleContextSwitch('choose')}
+										class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+									>
+										Choose another project
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+			
+			<!-- Pending Action Confirmation -->
+			{#if pendingConfirmation}
+				<div class="flex justify-start">
+					<div class="max-w-3xl bg-orange-50 border border-orange-200 rounded-lg p-4">
+						<div class="flex items-start gap-3">
+							<span class="text-xl">⚠️</span>
+							<div class="flex-1 min-w-0">
+								<p class="text-orange-800 font-medium mb-2">
+									Action requires confirmation
+								</p>
+								<p class="text-orange-700 text-sm mb-3">
+									This action will modify the database. Please confirm to proceed.
+								</p>
+								<div class="flex gap-2">
+									<button
+										on:click={handleConfirmPendingAction}
+										class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+									>
+										Confirm & Execute
+									</button>
+									<button
+										on:click={handleCancelPendingAction}
+										class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+									>
+										Cancel
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+			
+			<!-- Conversion Options (General Chat) -->
+			{#if showConversionOptions && conversionOptions}
+				<div class="flex justify-start">
+					<div class="max-w-3xl bg-blue-50 border border-blue-200 rounded-lg p-4">
+						<div class="flex items-start gap-3">
+							<span class="text-xl">💾</span>
+							<div class="flex-1 min-w-0">
+								<p class="text-blue-800 font-medium mb-2">
+									Save this content:
+								</p>
+								<div class="flex flex-wrap gap-2 mb-3">
+									{#each conversionOptions.options as option}
+										<button
+											on:click={() => handleConversionOption(option.type)}
+											class="px-3 py-2 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors text-sm flex items-center gap-2"
+										>
+											<span>{option.icon}</span>
+											<span>{option.label}</span>
+										</button>
+									{/each}
+								</div>
+								
+								{#if conversionOptions.projects.length > 0}
+									<p class="text-blue-700 text-sm mb-2">Or save to a project:</p>
+									<div class="flex flex-wrap gap-2">
+										{#each conversionOptions.projects as project}
+											<button
+												on:click={() => handleConversionOption('note', project.id)}
+												class="px-3 py-2 bg-white border border-green-300 rounded-lg hover:bg-green-50 transition-colors text-sm"
+											>
+												Save to {project.name}
+											</button>
+										{/each}
+										<button
+											on:click={() => {
+												// Open project selector
+												goto('/workspace');
+											}}
+											class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+										>
+											More...
+										</button>
+									</div>
+								{/if}
 							</div>
 						</div>
 					</div>
