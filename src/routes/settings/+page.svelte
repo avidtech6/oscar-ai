@@ -39,6 +39,9 @@
 	});
 
 	async function toggleDummyData() {
+		// Debug: show alert to confirm function is called
+		alert('toggleDummyData called! Current: ' + dummyDataToggle);
+		
 		// The checkbox state hasn't been updated yet, so we need to use the opposite value
 		const newValue = !dummyDataToggle;
 		console.log('toggleDummyData called, current:', dummyDataToggle, 'new:', newValue);
