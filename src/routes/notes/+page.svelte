@@ -345,6 +345,103 @@
 		}
 	}
 
+	// Per-item AI interaction
+	let aiPromptForNote: string | null = null;
+	let aiPromptText = '';
+	let aiPromptProcessing = false;
+	let aiPromptResult = '';
+
+	async function openAIPrompt(noteId: string) {
+		aiPromptForNote = noteId;
+		aiPromptText = '';
+		aiPromptResult = '';
+	}
+
+	function closeAIPrompt() {
+		aiPromptForNote = null;
+		aiPromptText = '';
+		aiPromptResult = '';
+	}
+
+	async function submitAIPrompt() {
+		if (!aiPromptText.trim() || !aiPromptForNote || !apiKey) return;
+		
+		aiPromptProcessing = true;
+		aiPromptResult = '';
+		
+		try {
+			const note = notes.find(n => n.id === aiPromptForNote);
+			if (!note) {
+				error = 'Note not found';
+				return;
+			}
+			
+			const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${apiKey}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					model: 'llama-3.1-70b-versatile',
+					messages: [
+						{
+							role: 'system',
+							content: `You are an AI assistant helping with a note. The note has:
+Title: ${note.title}
+Content: ${note.content}
+Tags: ${note.tags?.join(', ') || 'none'}
+Type: ${note.type}
+Created: ${formatDate(note.createdAt)}
+Updated: ${formatDate(note.updatedAt)}
+
+Please respond to the user's request about this specific note.`
+						},
+						{
+							role: 'user',
+							content: aiPromptText
+						}
+					],
+					temperature: 0.7,
+					max_tokens: 500
+				})
+			});
+			
+			if (!response.ok) {
+				throw new Error('AI request failed');
+			}
+			
+			const data = await response.json();
+			aiPromptResult = data.choices[0].message.content;
+		} catch (e) {
+			error = 'Failed to process AI request';
+			console.error(e);
+		} finally {
+			aiPromptProcessing = false;
+		}
+	}
+
+	async function applyAIResultToNote() {
+		if (!aiPromptForNote || !aiPromptResult) return;
+		
+		try {
+			const note = notes.find(n => n.id === aiPromptForNote);
+			if (!note) return;
+			
+			// Update the note with the AI result
+			await db.notes.update(note.id!, {
+				content: note.content + '\n\n---\n\nAI Response:\n' + aiPromptResult,
+				updatedAt: new Date()
+			});
+			
+			await loadNotes();
+			closeAIPrompt();
+		} catch (e) {
+			error = 'Failed to update note';
+			console.error(e);
+		}
+	}
+
 	function formatDate(date: Date) {
 		return new Date(date).toLocaleDateString('en-GB', {
 			day: 'numeric',
@@ -436,20 +533,32 @@
 	{:else}
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{#each notes as note (note.id)}
-				<div class="card p-4 hover:shadow-md transition-shadow cursor-pointer" on:click={() => openEditForm(note)} transition:fade>
+				<div class="card p-4 hover:shadow-md transition-shadow" transition:fade>
 					<div class="flex items-start justify-between mb-2">
-						<h3 class="font-semibold text-gray-900 truncate flex-1">{note.title}</h3>
-						<button
-							on:click|stopPropagation={() => deleteNote(note)}
-							class="text-gray-400 hover:text-red-500 p-1"
-						>
-							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-							</svg>
-						</button>
+						<h3 class="font-semibold text-gray-900 truncate flex-1 cursor-pointer" on:click={() => openEditForm(note)}>{note.title}</h3>
+						<div class="flex gap-1">
+							<button
+								on:click|stopPropagation={() => openAIPrompt(note.id!)}
+								class="text-gray-400 hover:text-forest-600 p-1"
+								title="Ask AI about this note"
+							>
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+								</svg>
+							</button>
+							<button
+								on:click|stopPropagation={() => deleteNote(note)}
+								class="text-gray-400 hover:text-red-500 p-1"
+								title="Delete note"
+							>
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+								</svg>
+							</button>
+						</div>
 					</div>
 					
-					<p class="text-gray-600 text-sm line-clamp-3 mb-3">{note.content}</p>
+					<p class="text-gray-600 text-sm line-clamp-3 mb-3 cursor-pointer" on:click={() => openEditForm(note)}>{note.content}</p>
 					
 					<div class="flex flex-wrap gap-1 mb-2">
 						{#if note.type}
@@ -623,3 +732,102 @@
 		overflow: hidden;
 	}
 </style>
+
+<!-- AI Prompt Modal -->
+{#if aiPromptForNote}
+	<div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" transition:fade>
+		<div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" transition:slide>
+			<!-- Header -->
+			<div class="px-6 py-4 border-b flex items-center justify-between">
+				<h2 class="text-lg font-semibold">
+					Ask AI About Note
+				</h2>
+				<button on:click={closeAIPrompt} class="text-gray-400 hover:text-gray-600">
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+					</svg>
+				</button>
+			</div>
+			
+			<!-- Content -->
+			<div class="flex-1 overflow-y-auto p-6 space-y-4">
+				{#let note = notes.find(n => n.id === aiPromptForNote)}
+					{#if note}
+						<div class="bg-gray-50 p-4 rounded-lg mb-4">
+							<h3 class="font-medium text-gray-900 mb-2">{note.title}</h3>
+							<p class="text-sm text-gray-600 whitespace-pre-wrap">{note.content}</p>
+							<div class="mt-2 text-xs text-gray-500">
+								<span>Type: {note.type}</span>
+								{#if note.tags && note.tags.length > 0}
+									<span class="ml-4">Tags: {note.tags.join(', ')}</span>
+								{/if}
+							</div>
+						</div>
+					{/if}
+				{/let}
+				
+				<div>
+					<label for="aiPrompt" class="block text-sm font-medium text-gray-700 mb-1">
+						What would you like the AI to do with this note?
+					</label>
+					<textarea
+						id="aiPrompt"
+						bind:value={aiPromptText}
+						placeholder="e.g., Summarize this note, Expand on this idea, Translate to Spanish, Create action items..."
+						rows="3"
+						class="input w-full resize-none"
+						disabled={aiPromptProcessing}
+					></textarea>
+					<p class="text-xs text-gray-500 mt-1">
+						Try: "Summarize", "Expand", "Create bullet points", "Translate", "Fix grammar", "Make more professional"
+					</p>
+				</div>
+				
+				{#if aiPromptResult}
+					<div class="border-t pt-4">
+						<h4 class="text-sm font-medium text-gray-700 mb-2">AI Response:</h4>
+						<div class="bg-green-50 border border-green-200 rounded-lg p-4">
+							<p class="text-gray-700 whitespace-pre-wrap text-sm">{aiPromptResult}</p>
+						</div>
+						<div class="mt-4 flex gap-3">
+							<button
+								on:click={applyAIResultToNote}
+								class="btn btn-primary"
+							>
+								Add to Note
+							</button>
+							<button
+								on:click={() => aiPromptResult = ''}
+								class="btn btn-secondary"
+							>
+								Ask Another Question
+							</button>
+						</div>
+					</div>
+				{/if}
+			</div>
+			
+			<!-- Footer -->
+			<div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
+				<button on:click={closeAIPrompt} class="btn btn-secondary">
+					Cancel
+				</button>
+				<button
+					on:click={submitAIPrompt}
+					class="btn btn-primary"
+					disabled={aiPromptProcessing || !aiPromptText.trim()}
+				>
+					{#if aiPromptProcessing}
+						<svg class="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+						</svg>
+						Processing...
+					{:else}
+						Ask AI
+					{/if}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
