@@ -159,44 +159,65 @@ export const dummyTrees: Omit<Tree, 'id' | 'createdAt' | 'updatedAt'>[] = [
 
 // Helper function to insert all dummy data
 export async function insertDummyData(): Promise<void> {
-	const { db, createProject, createTask, createNote, saveReport, createTree, deleteAllDummyData } = await import('../db/index.js');
+	console.log('insertDummyData: Starting...');
 	
-	// First delete any existing dummy data
-	await deleteAllDummyData();
-	
-	// Create dummy projects
-	const projectIds: string[] = [];
-	for (const project of dummyProjects) {
-		const id = await createProject(project);
-		projectIds.push(id);
-	}
-	
-	// Create dummy trees for first project
-	if (projectIds[0]) {
-		for (const tree of dummyTrees) {
-			await createTree({ ...tree, projectId: projectIds[0] });
+	try {
+		const { db, createProject, createTask, createNote, saveReport, createTree, deleteAllDummyData } = await import('../db/index.js');
+		
+		// First delete any existing dummy data
+		console.log('insertDummyData: Deleting existing dummy data...');
+		await deleteAllDummyData();
+		console.log('insertDummyData: Existing dummy data deleted');
+		
+		// Create dummy projects
+		console.log('insertDummyData: Creating dummy projects...');
+		const projectIds: string[] = [];
+		for (const project of dummyProjects) {
+			const id = await createProject(project);
+			projectIds.push(id);
+			console.log('insertDummyData: Created project', id, project.name);
 		}
-	}
-	
-	// Create dummy tasks (some with project association)
-	for (let i = 0; i < dummyTasks.length; i++) {
-		const task = dummyTasks[i];
-		const projectId = i === 0 ? projectIds[0] : undefined;
-		await createTask({ ...task, projectId });
-	}
-	
-	// Create dummy notes (some with project association)
-	for (let i = 0; i < dummyNotes.length; i++) {
-		const note = dummyNotes[i];
-		const projectId = i === 0 ? projectIds[0] : undefined;
-		await createNote({ ...note, projectId });
-	}
-	
-	// Create dummy reports for first project
-	if (projectIds[0]) {
-		for (const report of dummyReports) {
-			await saveReport({ ...report, projectId: projectIds[0] });
+		
+		// Create dummy trees for first project
+		if (projectIds[0]) {
+			console.log('insertDummyData: Creating dummy trees for project', projectIds[0]);
+			for (const tree of dummyTrees) {
+				await createTree({ ...tree, projectId: projectIds[0] });
+				console.log('insertDummyData: Created tree', tree.number);
+			}
 		}
+		
+		// Create dummy tasks (some with project association)
+		console.log('insertDummyData: Creating dummy tasks...');
+		for (let i = 0; i < dummyTasks.length; i++) {
+			const task = dummyTasks[i];
+			const projectId = i === 0 ? projectIds[0] : undefined;
+			await createTask({ ...task, projectId });
+			console.log('insertDummyData: Created task', task.title);
+		}
+		
+		// Create dummy notes (some with project association)
+		console.log('insertDummyData: Creating dummy notes...');
+		for (let i = 0; i < dummyNotes.length; i++) {
+			const note = dummyNotes[i];
+			const projectId = i === 0 ? projectIds[0] : undefined;
+			await createNote({ ...note, projectId });
+			console.log('insertDummyData: Created note', note.title);
+		}
+		
+		// Create dummy reports for first project
+		if (projectIds[0]) {
+			console.log('insertDummyData: Creating dummy reports...');
+			for (const report of dummyReports) {
+				await saveReport({ ...report, projectId: projectIds[0] });
+				console.log('insertDummyData: Created report', report.title);
+			}
+		}
+		
+		console.log('insertDummyData: Completed successfully');
+	} catch (error) {
+		console.error('insertDummyData: Error:', error);
+		throw error;
 	}
 }
 
