@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tree Condition Report - {{project.name}}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: white;
+        }
+        .header {
+            border-bottom: 3px solid #795548;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #795548;
+            margin: 0;
+            font-size: 24pt;
+        }
+        .header-subtitle {
+            color: #666;
+            font-size: 14pt;
+            margin: 5px 0 15px 0;
+        }
+        .project-info {
+            background: #f5f0ed;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #795548;
+        }
+        .section {
+            margin: 25px 0;
+            page-break-inside: avoid;
+        }
+        .section h2 {
+            color: #795548;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            font-size: 18pt;
+        }
+        .subsection {
+            margin: 15px 0;
+        }
+        .subsection h3 {
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 14pt;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th {
+            background: #795548;
+            color: white;
+            text-align: left;
+            padding: 10px;
+            font-weight: bold;
+        }
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .condition-rating {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 11pt;
+        }
+        .condition-good {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .condition-fair {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        .condition-poor {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .condition-dead {
+            background: #424242;
+            color: white;
+        }
+        .risk-matrix {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .risk-cell {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .risk-low {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+        .risk-medium {
+            background: #fff3e0;
+            border-color: #ff9800;
+        }
+        .risk-high {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+        .risk-immediate {
+            background: #f44336;
+            color: white;
+            border-color: #c62828;
+        }
+        .observation {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #795548;
+        }
+        .recommendation {
+            background: #e3f2fd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #2196f3;
+        }
+        .urgent {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+        .photo-placeholder {
+            background: #f5f5f5;
+            border: 2px dashed #ddd;
+            padding: 30px;
+            text-align: center;
+            color: #999;
+            margin: 10px 0;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 10pt;
+            color: #666;
+            text-align: center;
+        }
+        .signature-block {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature {
+            width: 45%;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+            text-align: center;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .assessment-criteria {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .criteria-item {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Tree Condition Report</h1>
+        <div class="header-subtitle">Visual Tree Assessment (VTA) Report</div>
+        
+        <div class="project-info">
+            <table>
+                <tr>
+                    <td><strong>Project:</strong></td>
+                    <td>{{project.name}}</td>
+                    <td><strong>Reference:</strong></td>
+                    <td>{{project.reference}}</td>
+                </tr>
+                <tr>
+                    <td><strong>Client:</strong></td>
+                    <td>{{project.client}}</td>
+                    <td><strong>Assessment Date:</strong></td>
+                    <td>{{survey.date}}</td>
+                </tr>
+                <tr>
+                    <td><strong>Site Address:</strong></td>
+                    <td colspan="3">{{project.siteAddress}}</td>
+                </tr>
+                <tr>
+                    <td><strong>Assessor:</strong></td>
+                    <td>{{survey.surveyor}}</td>
+                    <td><strong>Qualification:</strong></td>
+                    <td>{{survey.qualification}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>1.0 Introduction</h2>
+        <p>This Tree Condition Report presents the findings of a Visual Tree Assessment (VTA) conducted at {{project.siteAddress}} on {{survey.date}}. The assessment follows the methodology outlined in the National Tree Safety Group's "Common Sense Risk Management of Trees".</p>
+        
+        <div class="subsection">
+            <h3>1.1 Assessment Purpose</h3>
+            <p>The purpose of this assessment is to:</p>
+            <ul>
+                <li>Evaluate the structural condition and health of trees</li>
+                <li>Identify any defects or hazards that may pose a risk</li>
+                <li>Provide recommendations for tree management</li>
+                <li>Assess the suitability of trees for retention</li>
+                <li>Inform maintenance planning and risk management</li>
+            </ul>
+        </div>
+
+        <div class="subsection">
+            <h3>1.2 Assessment Methodology</h3>
+            <p>The assessment was conducted using Visual Tree Assessment (VTA) techniques, including:</p>
+            <div class="assessment-criteria">
+                <div class="criteria-item">
+                    <strong>Crown Assessment</strong>
+                    <p>Density, symmetry, dieback, epicormic growth</p>
+                </div>
+                <div class="criteria-item">
+                    <strong>Stem Assessment</strong>
+                    <p>Bark condition, cavities, cracks, lean</p>
+                </div>
+                <div class="criteria-item">
+                    <strong>Root Assessment</strong>
+                    <p>Root plate movement, soil conditions, excavations</p>
+                </div>
+                <div class="criteria-item">
+                    <strong>Fungal Assessment</strong>
+                    <p>Presence of fungi, decay indicators</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>2.0 Risk Assessment Matrix</h2>
+        
+        <div class="risk-matrix">
+            <div class="risk-cell risk-low">
+                <strong>Low Risk</strong>
+                <p>Minor defects, no immediate action required</p>
+            </div>
+            <div class="risk-cell risk-medium">
+                <strong>Medium Risk</strong>
+                <p>Moderate defects, monitor or consider works</p>
+            </div>
+            <div class="risk-cell risk-high">
+                <strong>High Risk</strong>
+                <p>Significant defects, works recommended</p>
+            </div>
+            <div class="risk-cell risk-immediate">
+                <strong>Immediate Risk</strong>
+                <p>Dangerous condition, urgent action required</p>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3>2.1 Risk Factors Considered</h3>
+            <ul>
+                <li><strong>Target:</strong> Likelihood of people/property being present</li>
+                <li><strong>Probability of Failure:</strong> Likelihood of tree/part failing</li>
+                <li><strong>Size of Part:</strong> Size of part likely to fail</li>
+                <li><strong>Impact:</strong> Consequences of failure</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>3.0 Tree Assessment Results</h2>
+        
+        {{#if trees.length}}
+        <div class="subsection">
+            <h3>3.1 Individual Tree Assessments</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tree Ref</th>
+                        <th>Species</th>
+                        <th>DBH (mm)</th>
+                        <th>Condition</th>
+                        <th>Risk Rating</th>
+                        <th>Key Defects</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each trees}}
+                    <tr>
+                        <td>{{this.number}}</td>
+                        <td>{{this.species}}</td>
+                        <td>{{this.DBH}}</td>
+                        <td>
+                            <span class="condition-rating 
+                                {{#if this.condition === 'Good'}}condition-good
+                                {{else if this.condition === 'Fair'}}condition-fair
+                                {{else if this.condition === 'Poor'}}condition-poor
+                                {{else if this.condition === 'Dead'}}condition-dead
+                                {{else}}condition-fair{{/if}}">
+                                {{this.condition || 'Not assessed'}}
+                            </span>
+                        </td>
+                        <td>
+                            {{#if this.category === 'A'}}High
+                            {{else if this.category === 'B'}}Medium
+                            {{else if this.category === 'C'}}Low
+                            {{else}}Not assessed{{/if}}
+                        </td>
+                        <td>
+                            {{#if this.notes}}
+                                {{this.notes.substring(0, 50)}}...
+                            {{else}}
+                                No defects noted
+                            {{/if}}
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3>3.2 Condition Summary</h3>
+            {{#let goodCount=(trees.filter(t => t.condition === 'Good').length)
+                  fairCount=(trees.filter(t => t.condition === 'Fair').length)
+                  poorCount=(trees.filter(t => t.condition === 'Poor').length)
+                  deadCount=(trees.filter(t => t.condition === 'Dead').length)}}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Condition</th>
+                        <th>Number of Trees</th>
+                        <th>Percentage</th>
+                        <th>Management Priority</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="condition-rating condition-good">Good</span></td>
+                        <td>{{goodCount}}</td>
+                        <td>{{(goodCount / trees.length * 100).toFixed(1)}}%</td>
+                        <td>Routine inspection</td>
+                    </tr>
+                    <tr>
+                        <td><span class="condition-rating condition-fair">Fair</span></td>
+                        <td>{{fairCount}}</td>
+                        <td>{{(fairCount / trees.length * 100).toFixed(1)}}%</td>
+                        <td>Monitor</td>
+                    </tr>
+                    <tr>
+                        <td><span class="condition-rating condition-poor">Poor</span></td>
+                        <td>{{poorCount}}</td>
+                        <td>{{(poorCount / trees.length * 100).toFixed(1)}}%</td>
+                        <td>Consider works</td>
+                    </tr>
+                    <tr>
+                        <td><span class="condition-rating condition-dead">Dead</span></td>
+                        <td>{{deadCount}}</td>
+                        <td>{{(deadCount / trees.length * 100).toFixed(1)}}%</td>
+                        <td>Remove</td>
+                    </tr>
+                </tbody>
+            </table>
+            {{/let}}
+        </div>
+        {{else}}
+        <div class="subsection">
+            <h3>3.1 Tree Assessments</h3>
+            <div class="observation">
+                <p><strong>No tree data available:</strong> Tree survey data is required to complete this condition assessment. Please conduct a tree survey before generating this report.</p>
+            </div>
+        </div>
+        {{/if}}
+    </div>
+
+    <div class="section">
+        <h2>4.0 Detailed Observations</h2>
+        
+        {{#if trees.length}}
+        <div class="subsection">
+            <h3>4.1 Common Defects Observed</h3>
+            {{#each trees}}
+            {{#if this.condition === 'Poor' || this.condition === 'Dead'}}
+            <div class="observation {{#if this.condition === 'Dead'}}urgent{{/if}}">
+                <h4>Tree {{this.number}} - {{this.species}}</h4>
+                <p><strong>Condition:</strong> {{this.condition}}</p>
+                <p><strong>Defects:</strong> {{this.notes || 'No specific defects noted'}}</p>
+                <p><strong>DBH:</strong> {{this.DBH}}mm</p>
+                {{#if this.photo}}
+                <div class="photo-placeholder">
+                    [Photo: {{this.photo}}]
+                </div>
+                {{/if}}
+            </div>
+            {{/if}}
+            {{/each}}
+        </div>
+        {{/if}}
+
+        <div class="subsection">
+            <h3>4.2 Site Factors Affecting Tree Health</h3>
+            <div class="observation">
+                <p><strong>Site Observations:</strong></p>
+                <ul>
+                    <li>Soil conditions: {{#if notes.length}}Noted in field observations{{else}}Not assessed{{/if}}</li>
+                    <li>Drainage: {{#if notes.length}}Refer to field notes{{else}}Not assessed{{/if}}</li>
+                    <li>Construction impacts: {{#if notes.length}}See project notes{{else}}No data{{/if}}</li>
+                    <li>Pest/disease presence: {{#if notes.length}}Check field notes{{else}}Not assessed{{/if}}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>5.0 Recommendations</h2>
+        
+        <div class="subsection">
+            <h3>5.1 Priority Actions</h3>
+            
+            {{#if recommendations.removedTrees}}
+            <div class="recommendation urgent">
+                <h4>Immediate Action Required</h4>
+                <p><strong>Remove the following trees:</strong></p>
+                <ul>
+                    {{#each recommendations.removedTrees}}
+                    <li>Tree {{this.treeRef}} - {{this.reason}}</li>
+                    {{/each}}
+                </ul>
+                <p><strong>Reason:</strong> These trees pose an immediate risk due to poor condition or structural defects.</p>
+            </div>
+            {{/if}}
+
+            {{#if recommendations.retainedTrees}}
+            <div class="recommendation">
+                <h4>Works Recommended</h4>
+                <p><strong>Consider works for the following trees:</strong></p>
+                <ul>
+                    {{#each recommendations.retainedTrees}}
+                    <li>Tree {{this.treeRef}} ({{this.species}}): {{#if this.category === 'A'}}Crown reduction/raising{{else if this.category === 'B'}}Selective pruning{{else}}Monitoring{{/if}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}}
+
+            <div class="recommendation">
+                <h4>Monitoring Schedule</h4>
+                <p><strong>Recommended inspection frequency:</strong></p>
+                <ul>
+                    <li><strong>High risk trees:</strong> 6-monthly inspection</li>
+                    <li><strong>Medium risk trees:</strong> Annual inspection</li>
+                    <li><strong>Low risk trees:</strong> Biennial inspection</li>
+                    <li><strong>All trees after severe weather:</strong> Visual check</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>6.0 Conclusions</h2>
+        <p>The tree population at {{project.siteAddress}} has been assessed and the findings are presented in this report. {{#if trees.length}}Of the {{trees

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Arboricultural Impact Assessment - {{project.name}}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: white;
+        }
+        .header {
+            border-bottom: 3px solid #2e7d32;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2e7d32;
+            margin: 0;
+            font-size: 24pt;
+        }
+        .header-subtitle {
+            color: #666;
+            font-size: 14pt;
+            margin: 5px 0 15px 0;
+        }
+        .project-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin: 25px 0;
+            page-break-inside: avoid;
+        }
+        .section h2 {
+            color: #2e7d32;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            font-size: 18pt;
+        }
+        .subsection {
+            margin: 15px 0;
+        }
+        .subsection h3 {
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 14pt;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th {
+            background: #2e7d32;
+            color: white;
+            text-align: left;
+            padding: 10px;
+            font-weight: bold;
+        }
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .impact-matrix {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .impact-cell {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .impact-high {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+        .impact-medium {
+            background: #fff3e0;
+            border-color: #ff9800;
+        }
+        .impact-low {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+        .recommendation {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 10pt;
+            color: #666;
+            text-align: center;
+        }
+        .signature-block {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature {
+            width: 45%;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+            text-align: center;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .logo {
+            float: right;
+            max-width: 100px;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Arboricultural Impact Assessment</h1>
+        <div class="header-subtitle">In accordance with BS5837:2012</div>
+        
+        <div class="project-info">
+            <table>
+                <tr>
+                    <td><strong>Project:</strong></td>
+                    <td>{{project.name}}</td>
+                    <td><strong>Reference:</strong></td>
+                    <td>{{project.reference}}</td>
+                </tr>
+                <tr>
+                    <td><strong>Client:</strong></td>
+                    <td>{{project.client}}</td>
+                    <td><strong>Date:</strong></td>
+                    <td>{{survey.date}}</td>
+                </tr>
+                <tr>
+                    <td><strong>Site Address:</strong></td>
+                    <td colspan="3">{{project.siteAddress}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>1.0 Introduction</h2>
+        <p>This Arboricultural Impact Assessment (AIA) has been prepared in accordance with British Standard 5837:2012 "Trees in relation to design, demolition and construction". The assessment evaluates the potential impacts of the proposed development on the existing trees within and adjacent to the site.</p>
+        
+        <div class="subsection">
+            <h3>1.1 Purpose</h3>
+            <p>The purpose of this assessment is to:</p>
+            <ul>
+                <li>Identify trees that may be affected by the proposed development</li>
+                <li>Assess the significance of potential impacts</li>
+                <li>Provide recommendations for tree protection and mitigation measures</li>
+                <li>Inform the design process to minimize arboricultural constraints</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>2.0 Site Description</h2>
+        <p>The site is located at {{project.siteAddress}}. The assessment area includes all trees within the site boundary and those on adjacent land that may be affected by the development.</p>
+        
+        {{#if trees.length}}
+        <div class="subsection">
+            <h3>2.1 Tree Population</h3>
+            <p>The site contains {{trees.length}} trees that have been surveyed and assessed. The trees range in size from {{Math.min(...trees.map(t => t.DBH))}}mm to {{Math.max(...trees.map(t => t.DBH))}}mm diameter at breast height (DBH).</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tree Ref</th>
+                        <th>Species</th>
+                        <th>DBH (mm)</th>
+                        <th>Category</th>
+                        <th>Condition</th>
+                        <th>RPA Radius (m)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each trees}}
+                    <tr>
+                        <td>{{this.number}}</td>
+                        <td>{{this.species}}</td>
+                        <td>{{this.DBH}}</td>
+                        <td>{{this.category}}</td>
+                        <td>{{this.condition}}</td>
+                        <td>{{(this.DBH * 12 / 1000).toFixed(1)}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="subsection">
+            <h3>2.1 Tree Population</h3>
+            <p>No tree data has been recorded for this site. Tree survey data is required to complete this assessment.</p>
+        </div>
+        {{/if}}
+    </div>
+
+    <div class="section">
+        <h2>3.0 Impact Assessment</h2>
+        
+        <div class="impact-matrix">
+            <div class="impact-cell impact-high">
+                <strong>High Impact</strong>
+                <p>Direct loss, root damage within RPA, major crown reduction</p>
+            </div>
+            <div class="impact-cell impact-medium">
+                <strong>Medium Impact</strong>
+                <p>Indirect effects, root damage outside RPA, minor pruning</p>
+            </div>
+            <div class="impact-cell impact-low">
+                <strong>Low Impact</strong>
+                <p>No direct impact, temporary disturbance, visual only</p>
+            </div>
+        </div>
+
+        {{#if trees.length}}
+        <div class="subsection">
+            <h3>3.1 Impact Summary</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tree Ref</th>
+                        <th>Impact Level</th>
+                        <th>Type of Impact</th>
+                        <th>Mitigation Required</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each trees}}
+                    <tr>
+                        <td>{{this.number}}</td>
+                        <td>
+                            {{#if this.category === 'A'}}High{{else if this.category === 'B'}}Medium{{else}}Low{{/if}}
+                        </td>
+                        <td>Construction proximity, potential root damage</td>
+                        <td>Tree Protection Zone, monitoring</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{/if}}
+    </div>
+
+    <div class="section">
+        <h2>4.0 Recommendations</h2>
+        
+        {{#if recommendations.retainedTrees}}
+        <div class="subsection">
+            <h3>4.1 Trees Recommended for Retention</h3>
+            <ul>
+                {{#each recommendations.retainedTrees}}
+                <li><strong>{{this.treeRef}}</strong> - {{this.species}} (Category {{this.category}}): Retain with full protection measures</li>
+                {{/each}}
+            </ul>
+        </div>
+        {{/if}}
+
+        {{#if recommendations.removedTrees}}
+        <div class="subsection">
+            <h3>4.2 Trees Recommended for Removal</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tree Ref</th>
+                        <th>Reason for Removal</th>
+                        <th>Replacement Required</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each recommendations.removedTrees}}
+                    <tr>
+                        <td>{{this.treeRef}}</td>
+                        <td>{{this.reason}}</td>
+                        <td>Yes</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{/if}}
+
+        <div class="subsection">
+            <h3>4.3 Management Recommendations</h3>
+            <div class="recommendation">
+                {{#if recommendations.management}}
+                <ul>
+                    {{#each recommendations.management}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+                {{else}}
+                <p>Standard tree protection measures should be implemented in accordance with BS5837:2012.</p>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>5.0 Conclusions</h2>
+        <p>The proposed development will have varying levels of impact on the existing tree population. With appropriate mitigation measures and careful implementation of the recommendations in this report, the impacts can be minimized to acceptable levels.</p>
+        
+        <p>The key recommendations are:</p>
+        <ol>
+            <li>Implement Tree Protection Zones (TPZs) around all retained trees</li>
+            <li>Employ an arboricultural method statement for construction near trees</li>
+            <li>Regular monitoring by a qualified arboriculturist during construction</li>
+            <li>Replace removed trees with suitable species at appropriate locations</li>
+        </ol>
+    </div>
+
+    <div class="signature-block">
+        <div class="signature">
+            <p><strong>{{survey.surveyor}}</strong></p>
+            <p>{{survey.qualification}}</p>
+            <p>{{company.name}}</p>
+        </div>
+        <div class="signature">
+            <p>Date: {{survey.date}}</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>{{company.name}} | {{company.address}} | Tel: {{company.phone}} | Email: {{company.email}}</p>
+        <p>This report has been prepared in accordance with BS5837:2012. All recommendations should be implemented by qualified personnel.</p>
+    </div>
+</body>
+</html>

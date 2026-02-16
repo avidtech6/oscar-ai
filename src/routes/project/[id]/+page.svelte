@@ -3,31 +3,38 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { db } from '$lib/db';
-	import type { Project, Tree, Note } from '$lib/db';
+	import type { Project, Tree, Note, Photo } from '$lib/db';
 	import VoiceRecorder from '$lib/components/VoiceRecorder.svelte';
+	import AIReviewChat from '$lib/components/ai/AIReviewChat.svelte';
+	import { getProjectReviewStatus } from '$lib/services/projectReview';
+	import PhotoCapture from '$lib/components/project/PhotoCapture.svelte';
+	import ProjectDashboard from '$lib/components/project/ProjectDashboard.svelte';
+	import TabSystem from '$lib/components/project/TabSystem.svelte';
+	import TreeModal from '$lib/components/project/TreeModal.svelte';
+	import UnifiedAIPrompt from '$lib/components/ai/UnifiedAIPrompt.svelte';
 
 	let projectId = '';
 	let project: Project | undefined;
 	let trees: Tree[] = [];
 	let notes: Note[] = [];
+	let photos: Photo[] = [];
 	let activeTab = 'trees';
 	let loading = true;
 	let saving = false;
 	let error = '';
 	
+	// AI Review
+	let showAIReview = false;
+	let projectReviewStatus: { needsReview: boolean; issueCount: number; priority: 'high' | 'medium' | 'low' } | null = null;
 
-	// Tree form
-	let newTree = {
-		number: '',
-		species: '',
-		scientificName: '',
-		DBH: 0,
-		height: 0,
-		age: '',
-		category: '' as 'A' | 'B' | 'C' | 'U' | '',
-		condition: '',
-		notes: ''
-	};
+	// Photo capture
+	let showPhotoCapture = false;
+
+	// Tree modal
+	let showTreeModal = false;
+
+	// Unified AI Prompt
+	let showUnifiedAIPrompt = false;
 
 	// Note form
 	let newNote = {
@@ -57,6 +64,12 @@
 
 			// Load notes
 			notes = await db.notes.where('projectId').equals(projectId).toArray();
+
+			// Load photos
+			photos = await db.photos.where('projectId').equals(projectId).toArray();
+
+			// Load review status
+			projectReviewStatus = await getProjectReviewStatus(projectId);
 		} catch (e) {
 			error = 'Failed to load project';
 			console.error(e);
@@ -81,41 +94,38 @@
 		}
 	}
 
-	async function addTree() {
-		if (!newTree.number || !newTree.species) return;
+	async function addTree(treeData: {
+		number: string;
+		species: string;
+		scientificName: string;
+		DBH: number;
+		height: number;
+		age: string;
+		category: 'A' | 'B' | 'C' | 'U' | '';
+		condition: string;
+		notes: string;
+	}) {
+		if (!treeData.number || !treeData.species) return;
 
 		try {
 			const treeId = await db.trees.add({
 				projectId,
-				number: newTree.number,
-				species: newTree.species,
-				scientificName: newTree.scientificName,
-				DBH: newTree.DBH,
-				height: newTree.height,
-				age: newTree.age,
-				category: newTree.category,
-				condition: newTree.condition,
-				notes: newTree.notes,
-				RPA: newTree.DBH * 12,
+				number: treeData.number,
+				species: treeData.species,
+				scientificName: treeData.scientificName,
+				DBH: treeData.DBH,
+				height: treeData.height,
+				age: treeData.age,
+				category: treeData.category,
+				condition: treeData.condition,
+				notes: treeData.notes,
+				RPA: treeData.DBH * 12,
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString()
 			});
 
 			// Refresh trees list
 			trees = await db.trees.where('projectId').equals(projectId).toArray();
-
-			// Reset form
-			newTree = {
-				number: '',
-				species: '',
-				scientificName: '',
-				DBH: 0,
-				height: 0,
-				age: '',
-				category: '',
-				condition: '',
-				notes: ''
-			};
 
 			// Save project timestamp
 			await saveProject();
@@ -217,6 +227,94 @@
 			default: return 'bg-gray-100 text-gray-800';
 		}
 	}
+
+	function getPriorityColor(priority: 'high' | 'medium' | 'low'): string {
+		switch (priority) {
+			case 'high': return 'bg-red-100 text-red-800 border-red-200';
+			case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+			case 'low': return 'bg-blue-100 text-blue-800 border-blue-200';
+			default: return 'bg-gray-100 text-gray-800 border-gray-200';
+		}
+	}
+
+	function getPriorityLabel(priority: 'high' | 'medium' | 'low'): string {
+		switch (priority) {
+			case 'high': return 'High Priority';
+			case 'medium': return 'Medium Priority';
+			case 'low': return 'Low Priority';
+			default: return 'Needs Review';
+		}
+	}
+
+	function toggleAIReview() {
+		showAIReview = !showAIReview;
+	}
+
+	// Photo handling
+	async function handlePhotoUpload(event: CustomEvent<{ filename: string; imageData: string; metadata: any }>) {
+		try {
+			const { filename, imageData, metadata } = event.detail;
+			
+			// Convert base64 to blob
+			const byteCharacters = atob(imageData);
+			const byteNumbers = new Array(byteCharacters.length);
+			for (let i = 0; i < byteCharacters.length; i++) {
+				byteNumbers[i] = byteCharacters.charCodeAt(i);
+			}
+			const byteArray = new Uint8Array(byteNumbers);
+			const blob = new Blob([byteArray], { type: 'image/jpeg' });
+			
+			// Save to database
+			await db.photos.add({
+				projectId,
+				filename,
+				blob,
+				mimeType: 'image/jpeg',
+				createdAt: new Date()
+			});
+			
+			// Refresh photos list
+			photos = await db.photos.where('projectId').equals(projectId).toArray();
+			await saveProject();
+		} catch (e) {
+			error = 'Failed to save photo';
+			console.error(e);
+		}
+	}
+
+	async function deletePhoto(photoId: string) {
+		if (!confirm('Are you sure you want to delete this photo?')) return;
+		
+		try {
+			await db.photos.delete(photoId);
+			photos = await db.photos.where('projectId').equals(projectId).toArray();
+			await saveProject();
+		} catch (e) {
+			error = 'Failed to delete photo';
+			console.error(e);
+		}
+	}
+
+	// Get voice notes (notes with type 'voice')
+	function getVoiceNotes() {
+		return notes.filter(note => note.type === 'voice');
+	}
+
+	// Get all items for combined view
+	function getAllItems() {
+		const allItems = [
+			...trees.map(tree => ({ ...tree, type: 'tree' as const })),
+			...notes.map(note => ({ ...note, type: 'note' as const })),
+			...photos.map(photo => ({ ...photo, type: 'photo' as const }))
+		];
+		
+		// Sort by creation date (newest first)
+		return allItems.sort((a, b) => {
+			const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+			const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+			return dateB - dateA;
+		});
+	}
 </script>
 
 <svelte:head>
@@ -224,24 +322,6 @@
 </svelte:head>
 
 <div class="max-w-6xl mx-auto">
-	<!-- Header -->
-	<div class="mb-6 flex items-center justify-between">
-		<div>
-			<a href="/workspace" class="text-sm text-forest-600 hover:underline mb-1 inline-block">&larr; Back to Workspace</a>
-			<h1 class="text-2xl font-bold text-gray-900">{project?.name || 'Loading...'}</h1>
-			{#if project?.clientName}
-				<p class="text-gray-600">Client: {project.clientName}</p>
-			{/if}
-		</div>
-		<button
-			on:click={saveProject}
-			disabled={saving}
-			class="btn btn-primary"
-		>
-			{saving ? 'Saving...' : 'Save'}
-		</button>
-	</div>
-
 	{#if error}
 		<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
 			{error}
@@ -258,143 +338,55 @@
 			<a href="/workspace" class="btn btn-primary mt-4">Back to Workspace</a>
 		</div>
 	{:else}
-		<!-- Tabs -->
-		<div class="border-b border-gray-200 mb-6">
-			<nav class="-mb-px flex space-x-8">
-				<button
-					on:click={() => activeTab = 'trees'}
-					class="py-4 px-1 border-b-2 font-medium text-sm transition-colors
-						   {activeTab === 'trees' 
-							   ? 'border-forest-500 text-forest-600' 
-							   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
-				>
-					Trees ({trees.length})
-				</button>
-				<button
-					on:click={() => activeTab = 'notes'}
-					class="py-4 px-1 border-b-2 font-medium text-sm transition-colors
-						   {activeTab === 'notes' 
-							   ? 'border-forest-500 text-forest-600' 
-							   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
-				>
-					Notes ({notes.length})
-				</button>
-			</nav>
-		</div>
+		<!-- Project Dashboard -->
+		<ProjectDashboard
+			{project}
+			{projectReviewStatus}
+			treesCount={trees.length}
+			notesCount={notes.length}
+			photosCount={photos.length}
+			voiceNotesCount={getVoiceNotes().length}
+			onBack={() => goto('/workspace')}
+			onSave={saveProject}
+			onToggleAIReview={toggleAIReview}
+			onAddTree={() => showTreeModal = true}
+			onAddNote={() => activeTab = 'notes'}
+			onAddPhoto={() => showPhotoCapture = true}
+			onAddVoiceNote={() => activeTab = 'voice'}
+		/>
+
+		<!-- Tab System -->
+		<TabSystem
+			{activeTab}
+			tabs={[
+				{ id: 'trees', label: 'Trees', count: trees.length },
+				{ id: 'notes', label: 'Notes', count: notes.length },
+				{ id: 'photos', label: 'Photos', count: photos.length },
+				{ id: 'voice', label: 'Voice Notes', count: getVoiceNotes().length },
+				{ id: 'all', label: 'All Items', count: getAllItems().length }
+			]}
+			onTabChange={(tabId) => activeTab = tabId}
+		/>
 
 		<!-- Trees Tab -->
 		{#if activeTab === 'trees'}
-			<!-- Add Tree Form -->
-			<div class="card p-6 mb-6">
-				<h2 class="text-lg font-semibold mb-4">Add New Tree</h2>
-				<form on:submit|preventDefault={addTree} class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-					<div>
-						<label for="treeNumber" class="block text-sm font-medium text-gray-700 mb-1">Tree No.</label>
-						<input
-							id="treeNumber"
-							type="text"
-							bind:value={newTree.number}
-							placeholder="e.g., T1"
-							class="input w-full"
-							required
-						/>
-					</div>
-					<div>
-						<label for="species" class="block text-sm font-medium text-gray-700 mb-1">Species</label>
-						<input
-							id="species"
-							type="text"
-							bind:value={newTree.species}
-							placeholder="e.g., English Oak"
-							class="input w-full"
-							required
-						/>
-					</div>
-					<div>
-						<label for="scientificName" class="block text-sm font-medium text-gray-700 mb-1">Scientific Name</label>
-						<input
-							id="scientificName"
-							type="text"
-							bind:value={newTree.scientificName}
-							placeholder="e.g., Quercus robur"
-							class="input w-full"
-						/>
-					</div>
-					<div>
-						<label for="DBH" class="block text-sm font-medium text-gray-700 mb-1">DBH (mm)</label>
-						<input
-							id="DBH"
-							type="number"
-							bind:value={newTree.DBH}
-							placeholder="e.g., 450"
-							class="input w-full"
-						/>
-					</div>
-					<div>
-						<label for="height" class="block text-sm font-medium text-gray-700 mb-1">Height (m)</label>
-						<input
-							id="height"
-							type="number"
-							bind:value={newTree.height}
-							placeholder="e.g., 12"
-							class="input w-full"
-						/>
-					</div>
-					<div>
-						<label for="age" class="block text-sm font-medium text-gray-700 mb-1">Age Class</label>
-						<select id="age" bind:value={newTree.age} class="input w-full">
-							<option value="">Select...</option>
-							<option value="Young">Young</option>
-							<option value="Semi-mature">Semi-mature</option>
-							<option value="Mature">Mature</option>
-							<option value="Over-mature">Over-mature</option>
-							<option value="Ancient">Ancient</option>
-						</select>
-					</div>
-					<div>
-						<label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-						<select id="category" bind:value={newTree.category} class="input w-full">
-							<option value="">Select...</option>
-							<option value="A">A - High Quality</option>
-							<option value="B">B - Moderate Quality</option>
-							<option value="C">C - Low Quality</option>
-							<option value="U">U - Unsuitable</option>
-						</select>
-					</div>
-					<div>
-						<label for="condition" class="block text-sm font-medium text-gray-700 mb-1">Condition</label>
-						<input
-							id="condition"
-							type="text"
-							bind:value={newTree.condition}
-							placeholder="e.g., Good"
-							class="input w-full"
-						/>
-					</div>
-					<div class="md:col-span-2 lg:col-span-4">
-						<label for="treeNotes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-						<textarea
-							id="treeNotes"
-							bind:value={newTree.notes}
-							placeholder="Additional observations..."
-							rows="2"
-							class="input w-full"
-						></textarea>
-					</div>
-					<div class="md:col-span-2 lg:col-span-4">
-						<button type="submit" class="btn btn-primary">Add Tree</button>
-					</div>
-				</form>
-			</div>
-
 			<!-- Trees List -->
 			<div class="card">
-				<div class="p-4 border-b border-gray-200">
-					<h2 class="text-lg font-semibold">Tree Survey</h2>
+				<div class="p-4 border-b border-gray-200 flex items-center justify-between">
+					<h2 class="text-lg font-semibold">Tree Survey ({trees.length})</h2>
+					<button
+						on:click={() => showTreeModal = true}
+						class="btn btn-primary"
+					>
+						<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+						</svg>
+						Add Tree
+					</button>
 				</div>
 				{#if trees.length === 0}
 					<div class="p-8 text-center text-gray-500">
-						<p>No trees added yet. Add your first tree above!</p>
+						<p>No trees added yet. Click "Add Tree" to add your first tree.</p>
 					</div>
 				{:else}
 					<div class="overflow-x-auto">
@@ -453,8 +445,8 @@
 			<div class="card p-6 mb-6">
 				<h2 class="text-lg font-semibold mb-4">Voice Note</h2>
 				<p class="text-sm text-gray-600 mb-4">Record a voice note and it will be automatically transcribed using AI.</p>
-				<VoiceRecorder 
-					{projectId} 
+				<VoiceRecorder
+					{projectId}
 					on:transcript={handleVoiceTranscript}
 				/>
 			</div>
@@ -540,5 +532,146 @@
 				{/if}
 			</div>
 		{/if}
+
+		<!-- Photos Tab -->
+		{#if activeTab === 'photos'}
+			<!-- Photo Capture Button -->
+			<div class="card p-6 mb-6">
+				<h2 class="text-lg font-semibold mb-4">Add Photos</h2>
+				<p class="text-sm text-gray-600 mb-4">Capture photos using your device camera or upload existing images.</p>
+				<button
+					on:click={() => showPhotoCapture = true}
+					class="btn btn-primary"
+				>
+					<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+					</svg>
+					Take Photo
+				</button>
+			</div>
+
+			<!-- Photos List -->
+			<div class="card">
+				<div class="p-4 border-b border-gray-200">
+					<h2 class="text-lg font-semibold">Project Photos ({photos.length})</h2>
+				</div>
+				{#if photos.length === 0}
+					<div class="p-8 text-center text-gray-500">
+						<p>No photos added yet. Take your first photo above!</p>
+					</div>
+				{:else}
+					<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+						{#each photos as photo}
+							<div class="relative group">
+								<div class="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+									{#if photo.blob instanceof Blob}
+										<img
+											src={URL.createObjectURL(photo.blob)}
+											alt={photo.filename || 'Photo'}
+											class="w-full h-full object-cover"
+										/>
+									{:else}
+										<div class="w-full h-full flex items-center justify-center text-gray-400">
+											<svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+											</svg>
+										</div>
+									{/if}
+								</div>
+								<div class="mt-2">
+									<p class="text-sm font-medium text-gray-900 truncate">{photo.filename}</p>
+									<p class="text-xs text-gray-500">
+										{#if photo.createdAt}
+											{new Date(photo.createdAt).toLocaleDateString()}
+										{/if}
+									</p>
+								</div>
+								<button
+									on:click={() => photo.id && deletePhoto(photo.id)}
+									class="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+									title="Delete photo"
+								>
+									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+									</svg>
+								</button>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		{/if}
 	{/if}
+
+	<!-- Photo Capture Modal -->
+	{#if showPhotoCapture}
+		<PhotoCapture
+			isOpen={showPhotoCapture}
+			projectId={projectId}
+			photosFolderId=""
+			on:upload={handlePhotoUpload}
+			on:close={() => showPhotoCapture = false}
+		/>
+	{/if}
+
+	<!-- Tree Modal -->
+	<TreeModal
+		isOpen={showTreeModal}
+		{projectId}
+		onClose={() => showTreeModal = false}
+		onSave={addTree}
+	/>
+
+	<!-- Photo Capture Modal -->
+	{#if showPhotoCapture}
+		<PhotoCapture
+			isOpen={showPhotoCapture}
+			projectId={projectId}
+			photosFolderId=""
+			on:upload={handlePhotoUpload}
+			on:close={() => showPhotoCapture = false}
+		/>
+	{/if}
+
+	<!-- Unified AI Prompt -->
+	<UnifiedAIPrompt
+		{projectId}
+		isOpen={showUnifiedAIPrompt}
+	/>
+
+	<!-- AI Review Chat Modal -->
+	{#if showAIReview && project}
+		<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+			<div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+				<div class="p-4 border-b border-gray-200 flex items-center justify-between">
+					<h2 class="text-xl font-semibold text-gray-900">AI Project Review</h2>
+					<button
+						on:click={toggleAIReview}
+						class="text-gray-400 hover:text-gray-600"
+					>
+						<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+						</svg>
+					</button>
+				</div>
+				<div class="p-4 overflow-y-auto max-h-[calc(90vh-80px)]">
+					<AIReviewChat projectId={projectId} projectName={project.name} />
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Floating AI Assistant Button -->
+	<div class="fixed bottom-6 right-6 z-40">
+		<button
+			on:click={() => showUnifiedAIPrompt = true}
+			class="bg-forest-600 text-white p-4 rounded-full shadow-lg hover:bg-forest-700 transition-colors flex items-center justify-center"
+			title="AI Assistant"
+		>
+			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+			</svg>
+		</button>
+	</div>
 </div>

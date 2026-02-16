@@ -9,6 +9,7 @@ export interface ContextInferenceResult {
 	projectName?: string;
 	confidence: number;
 	reason: string;
+	multipleMatches?: Array<{ id: string; name: string }>;
 }
 
 export interface ProjectMatch {
@@ -18,14 +19,20 @@ export interface ProjectMatch {
 	matches: string[];
 }
 
-// Infer project from message
-export async function inferProjectFromMessage(message: string): Promise<ContextInferenceResult> {
+// Enhanced project inference with better matching
+export async function inferProjectFromMessage(message: string, projects?: any[]): Promise<ContextInferenceResult> {
 	const msg = message.toLowerCase().trim();
 	const currentChatContext = get(chatContext);
 	
+	// If projects not provided, fetch them
+	let allProjects = projects;
+	if (!allProjects) {
+		allProjects = await db.projects.toArray();
+	}
+	
 	// If already in project mode, check if message references other projects
 	if (currentChatContext.mode === 'project' && currentChatContext.selectedProjectId) {
-		const currentProject = await db.projects.get(currentChatContext.selectedProjectId);
+		const currentProject = allProjects.find(p => p.id === currentChatContext.selectedProjectId);
 		if (currentProject) {
 			// Check if message mentions "this project" or similar
 			if (msg.includes('this project') || msg.includes('current project') || msg.includes('the project')) {
@@ -40,8 +47,6 @@ export async function inferProjectFromMessage(message: string): Promise<ContextI
 		}
 	}
 	
-	// Get all projects
-	const allProjects = await db.projects.toArray();
 	if (allProjects.length === 0) {
 		return {
 			shouldSwitch: false,
@@ -50,50 +55,75 @@ export async function inferProjectFromMessage(message: string): Promise<ContextI
 		};
 	}
 	
-	// Find project matches
+	// Find project matches with improved scoring
 	const projectMatches: ProjectMatch[] = [];
 	
 	for (const project of allProjects) {
 		const matches: string[] = [];
 		let confidence = 0;
 		
-		// Check for exact project name match
-		if (msg.includes(project.name.toLowerCase())) {
+		const projectNameLower = project.name.toLowerCase();
+		const projectClientLower = project.client ? project.client.toLowerCase() : '';
+		const projectLocationLower = project.location ? project.location.toLowerCase() : '';
+		
+		// Exact project name match (highest confidence)
+		if (msg.includes(projectNameLower)) {
+			// Calculate position score - earlier mentions are more important
+			const position = msg.indexOf(projectNameLower);
+			const positionScore = position >= 0 ? 1 - (position / msg.length) : 0.5;
 			matches.push(`Exact name match: "${project.name}"`);
-			confidence += 0.8;
+			confidence += 0.8 * positionScore;
 		}
 		
-		// Check for client name match
-		if (project.client && msg.includes(project.client.toLowerCase())) {
+		// Partial project name match
+		const words = projectNameLower.split(/\s+/);
+		for (const word of words) {
+			if (word.length > 3 && msg.includes(word)) {
+				matches.push(`Partial name match: "${word}"`);
+				confidence += 0.4;
+			}
+		}
+		
+		// Client name match
+		if (projectClientLower && msg.includes(projectClientLower)) {
 			matches.push(`Client match: "${project.client}"`);
 			confidence += 0.6;
 		}
 		
-		// Check for location match
-		if (project.location && msg.includes(project.location.toLowerCase())) {
+		// Location match
+		if (projectLocationLower && msg.includes(projectLocationLower)) {
 			matches.push(`Location match: "${project.location}"`);
 			confidence += 0.5;
 		}
 		
 		// Check for "file this in [project]" pattern
-		const fileInPattern = new RegExp(`file\\s+(?:this|it)\\s+in\\s+([^,.!?]+)`, 'i');
+		const fileInPattern = new RegExp(`(?:file|save|put|add)\\s+(?:this|it|that)\\s+(?:in|to|under)\\s+([^,.!?]+)`, 'i');
 		const fileInMatch = message.match(fileInPattern);
 		if (fileInMatch) {
 			const mentionedName = fileInMatch[1].trim().toLowerCase();
-			if (project.name.toLowerCase().includes(mentionedName) || mentionedName.includes(project.name.toLowerCase())) {
+			if (projectNameLower.includes(mentionedName) || mentionedName.includes(projectNameLower)) {
 				matches.push(`"File this in" pattern match`);
 				confidence += 0.9;
 			}
 		}
 		
-		// Check for "save to [project]" pattern
-		const saveToPattern = new RegExp(`save\\s+(?:this|it)\\s+to\\s+([^,.!?]+)`, 'i');
-		const saveToMatch = message.match(saveToPattern);
-		if (saveToMatch) {
-			const mentionedName = saveToMatch[1].trim().toLowerCase();
-			if (project.name.toLowerCase().includes(mentionedName) || mentionedName.includes(project.name.toLowerCase())) {
-				matches.push(`"Save to" pattern match`);
-				confidence += 0.9;
+		// Check for "for [project]" pattern
+		const forPattern = new RegExp(`(?:for|about|regarding)\\s+([^,.!?]+)`, 'i');
+		const forMatch = message.match(forPattern);
+		if (forMatch) {
+			const mentionedName = forMatch[1].trim().toLowerCase();
+			if (projectNameLower.includes(mentionedName) || mentionedName.includes(projectNameLower)) {
+				matches.push(`"For" pattern match`);
+				confidence += 0.7;
+			}
+		}
+		
+		// Check for project abbreviations or codes
+		if (project.code || project.abbreviation) {
+			const code = (project.code || project.abbreviation).toLowerCase();
+			if (msg.includes(code)) {
+				matches.push(`Code/abbreviation match: "${code}"`);
+				confidence += 0.8;
 			}
 		}
 		
@@ -113,8 +143,21 @@ export async function inferProjectFromMessage(message: string): Promise<ContextI
 	if (projectMatches.length > 0) {
 		const bestMatch = projectMatches[0];
 		
-		// Only suggest switch if confidence is high enough
-		if (bestMatch.confidence >= 0.7) {
+		// Check if there are multiple high-confidence matches
+		const highConfidenceMatches = projectMatches.filter(m => m.confidence >= 0.7);
+		
+		if (highConfidenceMatches.length > 1) {
+			// Multiple projects match - ask user to choose
+			return {
+				shouldSwitch: true,
+				projectId: '', // Empty to indicate multiple matches
+				projectName: '',
+				confidence: bestMatch.confidence,
+				reason: `Multiple projects match: ${highConfidenceMatches.map(m => m.projectName).join(', ')}`,
+				multipleMatches: highConfidenceMatches.map(m => ({ id: m.projectId, name: m.projectName }))
+			};
+		} else if (bestMatch.confidence >= 0.6) {
+			// Single good match
 			return {
 				shouldSwitch: true,
 				projectId: bestMatch.projectId,
@@ -126,15 +169,46 @@ export async function inferProjectFromMessage(message: string): Promise<ContextI
 	}
 	
 	// Check for pronoun references
-	if (msg.includes('this') || msg.includes('that') || msg.includes('the last') || msg.includes('previous')) {
-		const lastAIMessage = currentChatContext.lastAIMessage;
-		const lastReferencedItem = currentChatContext.lastReferencedItem;
+	const pronounResult = checkPronounReferences(msg, currentChatContext);
+	if (pronounResult) {
+		return pronounResult;
+	}
+	
+	// Check for generic project references
+	if (msg.includes('project') || msg.includes('client') || msg.includes('site') || msg.includes('job')) {
+		// Generic project reference but no specific match
+		return {
+			shouldSwitch: false,
+			confidence: 0.3,
+			reason: 'Generic project reference detected but no specific match'
+		};
+	}
+	
+	return {
+		shouldSwitch: false,
+		confidence: 0,
+		reason: 'No clear project reference detected'
+	};
+}
+
+// Check for pronoun references
+function checkPronounReferences(message: string, chatContext: any): ContextInferenceResult | null {
+	if (message.includes('this') || message.includes('that') || message.includes('the last') || message.includes('previous')) {
+		const lastAIMessage = chatContext.lastAIMessage;
+		const lastReferencedItem = chatContext.lastReferencedItem;
+		const lastCreatedItem = chatContext.lastCreatedItem;
 		
 		if (lastReferencedItem) {
 			return {
 				shouldSwitch: false,
 				confidence: 0.8,
 				reason: 'Pronoun reference detected to last referenced item'
+			};
+		} else if (lastCreatedItem) {
+			return {
+				shouldSwitch: false,
+				confidence: 0.8,
+				reason: 'Pronoun reference detected to last created item'
 			};
 		} else if (lastAIMessage) {
 			return {
@@ -145,11 +219,7 @@ export async function inferProjectFromMessage(message: string): Promise<ContextI
 		}
 	}
 	
-	return {
-		shouldSwitch: false,
-		confidence: 0,
-		reason: 'No clear project reference detected'
-	};
+	return null;
 }
 
 // Propose context switch

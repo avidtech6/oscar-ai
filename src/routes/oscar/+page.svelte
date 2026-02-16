@@ -60,6 +60,14 @@
 	let pendingConfirmation = false;
 	let conversionOptions: any = null;
 	let showConversionOptions = false;
+	
+	// Tagging confirmation state
+	let showTaggingConfirmation = false;
+	let taggingConfirmationData: any = null;
+	let showMultipleProjectMatches = false;
+	let multipleProjectMatches: Array<{ id: string; name: string }> = [];
+	let showProjectSelection = false;
+	let projectSelectionData: any = null;
 
 	// FAQ data - more concise
 	const faqs = [
@@ -182,6 +190,19 @@
 		try {
 			// First, check for context inference
 			const inference = await inferProjectFromMessage(resolvedMessage);
+			
+			// Handle multiple project matches
+			if (inference.shouldSwitch && inference.multipleMatches && inference.multipleMatches.length > 1) {
+				contextInferenceResult = inference;
+				multipleProjectMatches = inference.multipleMatches;
+				showMultipleProjectMatches = true;
+				
+				// Don't proceed with AI response yet - wait for user decision
+				sending = false;
+				return;
+			}
+			
+			// Handle single project match
 			if (inference.shouldSwitch && inference.projectId) {
 				contextInferenceResult = inference;
 				showContextSwitchPrompt = true;
@@ -201,6 +222,16 @@
 				console.log('Intent detected:', intent.type, intent.data);
 				actionResult = await executeIntent(intent);
 				console.log('Action result:', actionResult);
+				
+				// Check if action needs project selection
+				if (actionResult && !actionResult.success && actionResult.action === 'needsProjectSelection') {
+					projectSelectionData = actionResult.data;
+					showProjectSelection = true;
+					
+					// Don't proceed with AI response yet - wait for user decision
+					sending = false;
+					return;
+				}
 			}
 
 			// Build system prompt - professional, concise, no lecturing
@@ -608,6 +639,156 @@ Provide concise, accurate guidance.`;
 		}
 	}
 	
+	// Handle multiple project selection
+	async function handleMultipleProjectSelect(projectId: string) {
+		showMultipleProjectMatches = false;
+		
+		if (projectId === 'general') {
+			// Stay in General Chat
+			const confirmationMessage: Message = {
+				role: 'oscar',
+				content: `Staying in General Chat mode. No automatic database writes.`,
+				timestamp: new Date().toISOString()
+			};
+			messages = [...messages, confirmationMessage];
+			
+			try {
+				await saveChatMessage({
+					role: 'oscar',
+					content: confirmationMessage.content
+				});
+			} catch (e) {
+				console.error('Failed to save confirmation message:', e);
+			}
+			
+			// Continue with the original message
+			await sendMessage();
+		} else if (projectId === 'cancel') {
+			// Cancel and reset
+			multipleProjectMatches = [];
+			sending = false;
+		} else {
+			// Switch to selected project
+			const selectedProject = multipleProjectMatches.find(p => p.id === projectId);
+			if (selectedProject) {
+				chatContext.setProject(projectId);
+				
+				// Show confirmation message
+				const confirmationMessage: Message = {
+					role: 'oscar',
+					content: `Switched to project: **${selectedProject.name}**. All new items will be saved here.`,
+					timestamp: new Date().toISOString()
+				};
+				messages = [...messages, confirmationMessage];
+				
+				// Save confirmation message
+				try {
+					await saveChatMessage({
+						role: 'oscar',
+						content: confirmationMessage.content
+					});
+				} catch (e) {
+					console.error('Failed to save confirmation message:', e);
+				}
+				
+				// Continue with the original message
+				await sendMessage();
+			}
+		}
+	}
+	
+	// Handle project selection for General Chat actions
+	async function handleProjectSelection(option: string) {
+		showProjectSelection = false;
+		
+		if (option === 'cancel') {
+			// Cancel the action
+			projectSelectionData = null;
+			sending = false;
+			return;
+		}
+		
+		if (option === 'general') {
+			// Save without project tag (General Chat mode)
+			const currentChatContext = get(chatContext);
+			if (currentChatContext.mode === 'general') {
+				// Execute action without project ID
+				const actionResult = await executeIntent({
+					type: projectSelectionData.action.replace('create', '').toLowerCase(),
+					action: projectSelectionData.action,
+					data: {
+						...projectSelectionData.data,
+						projectId: undefined
+					},
+					confidence: 1
+				});
+				
+				// Add result message
+				const resultMessage: Message = {
+					role: 'oscar',
+					content: `✓ ${actionResult.message}`,
+					timestamp: new Date().toISOString(),
+					actionResult: actionResult
+				};
+				messages = [...messages, resultMessage];
+				
+				// Save result message
+				try {
+					await saveChatMessage({
+						role: 'oscar',
+						content: resultMessage.content,
+						actionResult: actionResult
+					});
+				} catch (e) {
+					console.error('Failed to save result message:', e);
+				}
+			}
+		} else {
+			// Save with selected project
+			const selectedProject = projectSelectionData.availableProjects?.find((p: any) => p.id === option);
+			const projectName = selectedProject ? selectedProject.name : 'the project';
+			
+			// Execute action with project ID
+			const actionResult = await executeIntent({
+				type: projectSelectionData.action.replace('create', '').toLowerCase(),
+				action: projectSelectionData.action,
+				data: {
+					...projectSelectionData.data,
+					projectId: option
+				},
+				confidence: 1
+			});
+			
+			// Add project tagging confirmation
+			if (actionResult.success) {
+				actionResult.message = `${actionResult.message} (Tagged to: ${projectName})`;
+				actionResult.data = { ...actionResult.data, projectTag: projectName };
+			}
+			
+			// Add result message
+			const resultMessage: Message = {
+				role: 'oscar',
+				content: `✓ ${actionResult.message}`,
+				timestamp: new Date().toISOString(),
+				actionResult: actionResult
+			};
+			messages = [...messages, resultMessage];
+			
+			// Save result message
+			try {
+				await saveChatMessage({
+					role: 'oscar',
+					content: resultMessage.content,
+					actionResult: actionResult
+				});
+			} catch (e) {
+				console.error('Failed to save result message:', e);
+			}
+		}
+		
+		projectSelectionData = null;
+	}
+	
 	// Check for pending actions
 	$: pendingConfirmation = $chatContext.requiresConfirmation;
 </script>
@@ -861,6 +1042,106 @@ Provide concise, accurate guidance.`;
 									<button
 										on:click={handleCancelPendingAction}
 										class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+									>
+										Cancel
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+			
+			<!-- Multiple Project Matches -->
+			{#if showMultipleProjectMatches && multipleProjectMatches.length > 0}
+				<div class="flex justify-start">
+					<div class="max-w-3xl bg-purple-50 border border-purple-200 rounded-lg p-4">
+						<div class="flex items-start gap-3">
+							<span class="text-xl">🔍</span>
+							<div class="flex-1 min-w-0">
+								<p class="text-purple-800 font-medium mb-2">
+									Multiple projects match your message
+								</p>
+								<p class="text-purple-700 text-sm mb-3">
+									Which project did you mean?
+								</p>
+								<div class="space-y-2 mb-3">
+									{#each multipleProjectMatches as project}
+										<button
+											on:click={() => handleMultipleProjectSelect(project.id)}
+											class="w-full text-left p-3 bg-white border border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors"
+										>
+											<span class="font-medium text-purple-900">{project.name}</span>
+										</button>
+									{/each}
+								</div>
+								<div class="flex gap-2">
+									<button
+										on:click={() => handleMultipleProjectSelect('general')}
+										class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+									>
+										Keep in General Chat
+									</button>
+									<button
+										on:click={() => handleMultipleProjectSelect('cancel')}
+										class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+									>
+										Cancel
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+			
+			<!-- Project Selection for General Chat -->
+			{#if showProjectSelection && projectSelectionData}
+				<div class="flex justify-start">
+					<div class="max-w-3xl bg-green-50 border border-green-200 rounded-lg p-4">
+						<div class="flex items-start gap-3">
+							<span class="text-xl">🏷️</span>
+							<div class="flex-1 min-w-0">
+								<p class="text-green-800 font-medium mb-2">
+									Where should I save this {projectSelectionData.action.replace('create', '')}?
+								</p>
+								<p class="text-green-700 text-sm mb-3">
+									Select a project to tag this item:
+								</p>
+								<div class="space-y-2 mb-3">
+									{#if projectSelectionData.availableProjects && projectSelectionData.availableProjects.length > 0}
+										{#each projectSelectionData.availableProjects as project}
+											<button
+												on:click={() => handleProjectSelection(project.id)}
+												class="w-full text-left p-3 bg-white border border-green-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors"
+											>
+												<span class="font-medium text-green-900">{project.name}</span>
+											</button>
+										{/each}
+									{/if}
+									
+									{#if projectSelectionData.hasMoreProjects}
+										<button
+											on:click={() => {
+												// Open project selector
+												goto('/workspace');
+											}}
+											class="w-full text-left p-3 bg-white border border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors"
+										>
+											<span class="font-medium text-gray-700">More projects...</span>
+										</button>
+									{/if}
+								</div>
+								<div class="flex gap-2">
+									<button
+										on:click={() => handleProjectSelection('general')}
+										class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+									>
+										Save without project tag
+									</button>
+									<button
+										on:click={() => handleProjectSelection('cancel')}
+										class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
 									>
 										Cancel
 									</button>

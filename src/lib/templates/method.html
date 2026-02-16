@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Arboricultural Method Statement - {{project.name}}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: white;
+        }
+        .header {
+            border-bottom: 3px solid #1976d2;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #1976d2;
+            margin: 0;
+            font-size: 24pt;
+        }
+        .header-subtitle {
+            color: #666;
+            font-size: 14pt;
+            margin: 5px 0 15px 0;
+        }
+        .project-info {
+            background: #f5f9ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1976d2;
+        }
+        .section {
+            margin: 25px 0;
+            page-break-inside: avoid;
+        }
+        .section h2 {
+            color: #1976d2;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            font-size: 18pt;
+        }
+        .subsection {
+            margin: 15px 0;
+        }
+        .subsection h3 {
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 14pt;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th {
+            background: #1976d2;
+            color: white;
+            text-align: left;
+            padding: 10px;
+            font-weight: bold;
+        }
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .method-step {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .method-step h4 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+        }
+        .protection-zone {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .warning {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .checklist {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            margin: 10px 0;
+        }
+        .checklist-checkbox {
+            margin-right: 10px;
+            margin-top: 3px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 10pt;
+            color: #666;
+            text-align: center;
+        }
+        .signature-block {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature {
+            width: 45%;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+            text-align: center;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .logo {
+            float: right;
+            max-width: 100px;
+            margin-left: 20px;
+        }
+        .phase-timeline {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        .phase {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #f5f5f5;
+            margin: 0 5px;
+            border-radius: 5px;
+        }
+        .phase.active {
+            background: #1976d2;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Arboricultural Method Statement</h1>
+        <div class="header-subtitle">In accordance with BS5837:2012</div>
+        
+        <div class="project-info">
+            <table>
+                <tr>
+                    <td><strong>Project:</strong></td>
+                    <td>{{project.name}}</td>
+                    <td><strong>Reference:</strong></td>
+                    <td>{{project.reference}}</td>
+                </tr>
+                <tr>
+                    <td><strong>Client:</strong></td>
+                    <td>{{project.client}}</td>
+                    <td><strong>Date:</strong></td>
+                    <td>{{survey.date}}</td>
+                </tr>
+                <tr>
+                    <td><strong>Site Address:</strong></td>
+                    <td colspan="3">{{project.siteAddress}}</td>
+                </tr>
+                <tr>
+                    <td><strong>Prepared by:</strong></td>
+                    <td>{{survey.surveyor}}</td>
+                    <td><strong>Qualification:</strong></td>
+                    <td>{{survey.qualification}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>1.0 Introduction</h2>
+        <p>This Arboricultural Method Statement (AMS) has been prepared to detail the working methods and protective measures required to safeguard trees during the construction phase of the development at {{project.siteAddress}}.</p>
+        
+        <div class="subsection">
+            <h3>1.1 Purpose</h3>
+            <p>The purpose of this method statement is to:</p>
+            <ul>
+                <li>Define the working methods to be employed near trees</li>
+                <li>Specify tree protection measures in accordance with BS5837:2012</li>
+                <li>Provide clear instructions to contractors and site personnel</li>
+                <li>Minimize the risk of damage to retained trees</li>
+                <li>Ensure compliance with planning conditions and best practice</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>2.0 Tree Protection Principles</h2>
+        
+        <div class="protection-zone">
+            <h3>2.1 Root Protection Area (RPA)</h3>
+            <p>The Root Protection Area (RPA) is calculated as 12 times the stem diameter (DBH) measured at 1.5m above ground level. No construction activities, storage of materials, or soil compaction should occur within the RPA.</p>
+            
+            {{#if trees.length}}
+            <p><strong>RPA Calculations:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tree Ref</th>
+                        <th>Species</th>
+                        <th>DBH (mm)</th>
+                        <th>RPA Radius (m)</th>
+                        <th>RPA Area (m²)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each trees}}
+                    <tr>
+                        <td>{{this.number}}</td>
+                        <td>{{this.species}}</td>
+                        <td>{{this.DBH}}</td>
+                        <td>{{(this.DBH * 12 / 1000).toFixed(1)}}</td>
+                        <td>{{(Math.PI * Math.pow(this.DBH * 12 / 1000, 2)).toFixed(1)}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            {{/if}}
+        </div>
+
+        <div class="method-step">
+            <h4>2.2 Tree Protection Zones (TPZ)</h4>
+            <p>Tree Protection Zones shall be established around all retained trees. The TPZ shall extend to the full RPA radius plus an additional 1.5m buffer zone.</p>
+            <p><strong>TPZ Requirements:</strong></p>
+            <ul>
+                <li>Clearly marked with fencing at 2.4m height</li>
+                <li>Signage indicating "Tree Protection Zone - No Entry"</li>
+                <li>No storage of materials within TPZ</li>
+                <li>No vehicle movement within TPZ</li>
+                <li>No excavation or ground disturbance within TPZ</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>3.0 Construction Methodology</h2>
+        
+        <div class="phase-timeline">
+            <div class="phase active">1. Site Setup</div>
+            <div class="phase">2. Protection Installation</div>
+            <div class="phase">3. Construction Works</div>
+            <div class="phase">4. Monitoring</div>
+            <div class="phase">5. Completion</div>
+        </div>
+
+        <div class="subsection">
+            <h3>3.1 Phase 1: Site Setup and Mobilization</h3>
+            <div class="method-step">
+                <h4>Step 1: Site Induction</h4>
+                <p>All site personnel must attend a tree protection induction before commencing work. The induction will cover:</p>
+                <ul>
+                    <li>Location of Tree Protection Zones</li>
+                    <li>Prohibited activities near trees</li>
+                    <li>Emergency procedures for tree damage</li>
+                    <li>Reporting requirements</li>
+                </ul>
+            </div>
+
+            <div class="method-step">
+                <h4>Step 2: Access Route Establishment</h4>
+                <p>Designated access routes shall be established to avoid Tree Protection Zones. Routes shall be:</p>
+                <ul>
+                    <li>Clearly marked with ground protection mats</li>
+                    <li>Located at least 3m from any TPZ boundary</li>
+                    <li>Regularly inspected for encroachment</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="subsection">
+            <h3>3.2 Phase 2: Tree Protection Installation</h3>
+            <div class="method-step">
+                <h4>Step 3: Fencing Installation</h4>
+                <p>Install 2.4m high Heras fencing or equivalent around all TPZs. Fencing shall be:</p>
+                <ul>
+                    <li>Erected before any construction activity begins</li>
+                    <li>Maintained throughout the construction period</li>
+                    <li>Inspected weekly for damage or unauthorized entry</li>
+                </ul>
+            </div>
+
+            <div class="method-step">
+                <h4>Step 4: Ground Protection</h4>
+                <p>Where construction activities must occur near TPZs, install ground protection:</p>
+                <ul>
+                    <li>Use timber mats or equivalent for temporary access</li>
+                    <li>Ensure no soil compaction within RPA</li>
+                    <li>Remove protection immediately after use</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>4.0 Monitoring and Inspection</h2>
+        
+        <div class="checklist">
+            <h3>4.1 Weekly Inspection Checklist</h3>
+            
+            <div class="checklist-item">
+                <div class="checklist-checkbox">□</div>
+                <div>TPZ fencing intact and secure</div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-checkbox">□</div>
+                <div>No materials stored within TPZ</div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-checkbox">□</div>
+                <div>No vehicle encroachment into TPZ</div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-checkbox">□</div>
+                <div>No excavation within RPA</div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-checkbox">□</div>
+                <div>Tree condition unchanged (no damage to bark, branches, roots)</div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-checkbox">□</div>
+                <div>Ground protection mats in good condition</div>
+            </div>
+        </div>
+
+        <div class="warning">
+            <h3>4.2 Emergency Procedures</h3>
+            <p><strong>In case of tree damage:</strong></p>
+            <ol>
+                <li>Stop all work in the immediate area</li>
+                <li>Notify the site supervisor and arboricultural consultant immediately</li>
+                <li>Photograph the damage from multiple angles</li>
+                <li>Implement temporary protection measures</li>
+                <li>Do not attempt to repair the damage without specialist advice</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>5.0 Responsibilities</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Role</th>
+                    <th>Responsibilities</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Principal Contractor</strong></td>
+                    <td>Overall implementation of method statement, site inductions, weekly inspections</td>
+                </tr>
+                <tr>
+                    <td><strong>Site Supervisor</strong></td>
+                    <td>Daily monitoring of TPZs, enforcement of protection measures</td>
+                </tr>
+                <tr>
+                    <td><strong>Arboricultural Consultant</strong></td>
+                    <td>Monthly inspections, advice on tree protection, assessment of any damage</td>
+                </tr>
+                <tr>
+                    <td><strong>All Site Personnel</strong></td>
+                    <td>Compliance with protection measures, reporting of any issues or damage</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="signature-block">
+        <div class="signature">
+            <p><strong>{{survey.surveyor}}</strong></p>
+            <p>{{survey.qualification}}</p>
+            <p>{{company.name}}</p>
+        </div>
+        <div class="signature">
+            <p>Date: {{survey.date}}</p>
+            <p>Valid for construction period</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>{{company.name}} | {{company.address}} | Tel: {{company.phone}} | Email: {{company.email}}</p>
+        <p>This method statement forms part of the contract documentation and must be adhered to throughout the construction period.</p>
+    </div>
+</body>
+</html>

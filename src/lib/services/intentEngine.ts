@@ -3,6 +3,7 @@ import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { db, type Task, type Note, type ObjectLink, createTask, getAllTasks, getTasksByStatus, getTasksByProject, createNote, getNotes, getAllNotes, createLink, getLinkedNotesForTask, updateTask } from '$lib/db';
 import { settings } from '$lib/stores/settings';
+import { processNaturalLanguageInput, extractMultipleActions, hasMultipleActions } from './textProcessing';
 
 // Intent types
 export type IntentType = 'task' | 'subtask' | 'note' | 'project' | 'blog' | 'report' | 'diagram' | 'tree' | 'query' | 'update' | 'chat';
@@ -24,9 +25,96 @@ export interface ActionResult {
 	objects?: any[];
 }
 
+// Helper function to get action type from text
+function getActionTypeFromText(text: string): 'task' | 'note' | 'query' | 'update' | 'unknown' {
+	const normalized = text.toLowerCase();
+	
+	if (normalized.includes('todo') ||
+		normalized.includes('task') ||
+		normalized.includes('remind') ||
+		normalized.includes('remember') ||
+		normalized.includes('check') ||
+		normalized.includes('buy') ||
+		normalized.includes('fix') ||
+		normalized.includes('schedule') ||
+		normalized.includes('research') ||
+		normalized.includes('complete') ||
+		normalized.includes('finish') ||
+		normalized.includes('do') ||
+		normalized.includes('make')) {
+		return 'task';
+	}
+	
+	if (normalized.includes('note') ||
+		normalized.includes('write') ||
+		normalized.includes('jot') ||
+		normalized.includes('record') ||
+		normalized.includes('save')) {
+		return 'note';
+	}
+	
+	if (normalized.includes('show') ||
+		normalized.includes('list') ||
+		normalized.includes('find') ||
+		normalized.includes('search') ||
+		normalized.includes('what') ||
+		normalized.includes('where') ||
+		normalized.includes('how') ||
+		normalized.includes('when')) {
+		return 'query';
+	}
+	
+	if (normalized.includes('update') ||
+		normalized.includes('change') ||
+		normalized.includes('edit') ||
+		normalized.includes('modify') ||
+		normalized.includes('rename') ||
+		normalized.includes('move') ||
+		normalized.includes('delete')) {
+		return 'update';
+	}
+	
+	return 'unknown';
+}
+
+// Process message with spelling and grammar correction
+export function preprocessMessage(message: string): {
+	original: string;
+	corrected: string;
+	normalized: string;
+	hasMultipleActions: boolean;
+	actions: string[];
+} {
+	const processed = processNaturalLanguageInput(message);
+	return {
+		original: message,
+		corrected: processed.corrected,
+		normalized: processed.normalized,
+		hasMultipleActions: processed.hasMultiple,
+		actions: processed.actions
+	};
+}
+
 // Intent classification function
 export function classifyIntent(message: string): ClassifiedIntent | null {
-	const msg = message.toLowerCase().trim();
+	// Preprocess the message
+	const processed = preprocessMessage(message);
+	const msg = processed.normalized.toLowerCase().trim();
+	
+	// Check for multiple actions
+	if (processed.hasMultipleActions) {
+		return {
+			type: 'task',
+			action: 'createMultipleTasks',
+			data: {
+				originalMessage: message,
+				processed,
+				actions: processed.actions,
+				actionTypes: processed.actions.map(action => getActionTypeFromText(action))
+			},
+			confidence: 0.9
+		};
+	}
 	
 	// Task patterns - "remember", "look into", "check", "buy", "fix", "schedule", "follow up", "research", "do", "complete"
 	const taskPatterns = [
@@ -48,7 +136,7 @@ export function classifyIntent(message: string): ClassifiedIntent | null {
 			return {
 				type: 'task',
 				action: 'createTask',
-				data: extractTaskData(message),
+				data: extractTaskData(processed.normalized),
 				confidence: 0.9
 			};
 		}
@@ -473,38 +561,121 @@ export async function executeIntent(intent: ClassifiedIntent): Promise<ActionRes
 	}
 	
 	try {
-		switch (intent.type) {
-			case 'task':
-				return await executeCreateTask(intent.data);
-			case 'note':
-				return await executeCreateNote(intent.data);
-			case 'project':
-				return await executeCreateProject(intent.data);
-			case 'blog':
-				return await executeCreateBlog(intent.data);
-			case 'report':
-				return await executeCreateReport(intent.data);
-			case 'diagram':
-				return await executeCreateDiagram(intent.data);
-			case 'tree':
-				return await executeCreateTree(intent.data);
-			case 'query':
-				return await executeQuery(intent.data);
-			case 'subtask':
-				return await executeCreateTask({ ...intent.data, isSubtask: true });
+		// Get current context for AI actions
+		const { getAIContext, executeAction } = await import('./aiActions');
+		const context = await getAIContext();
+		
+		// Map intent to action
+		let action: string;
+		let data: any;
+		
+		switch (intent.action) {
+			case 'createMultipleTasks':
+				// For multiple tasks, use the existing implementation
+				return await executeCreateMultipleTasks(intent.data);
 			default:
-				return { success: false, message: 'Unknown intent type' };
+				// Map intent type to action
+				switch (intent.type) {
+					case 'task':
+						action = 'createTask';
+						data = intent.data;
+						break;
+					case 'note':
+						action = 'createNote';
+						data = intent.data;
+						break;
+					case 'project':
+						action = 'createProject';
+						data = intent.data;
+						break;
+					case 'blog':
+						action = 'createBlogPost';
+						data = intent.data;
+						break;
+					case 'report':
+						action = 'createReport';
+						data = intent.data;
+						break;
+					case 'diagram':
+						action = 'createDiagram';
+						data = intent.data;
+						break;
+					case 'tree':
+						action = 'createTree';
+						data = intent.data;
+						break;
+					case 'query':
+						// Queries don't go through executeAction
+						return await executeQuery(intent.data);
+					case 'subtask':
+						action = 'createTask';
+						data = { ...intent.data, isSubtask: true };
+						break;
+					case 'update':
+						action = 'updateObject';
+						data = intent.data;
+						break;
+					default:
+						return { success: false, message: 'Unknown intent type' };
+				}
 		}
+		
+		// Execute through unified pipeline with safety checks
+		return await executeAction(action, data, context);
 	} catch (error) {
 		console.error('Error executing intent:', error);
-		return { 
-			success: false, 
-			message: error instanceof Error ? error.message : 'Failed to execute action' 
+		return {
+			success: false,
+			message: error instanceof Error ? error.message : 'Failed to execute action'
 		};
 	}
 }
 
 // Execute functions for each intent type
+async function executeCreateMultipleTasks(data: any): Promise<ActionResult> {
+	const { originalMessage, processed, actions, actionTypes } = data;
+	const currentSettings = get(settings);
+	const projectId = currentSettings.currentProjectId;
+	
+	try {
+		// For now, just create the first task and return a message about multiple actions
+		// In a full implementation, this would create UI for the user to choose how to handle multiple actions
+		if (actions.length === 0) {
+			return { success: false, message: 'No actions detected in the message.' };
+		}
+		
+		// Create the first task as an example
+		const firstAction = actions[0];
+		const taskId = await createTask({
+			title: firstAction || 'Multiple Tasks',
+			content: `Original message: ${originalMessage}\n\nDetected actions:\n${actions.map((a: string, i: number) => `${i + 1}. ${a}`).join('\n')}`,
+			status: 'todo',
+			priority: 'medium',
+			projectId,
+			tags: ['multiple-actions'],
+			dueDate: undefined
+		});
+		
+		return {
+			success: true,
+			message: `Detected ${actions.length} actions in your message. Created a task with all actions listed.`,
+			action: 'createMultipleTasks',
+			data: {
+				taskId,
+				actionsCount: actions.length,
+				actions,
+				actionTypes,
+				processed
+			},
+			redirectUrl: `/tasks`,
+			intentType: 'task'
+		};
+	} catch (error) {
+		console.error('Error creating multiple tasks:', error);
+		return { success: false, message: 'Failed to process multiple actions. Please try again.' };
+	}
+}
+
 async function executeCreateTask(data: any): Promise<ActionResult> {
 	const { title, content, status, priority, projectId, tags, dueDate, isSubtask } = data;
 	
@@ -859,6 +1030,32 @@ async function executeQuery(data: any): Promise<ActionResult> {
 	} catch (error) {
 		console.error('Error executing query:', error);
 		return { success: false, message: 'Failed to execute query. Please try again.' };
+	}
+}
+
+// Parse and clean user-provided free-text answers (for gap-fill)
+// For Step 17: Multi-Field Extraction - can extract both client and location from a single answer
+export async function parseUserAnswer(answer: string, field: string): Promise<string> {
+	// For Step 17, handle both client and location fields
+	if (field !== 'client' && field !== 'location') {
+		return answer; // Return as-is for other fields
+	}
+
+	try {
+		// Import the AI function from aiActions
+		const { parseUserAnswer: parseWithAI } = await import('./aiActions');
+		const result = await parseWithAI(answer, field);
+		// Extract the cleaned text from the result object
+		return result.cleaned;
+	} catch (error) {
+		console.error('Error parsing user answer in intent engine:', error);
+		// Simple fallback
+		const simpleClean = answer
+			.replace(/^[^a-zA-Z0-9]+/, '')
+			.replace(/[^a-zA-Z0-9\s\/&]+$/, '')
+			.replace(/\s+/g, ' ')
+			.trim();
+		return simpleClean || answer;
 	}
 }
 

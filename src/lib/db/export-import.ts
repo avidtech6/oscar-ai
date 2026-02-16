@@ -44,8 +44,8 @@ export async function exportProject(projectId: string): Promise<void> {
 		version: '1.0',
 		exportedAt: new Date().toISOString(),
 		project: { ...project, id: undefined },
-		trees: trees.map(t => ({ ...t, id: undefined, projectId: undefined })),
-		notes: notes.map(n => ({ ...n, id: undefined, projectId: undefined })),
+		trees: trees.map(t => ({ ...t, id: undefined })),
+		notes: notes.map(n => ({ ...n, id: undefined })),
 		photos: photosData,
 		reports: reportsData
 	};

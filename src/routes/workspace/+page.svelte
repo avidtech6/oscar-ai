@@ -3,8 +3,10 @@
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/db';
 	import type { Project } from '$lib/db';
+	import { getProjectReviewStatus } from '$lib/services/projectReview';
 
 	let projects: Project[] = [];
+	let projectReviewStatuses: Map<string, { needsReview: boolean; issueCount: number; priority: 'high' | 'medium' | 'low' }> = new Map();
 	let loading = true;
 	let error = '';
 	let newProjectName = '';
@@ -14,6 +16,14 @@
 		// Load projects from IndexedDB
 		try {
 			projects = await db.projects.toArray();
+			
+			// Load review status for each project
+			for (const project of projects) {
+				if (project.id) {
+					const status = await getProjectReviewStatus(project.id);
+					projectReviewStatuses.set(project.id, status);
+				}
+			}
 		} catch (e) {
 			error = 'Failed to load projects';
 			console.error(e);
@@ -30,12 +40,12 @@
 		try {
 			const projectId = await db.projects.add({
 				name: newProjectName.trim(),
-				clientName: '',
-				siteAddress: '',
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-				rootFolderId: '',
-				driveFolderId: ''
+				client: '',
+				location: '',
+				description: '',
+				isDummy: false,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			});
 			
 			// Refresh projects list
@@ -63,6 +73,24 @@
 			month: 'short',
 			year: 'numeric'
 		});
+	}
+
+	function getPriorityColor(priority: 'high' | 'medium' | 'low'): string {
+		switch (priority) {
+			case 'high': return 'bg-red-100 text-red-800 border-red-200';
+			case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+			case 'low': return 'bg-blue-100 text-blue-800 border-blue-200';
+			default: return 'bg-gray-100 text-gray-800 border-gray-200';
+		}
+	}
+
+	function getPriorityLabel(priority: 'high' | 'medium' | 'low'): string {
+		switch (priority) {
+			case 'high': return 'High Priority';
+			case 'medium': return 'Medium Priority';
+			case 'low': return 'Low Priority';
+			default: return 'Needs Review';
+		}
 	}
 
 	async function deleteProject(project: Project) {
@@ -167,14 +195,26 @@
 								href="/project/{project.id}"
 								class="flex-1 min-w-0"
 							>
-								<h3 class="text-lg font-medium text-gray-900 truncate">
-									{project.name}
-								</h3>
-								{#if project.clientName}
-									<p class="text-sm text-gray-500 truncate">Client: {project.clientName}</p>
+								<div class="flex items-center gap-2 mb-1">
+									<h3 class="text-lg font-medium text-gray-900 truncate">
+										{project.name}
+									</h3>
+									{#if project.id && projectReviewStatuses.get(project.id)?.needsReview}
+										{@const status = projectReviewStatuses.get(project.id)!}
+										<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border {getPriorityColor(status.priority)}"
+											title="{getPriorityLabel(status.priority)} - {status.issueCount} issue{status.issueCount !== 1 ? 's' : ''}">
+											<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+												<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+											</svg>
+											{status.issueCount} issue{status.issueCount !== 1 ? 's' : ''}
+										</span>
+									{/if}
+								</div>
+								{#if project.client}
+									<p class="text-sm text-gray-500 truncate">Client: {project.client}</p>
 								{/if}
-								{#if project.siteAddress}
-									<p class="text-sm text-gray-500 truncate">Site: {project.siteAddress}</p>
+								{#if project.location}
+									<p class="text-sm text-gray-500 truncate">Site: {project.location}</p>
 								{/if}
 								<p class="text-xs text-gray-400 mt-1">
 									Created: {formatDate(project.createdAt)}

@@ -155,8 +155,8 @@ export async function uploadPhoto(projectId: string, treeId: string | null, file
     return await pb.collection('photos').create(formData);
 }
 
-export async function getPhotoUrl(photo: any): string {
-    return pb.files.getUrl(photo, photo.file);
+export function getPhotoUrl(photo: any): string {
+	return pb.files.getUrl(photo, photo.file);
 }
 
 export async function deletePhoto(id: string) {
@@ -173,8 +173,8 @@ export async function uploadVoiceNote(projectId: string, treeId: string | null, 
     return await pb.collection('voiceNotes').create(formData);
 }
 
-export async function getVoiceNoteUrl(voiceNote: any): string {
-    return pb.files.getUrl(voiceNote, voiceNote.audioFile);
+export function getVoiceNoteUrl(voiceNote: any): string {
+	return pb.files.getUrl(voiceNote, voiceNote.audioFile);
 }
 
 export async function deleteVoiceNote(id: string) {
@@ -192,8 +192,8 @@ export async function createReport(projectId: string, type: string, pdfFile: Fil
     return await pb.collection('reports').create(formData);
 }
 
-export async function getReportUrl(report: any): string {
-    return pb.files.getUrl(report, report.pdfFile);
+export function getReportUrl(report: any): string {
+	return pb.files.getUrl(report, report.pdfFile);
 }
 
 export async function deleteReport(id: string) {

@@ -10,6 +10,7 @@ export interface ChatContext {
 	selectedProjectId: string;
 	lastAIMessage: string;
 	lastReferencedItem: any;
+	lastCreatedItem: any;
 	requiresConfirmation: boolean;
 	pendingAction: {
 		type: string;
@@ -27,6 +28,7 @@ const createChatContextStore = () => {
 		selectedProjectId: '',
 		lastAIMessage: '',
 		lastReferencedItem: null,
+		lastCreatedItem: null,
 		requiresConfirmation: false,
 		pendingAction: null
 	});
@@ -56,7 +58,8 @@ const createChatContextStore = () => {
 				mode: value.mode,
 				selectedProjectId: value.selectedProjectId,
 				lastAIMessage: value.lastAIMessage,
-				lastReferencedItem: value.lastReferencedItem
+				lastReferencedItem: value.lastReferencedItem,
+				lastCreatedItem: value.lastCreatedItem
 			};
 			localStorage.setItem(CHAT_CONTEXT_STORAGE, JSON.stringify(toStore));
 		});
@@ -113,6 +116,13 @@ const createChatContextStore = () => {
 		}));
 	};
 
+	const setLastCreatedItem = (item: any) => {
+		update(ctx => ({
+			...ctx,
+			lastCreatedItem: item
+		}));
+	};
+
 	const setPendingAction = (action: ChatContext['pendingAction']) => {
 		update(ctx => ({
 			...ctx,
@@ -148,6 +158,7 @@ const createChatContextStore = () => {
 		setGlobalWorkspace,
 		setLastAIMessage,
 		setLastReferencedItem,
+		setLastCreatedItem,
 		setPendingAction,
 		clearPendingAction,
 		confirmPendingAction
