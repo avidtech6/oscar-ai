@@ -112,6 +112,8 @@ export class OscarDatabase extends Dexie {
 
 	constructor() {
 		super('OscarAI');
+		
+		// Version 3 - original schema
 		this.version(3).stores({
 			projects: 'id, name, createdAt, updatedAt',
 			trees: 'id, projectId, number, species, createdAt',
@@ -121,6 +123,23 @@ export class OscarDatabase extends Dexie {
 			tasks: 'id, status, priority, projectId, *tags, createdAt',
 			links: 'id, sourceId, targetId, sourceType, targetType, relationType',
 			chatMessages: 'id, role, timestamp'
+		});
+		
+		// Version 4 - add isDummy indexes for dummy data queries
+		this.version(4).stores({
+			projects: 'id, name, createdAt, updatedAt, isDummy',
+			trees: 'id, projectId, number, species, createdAt, isDummy',
+			notes: 'id, projectId, title, *tags, createdAt, isDummy',
+			photos: 'id, projectId, treeId, createdAt',
+			reports: 'id, projectId, type, generatedAt, isDummy',
+			tasks: 'id, status, priority, projectId, *tags, createdAt, isDummy',
+			links: 'id, sourceId, targetId, sourceType, targetType, relationType',
+			chatMessages: 'id, role, timestamp'
+		}).upgrade(trans => {
+			// Migration: ensure all existing records have isDummy = 0 (false)
+			// This is a no-op migration since isDummy will be undefined/null for existing records
+			// and queries with .equals(1) won't match them
+			console.log('Migrating to database version 4: adding isDummy indexes');
 		});
 	}
 }
