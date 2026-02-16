@@ -1046,12 +1046,12 @@
 	{:else}
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{#each notes as note (note.id)}
-				<div class="card p-4 hover:shadow-md transition-shadow {selectedNotes.has(note.id!) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}">
+				<div class="card p-4 hover:shadow-md transition-shadow {selectedNotes.has(note.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}">
 					<div class="flex items-start gap-3 mb-2">
 						<!-- Checkbox for selection -->
 						<input
 							type="checkbox"
-							checked={selectedNotes.has(note.id!)}
+							checked={selectedNotes.has(note.id)}
 							on:change={() => note.id && toggleNoteSelection(note.id)}
 							class="mt-1 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
 						/>

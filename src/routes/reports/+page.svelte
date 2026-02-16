@@ -17,6 +17,11 @@
 	} from '$lib/services/templateService';
 	import { suggestClientName, suggestSiteAddress, parseUserAnswer, generateFollowUpQuestions, generateAIGapFillQuestions } from '$lib/services/aiActions';
 	import MicButton from '$lib/components/MicButton.svelte';
+	import ReportWizard from '$lib/components/reports/ReportWizard.svelte';
+	import ReportPreview from '$lib/components/reports/ReportPreview.svelte';
+	import ReportEditor from '$lib/components/reports/ReportEditor.svelte';
+	import SectionEditor from '$lib/components/reports/SectionEditor.svelte';
+	import ProjectContextBar from '$lib/components/reports/ProjectContextBar.svelte';
 
 	let apiKey = '';
 	groqApiKey.subscribe(value => {
@@ -405,7 +410,7 @@
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `${selectedTemplate?.id || 'report'}_${selectedProject?.name || 'report'}_${new Date().toISOString().split('T')[0]}.html`;
+		a.download = (selectedTemplate?.id || 'report') + '_' + (selectedProject?.name || 'report') + '_' + new Date().toISOString().split('T')[0] + '.html';
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
@@ -415,88 +420,36 @@
 	function downloadAsPdf() {
 		if (!generatedReport) return;
 		
-		// Create a new window with the report content
-		const printWindow = window.open('', '_blank');
-		if (!printWindow) {
+		// Simple PDF generation - use a safer approach
+		const w = window.open('', '_blank');
+		if (!w) {
 			alert('Please allow popups to generate PDF');
 			return;
 		}
-		
-		const title = (selectedTemplate?.name || 'Report') + ' - ' + (selectedProject?.name || '');
-		
-		// Build HTML using a template literal with proper escaping
-		const html = `<!DOCTYPE html>
-<html>
-<head>
-	<title>${title}</title>
-	<style>
-		@media print {
-			body { margin: 0; padding: 0; }
-			@page { margin: 20mm; }
-			.no-print { display: none !important; }
-		}
-		.print-button {
-			position: fixed;
-			top: 20px;
-			right: 20px;
-			padding: 10px 20px;
-			background: #059669;
-			color: white;
-			border: none;
-			border-radius: 5px;
-			cursor: pointer;
-			z-index: 1000;
-		}
-	</style>
-</head>
-<body>
-	<button class="print-button no-print" onclick="window.print()">Print to PDF</button>
-	<div>${generatedReport}</div>
-	<script>
-		// Auto-print after a short delay
-		setTimeout(() => {
-			window.print();
-			// Close window after print dialog (with delay)
-			setTimeout(() => window.close(), 1000);
+		// Use a safer approach to avoid parsing issues
+		const safeReport = generatedReport.replace(/[{}]/g, '');
+		w.document.write('<html><head><title>Report</title></head><body>' + safeReport + '</body></html>');
+		w.document.close();
+		setTimeout(function() {
+			w.print();
+			setTimeout(function() { w.close(); }, 1000);
 		}, 500);
-	</script>
-</body>
-</html>`;
-		
-		printWindow.document.write(html);
-		printWindow.document.close();
 	}
 	
 	function downloadAsWord() {
 		if (!generatedReport) return;
 		
-		// Convert HTML to Word document
-		const htmlContent = `
-			<!DOCTYPE html>
-			<html>
-			<head>
-				<meta charset="UTF-8">
-				<title>${selectedTemplate?.name || 'Report'} - ${selectedProject?.name || ''}</title>
-				<style>
-					body { font-family: Arial, sans-serif; margin: 20px; }
-					h1, h2, h3 { color: #2e7d32; }
-					table { border-collapse: collapse; width: 100%; }
-					th, td { border: 1px solid #ddd; padding: 8px; }
-					th { background-color: #f5f5f5; }
-				</style>
-			</head>
-			<body>
-				${generatedReport}
-			</body>
-			</html>
-		`;
+		const title = (selectedTemplate?.name || 'Report') + ' - ' + (selectedProject?.name || '');
 		
-		// Create a blob with Word-compatible HTML
+		// Simple Word document generation - use safer approach
+		const safeReport = generatedReport.replace(/[{}]/g, '');
+		const htmlContent = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title><style>body{font-family:Arial,sans-serif;margin:20px;}h1,h2,h3{color:#2e7d32;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #ddd;padding:8px;}th{background-color:#f5f5f5;}</style></head><body>' + safeReport + '</body></html>';
+		
 		const blob = new Blob([htmlContent], { type: 'application/msword' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `${selectedTemplate?.id || 'report'}_${selectedProject?.name || 'report'}_${new Date().toISOString().split('T')[0]}.doc`;
+		a.download = (selectedTemplate?.id || 'report') + '_' + (selectedProject?.name || 'report') + '_' + new Date().toISOString().split('T')[0] + '.doc';
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
@@ -515,7 +468,7 @@
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `${selectedTemplate?.id || 'report'}_${selectedProject?.name || 'report'}_${new Date().toISOString().split('T')[0]}.txt`;
+		a.download = (selectedTemplate?.id || 'report') + '_' + (selectedProject?.name || 'report') + '_' + new Date().toISOString().split('T')[0] + '.txt';
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
@@ -718,6 +671,17 @@
 			followUpQuestions = [];
 		}
 	}
+
+	// Helper function to escape curly braces for Svelte template safety
+	function escapeForSvelte(html) {
+		if (!html) return '';
+		// Replace { with &#123; and } with &#125; to prevent Svelte parsing errors
+		return html.replace(/{/g, '&#123;').replace(/}/g, '&#125;');
+	}
+
+	// Computed property for safe iframe content
+	$: safeGeneratedReport = escapeForSvelte(generatedReport);
+	$: safeSectionContent = sections[currentSectionIndex] ? escapeForSvelte(sections[currentSectionIndex].content) : '';
 </script>
 
 <svelte:head>
@@ -726,33 +690,16 @@
 
 <div class="max-w-6xl mx-auto">
 	<!-- Persistent Project Context Bar -->
-	<div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
-		<div>
-			{#if selectedProject}
-				<h2 class="font-medium text-blue-800">Building report for:</h2>
-				<p class="text-blue-700 text-lg font-semibold">{selectedProject.name}</p>
-				<p class="text-blue-600 text-sm">
-					{trees.length} trees, {notes.length} notes, {tasks.length} tasks available
-				</p>
-			{:else}
-				<h2 class="font-medium text-blue-800">Select a project to begin.</h2>
-				<p class="text-blue-600 text-sm">
-					All reports must be linked to a project.
-				</p>
-			{/if}
-		</div>
-		{#if selectedProject}
-			<button
-				on:click={() => {
-					currentStep = 'project-select';
-					selectedProject = undefined;
-				}}
-				class="btn btn-secondary text-sm"
-			>
-				Change Project
-			</button>
-		{/if}
-	</div>
+	<ProjectContextBar
+		selectedProject={selectedProject}
+		trees={trees}
+		notes={notes}
+		tasks={tasks}
+		changeProject={() => {
+			currentStep = 'project-select';
+			selectedProject = undefined;
+		}}
+	/>
 
 	<h1 class="text-2xl font-bold text-gray-900 mb-6">HTML Report Builder</h1>
 
@@ -782,7 +729,7 @@
 					<div class="grid gap-3">
 						{#each allProjects as project}
 							<button
-								on:click={() => selectProject(project.id!)}
+								on:click={() => project.id && selectProject(project.id)}
 								class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors text-left"
 							>
 								<div class="flex-1">
@@ -834,569 +781,76 @@
 
 		<!-- Step 3: AI-Guided Flow -->
 		{#if currentStep === 'ai-guided' && selectedTemplate && selectedProject}
-			<div class="card p-6 mb-6">
-				<div class="flex items-center justify-between mb-6">
-					<div>
-						<h2 class="text-lg font-semibold">AI-Guided Report Assembly</h2>
-						<p class="text-gray-600">Template: <strong>{selectedTemplate.name}</strong></p>
-					</div>
-					<button
-						on:click={goBack}
-						class="btn btn-secondary"
-					>
-						← Back
-					</button>
-				</div>
-
-				<!-- Project Confirmation Step -->
-				{#if aiFlowStep === 'project-confirm'}
-					<div class="mb-6">
-						<h3 class="font-medium mb-3">Confirm Project Context</h3>
-						<div class="p-4 bg-green-50 border border-green-200 rounded-lg">
-							<p class="text-green-700">
-								<strong>✓ Project confirmed:</strong> {selectedProject.name}
-							</p>
-							<p class="text-green-600 text-sm mt-1">
-								Client: {selectedProject.client || 'Not specified'}<br>
-								Site: {selectedProject.location || 'Not specified'}
-							</p>
-						</div>
-						<div class="mt-4">
-							<button
-								on:click={continueAIFlow}
-								class="btn btn-primary"
-							>
-								Continue →
-							</button>
-						</div>
-					</div>
-				{/if}
-
-				<!-- Data Pull Step -->
-				{#if aiFlowStep === 'data-pull'}
-					<div class="mb-6">
-						<h3 class="font-medium mb-3">Pull in Project Data</h3>
-						<p class="text-gray-600 mb-4">
-							Do you want me to pull in all trees, notes, voice memos, and tasks tagged to this project?
-						</p>
-						
-						<div class="grid gap-3 mb-6">
-							<label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 {pullProjectData ? 'border-forest-500 bg-forest-50' : 'border-gray-200'}">
-								<input
-									type="radio"
-									name="pullData"
-									checked={pullProjectData}
-									on:change={() => pullProjectData = true}
-									class="mt-0"
-								/>
-								<div>
-									<div class="font-medium text-gray-900">Yes, pull in all project data</div>
-									<div class="text-sm text-gray-500">
-										{trees.length} trees, {notes.length} notes, {tasks.length} tasks will be included
-									</div>
-								</div>
-							</label>
-							
-							<label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 {!pullProjectData ? 'border-forest-500 bg-forest-50' : 'border-gray-200'}">
-								<input
-									type="radio"
-									name="pullData"
-									checked={!pullProjectData}
-									on:change={() => pullProjectData = false}
-									class="mt-0"
-								/>
-								<div>
-									<div class="font-medium text-gray-900">Let me choose what to include</div>
-									<div class="text-sm text-gray-500">Select specific items later</div>
-								</div>
-							</label>
-						</div>
-
-						<div class="flex gap-4">
-							<button
-								on:click={continueAIFlow}
-								class="btn btn-primary"
-							>
-								Continue →
-							</button>
-							<button
-								on:click={goBack}
-								class="btn btn-secondary"
-							>
-								← Back
-							</button>
-						</div>
-					</div>
-				{/if}
-
-				<!-- Gap Fill Step -->
-				{#if aiFlowStep === 'gap-fill' && gapFillQuestions.length > 0}
-					<div class="mb-6">
-						<h3 class="font-medium mb-3">Fill Missing Information</h3>
-						<p class="text-gray-600 mb-4">
-							The following information is missing or incomplete:
-						</p>
-						
-						<div class="mb-6">
-							<div class="mb-2">
-								<label class="block text-sm font-medium text-gray-700 mb-1">
-									{gapFillQuestions[currentGapIndex].question}
-								</label>
-								<textarea
-									bind:value={gapFillQuestions[currentGapIndex].answer}
-									rows="3"
-									class="input w-full"
-									placeholder="Enter your answer..."
-								></textarea>
-								<div class="mt-2 flex gap-2">
-									<MicButton on:transcript={(e) => gapFillQuestions[currentGapIndex].answer += e.detail.text} />
-									{#if gapFillQuestions[currentGapIndex].field === 'client'}
-										<button
-											on:click={suggestClientNameForGap}
-											class="btn btn-secondary text-sm flex items-center gap-1"
-											type="button"
-										>
-											<span>🤖</span>
-											<span>Suggest with AI</span>
-										</button>
-										<button
-											on:click={cleanAnswerWithAI}
-											class="btn btn-secondary text-sm flex items-center gap-1"
-											type="button"
-										>
-											<span>🧹</span>
-											<span>Clean with AI</span>
-										</button>
-									{/if}
-									{#if gapFillQuestions[currentGapIndex].field === 'location'}
-										<button
-											on:click={suggestSiteAddressForGap}
-											class="btn btn-secondary text-sm flex items-center gap-1"
-											type="button"
-										>
-											<span>🤖</span>
-											<span>Suggest with AI</span>
-										</button>
-										<button
-											on:click={cleanAnswerWithAI}
-											class="btn btn-secondary text-sm flex items-center gap-1"
-											type="button"
-										>
-											<span>🧹</span>
-											<span>Clean with AI</span>
-										</button>
-										<button
-											on:click={generateFollowUpForGap}
-											class="btn btn-secondary text-sm flex items-center gap-1"
-											type="button"
-										>
-											<span>❓</span>
-											<span>Ask AI for follow-up questions</span>
-										</button>
-									{/if}
-								</div>
-							</div>
-							
-							{#if gapFillQuestions[currentGapIndex].field === 'location' && followUpQuestions.length > 0}
-								<div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-									<h4 class="font-medium text-blue-800 mb-2">AI Follow‑Up Questions</h4>
-									<ul class="list-disc pl-5 text-blue-700 text-sm space-y-1">
-										{#each followUpQuestions as question}
-											<li>{question}</li>
-										{/each}
-									</ul>
-									<p class="text-blue-600 text-xs mt-2">Consider answering these questions to provide more precise location details.</p>
-								</div>
-							{/if}
-							
-							<div class="text-sm text-gray-500 mt-2">
-								Question {currentGapIndex + 1} of {gapFillQuestions.length}
-								{#if gapFillQuestions[currentGapIndex].field === 'client' || gapFillQuestions[currentGapIndex].field === 'location'}
-									<span class="ml-2 text-blue-600">• AI suggestion available</span>
-								{/if}
-							</div>
-						</div>
-
-						<div class="flex gap-4">
-							<button
-								on:click={continueAIFlow}
-								class="btn btn-primary"
-							>
-								{#if currentGapIndex < gapFillQuestions.length - 1}
-									Next Question →
-								{:else}
-									Review Report
-								{/if}
-							</button>
-							{#if currentGapIndex > 0}
-								<button
-									on:click={() => currentGapIndex--}
-									class="btn btn-secondary"
-								>
-									← Previous
-								</button>
-							{/if}
-						</div>
-					</div>
-				{/if}
-
-				<!-- Review Step -->
-				{#if aiFlowStep === 'review'}
-					<div class="mb-6">
-						<h3 class="font-medium mb-3">Review and Generate</h3>
-						
-						{#if showMissingDataWarning}
-							<div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-								<h3 class="font-medium text-yellow-800 mb-2">⚠️ Missing Data Detected</h3>
-								<p class="text-yellow-700 text-sm mb-2">The following data is missing or incomplete:</p>
-								<ul class="list-disc pl-5 text-yellow-700 text-sm">
-									{#each missingData as item}
-										<li>{item}</li>
-									{/each}
-								</ul>
-								<p class="text-yellow-700 text-sm mt-2">You can still generate the report, but these sections may be incomplete.</p>
-							</div>
-						{/if}
-
-						<div class="mb-6">
-							<h3 class="font-medium mb-3">Generation Method</h3>
-							<div class="flex gap-4">
-								<label class="flex items-center gap-2">
-									<input
-										type="radio"
-										name="generationMethod"
-										value="template"
-										bind:group={reportMode}
-										checked
-									/>
-									<span>Template-based (Fast, structured)</span>
-								</label>
-								<label class="flex items-center gap-2">
-									<input
-										type="radio"
-										name="generationMethod"
-										value="ai"
-										bind:group={reportMode}
-									/>
-									<span>AI-generated (Flexible, creative)</span>
-								</label>
-							</div>
-						</div>
-
-						{#if reportMode === 'ai'}
-							<div class="mb-6">
-								<h3 class="font-medium mb-3">Additional Notes (Optional)</h3>
-								<textarea
-									bind:value={additionalNotes}
-									placeholder="Any specific requirements or additional information for the AI..."
-									rows="4"
-									class="input w-full"
-								></textarea>
-								<div class="mt-2">
-									<MicButton on:transcript={(e) => additionalNotes += e.detail.text} />
-								</div>
-							</div>
-						{/if}
-
-						<div class="flex gap-4">
-							<button
-								on:click={continueAIFlow}
-								disabled={generating}
-								class="btn btn-primary flex-1"
-							>
-								{generating ? 'Generating...' : `Generate ${selectedTemplate.name}`}
-							</button>
-							<button
-								on:click={goBack}
-								class="btn btn-secondary"
-							>
-								← Back
-							</button>
-						</div>
-					</div>
-				{/if}
-			</div>
+			<ReportWizard
+				selectedTemplate={selectedTemplate}
+				selectedProject={selectedProject}
+				trees={trees}
+				notes={notes}
+				tasks={tasks}
+				missingData={missingData}
+				showMissingDataWarning={showMissingDataWarning}
+				aiFlowStep={aiFlowStep}
+				pullProjectData={pullProjectData}
+				gapFillQuestions={gapFillQuestions}
+				currentGapIndex={currentGapIndex}
+				followUpQuestions={followUpQuestions}
+				reportMode={reportMode}
+				additionalNotes={additionalNotes}
+				generating={generating}
+				on:goBack={goBack}
+				on:continueAIFlow={continueAIFlow}
+				on:generateReport={generateReport}
+				on:suggestClientNameForGap={suggestClientNameForGap}
+				on:suggestSiteAddressForGap={suggestSiteAddressForGap}
+				on:cleanAnswerWithAI={cleanAnswerWithAI}
+				on:generateFollowUpForGap={generateFollowUpForGap}
+			/>
 		{/if}
 
 		<!-- Step 4: Generated Report -->
 		{#if currentStep === 'generate' && generatedReport}
-			<div class="card">
-				<div class="p-4 border-b border-gray-200 flex items-center justify-between">
-					<div>
-						<h2 class="text-lg font-semibold">Generated Report</h2>
-						<p class="text-sm text-gray-500">{selectedTemplate?.name} - {selectedProject?.name}</p>
-					</div>
-					<div class="flex gap-2">
-						<button
-							on:click={copyToClipboard}
-							class="btn btn-secondary text-sm"
-						>
-							Copy HTML
-						</button>
-						<button
-							on:click={downloadAsHtml}
-							class="btn btn-primary text-sm"
-						>
-							HTML
-						</button>
-						<button
-							on:click={downloadAsPdf}
-							class="btn btn-primary text-sm"
-						>
-							PDF
-						</button>
-						<button
-							on:click={downloadAsWord}
-							class="btn btn-primary text-sm"
-						>
-							Word
-						</button>
-						<button
-							on:click={downloadAsPlainText}
-							class="btn btn-secondary text-sm"
-						>
-							TXT
-						</button>
-						<button
-							on:click={startOver}
-							class="btn btn-secondary text-sm"
-						>
-							New Report
-						</button>
-					</div>
-				</div>
-				
-				<div class="p-6">
-					<div class="mb-4 text-sm text-gray-600">
-						Report generated successfully. Export in multiple formats:
-					</div>
-					
-					<!-- Export Options -->
-					<div class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-						<button
-							on:click={downloadAsHtml}
-							class="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-						>
-							<div class="text-2xl mb-2">📄</div>
-							<div class="font-medium">HTML</div>
-							<div class="text-xs text-gray-500">Web format</div>
-						</button>
-						<button
-							on:click={downloadAsPdf}
-							class="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-						>
-							<div class="text-2xl mb-2">📊</div>
-							<div class="font-medium">PDF</div>
-							<div class="text-xs text-gray-500">Print-ready</div>
-						</button>
-						<button
-							on:click={downloadAsWord}
-							class="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-						>
-							<div class="text-2xl mb-2">📝</div>
-							<div class="font-medium">Word</div>
-							<div class="text-xs text-gray-500">Editable</div>
-						</button>
-						<button
-							on:click={downloadAsPlainText}
-							class="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-						>
-							<div class="text-2xl mb-2">📃</div>
-							<div class="font-medium">Plain Text</div>
-							<div class="text-xs text-gray-500">Simple format</div>
-						</button>
-					</div>
-					
-					<!-- Report Preview -->
-					<div class="border rounded-lg overflow-hidden">
-						<div class="bg-gray-100 px-4 py-2 border-b text-sm font-medium">
-							Report Preview
-						</div>
-						<div class="p-4 max-h-[600px] overflow-auto">
-							{#if generatedReport.includes('<!DOCTYPE html>') || generatedReport.includes('<html>')}
-								<iframe
-									srcdoc={generatedReport}
-									class="w-full h-[500px] border-0"
-									title="Report Preview"
-								></iframe>
-							{:else}
-								<pre class="whitespace-pre-wrap font-sans text-sm text-gray-700">{generatedReport}</pre>
-							{/if}
-						</div>
-					</div>
-					
-					<div class="mt-6 text-sm text-gray-500">
-						<strong>Note:</strong> HTML format is best for web viewing, PDF for printing, Word for editing, and plain text for simple sharing.
-					</div>
-				</div>
-			</div>
+			<ReportPreview
+				selectedTemplate={selectedTemplate}
+				selectedProject={selectedProject}
+				generatedReport={generatedReport}
+				safeGeneratedReport={safeGeneratedReport}
+				copyToClipboard={copyToClipboard}
+				downloadAsHtml={downloadAsHtml}
+				downloadAsPdf={downloadAsPdf}
+				downloadAsWord={downloadAsWord}
+				downloadAsPlainText={downloadAsPlainText}
+				startOver={startOver}
+			/>
 		{/if}
 
 		<!-- Step 5: Edit Mode -->
 		{#if currentStep === 'edit' && generatedReport}
-			<div class="card">
-				<div class="p-4 border-b border-gray-200 flex items-center justify-between">
-					<h2 class="text-lg font-semibold">Edit Report</h2>
-					<div class="flex gap-2">
-						<button
-							on:click={enterSectionEditMode}
-							class="btn btn-secondary text-sm"
-						>
-							Edit by Sections
-						</button>
-						<button
-							on:click={copyToClipboard}
-							class="btn btn-secondary text-sm"
-						>
-							Copy HTML
-						</button>
-						<button
-							on:click={downloadAsHtml}
-							class="btn btn-primary text-sm"
-						>
-							Download HTML
-						</button>
-						<button
-							on:click={startOver}
-							class="btn btn-secondary text-sm"
-						>
-							New Report
-						</button>
-					</div>
-				</div>
-				
-				<div class="p-6">
-					<div class="mb-4">
-						<textarea
-							bind:value={generatedReport}
-							rows="20"
-							class="input w-full font-mono text-sm"
-							placeholder="Edit your report HTML here..."
-						></textarea>
-					</div>
-					
-					<div class="flex gap-4">
-						<button
-							on:click={downloadAsHtml}
-							class="btn btn-primary"
-						>
-							Save & Download
-						</button>
-						<button
-							on:click={startOver}
-							class="btn btn-secondary"
-						>
-							Discard Changes
-						</button>
-					</div>
-				</div>
-			</div>
+			<ReportEditor
+				bind:generatedReport
+				selectedTemplate={selectedTemplate}
+				selectedProject={selectedProject}
+				enterSectionEditMode={enterSectionEditMode}
+				copyToClipboard={copyToClipboard}
+				downloadAsHtml={downloadAsHtml}
+				startOver={startOver}
+			/>
 		{/if}
 		
 		<!-- Step 6: Section-by-Section Edit Mode -->
 		{#if currentStep === 'edit-sections' && sections.length > 0}
-			<div class="card">
-				<div class="p-4 border-b border-gray-200 flex items-center justify-between">
-					<div>
-						<h2 class="text-lg font-semibold">Edit Report Sections</h2>
-						<p class="text-sm text-gray-500">
-							Section {currentSectionIndex + 1} of {sections.length}: {sections[currentSectionIndex].title}
-						</p>
-					</div>
-					<div class="flex gap-2">
-						<button
-							on:click={saveAndExitSectionEdit}
-							class="btn btn-primary text-sm"
-						>
-							Save & Exit
-						</button>
-						<button
-							on:click={() => {
-								editMode = 'full';
-								currentStep = 'edit';
-							}}
-							class="btn btn-secondary text-sm"
-						>
-							Cancel
-						</button>
-					</div>
-				</div>
-				
-				<div class="p-6">
-					<!-- Section Navigation -->
-					<div class="mb-6">
-						<div class="flex items-center justify-between mb-4">
-							<h3 class="font-medium">Sections</h3>
-							<div class="flex gap-2">
-								<button
-									on:click={previousSection}
-									disabled={currentSectionIndex === 0}
-									class="btn btn-secondary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-								>
-									← Previous
-								</button>
-								<button
-									on:click={nextSection}
-									disabled={currentSectionIndex === sections.length - 1}
-									class="btn btn-secondary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-								>
-									Next →
-								</button>
-							</div>
-						</div>
-						
-						<div class="flex flex-wrap gap-2">
-							{#each sections as section, index}
-								<button
-									on:click={() => currentSectionIndex = index}
-									class="px-3 py-2 text-sm border rounded-lg transition-colors {currentSectionIndex === index ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-200 hover:bg-gray-50'}"
-								>
-									{section.title}
-								</button>
-							{/each}
-						</div>
-					</div>
-					
-					<!-- Section Editor -->
-					<div class="mb-6">
-						<h3 class="font-medium mb-3">Editing: {sections[currentSectionIndex].title}</h3>
-						<textarea
-							bind:value={sections[currentSectionIndex].content}
-							rows="15"
-							class="input w-full font-mono text-sm"
-							placeholder="Edit section content..."
-						></textarea>
-						<div class="mt-2 text-sm text-gray-500">
-							This section contains HTML. You can edit the content directly.
-						</div>
-					</div>
-					
-					<!-- Section Preview -->
-					<div class="mb-6">
-						<h3 class="font-medium mb-3">Section Preview</h3>
-						<div class="border rounded-lg p-4 bg-gray-50 max-h-[300px] overflow-auto">
-							<div class="section-title font-medium text-lg mb-3">{sections[currentSectionIndex].title}</div>
-							<div class="prose max-w-none" innerHTML={sections[currentSectionIndex].content}></div>
-						</div>
-					</div>
-					
-					<div class="flex gap-4">
-						<button
-							on:click={updateCurrentSection}
-							class="btn btn-primary"
-						>
-							Save Section
-						</button>
-						<button
-							on:click={nextSection}
-							disabled={currentSectionIndex === sections.length - 1}
-							class="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-						>
-							Next Section →
-						</button>
-					</div>
-				</div>
-			</div>
+			<SectionEditor
+				bind:sections
+				bind:currentSectionIndex
+				safeSectionContent={safeSectionContent}
+				previousSection={previousSection}
+				nextSection={nextSection}
+				updateCurrentSection={updateCurrentSection}
+				saveAndExitSectionEdit={saveAndExitSectionEdit}
+				cancelSectionEdit={() => {
+					editMode = 'full';
+					currentStep = 'edit';
+				}}
+			/>
 		{/if}
 	{/if}
 </div>
@@ -1458,8 +912,7 @@
 	
 	.input:focus {
 		outline: none;
-		ring: 2px;
-		ring-color: #059669;
+		box-shadow: 0 0 0 2px #059669;
 		border-color: #059669;
 	}
 </style>
