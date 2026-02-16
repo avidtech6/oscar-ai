@@ -42,9 +42,6 @@
 		const target = event.target as HTMLInputElement;
 		const newValue = target.checked;
 		
-		// Debug: show alert to confirm function is called
-		alert('toggleDummyData called! New value: ' + newValue);
-		
 		console.log('toggleDummyData called, new:', newValue);
 		
 		// Update the store first
@@ -104,17 +101,14 @@
 		connectionStatus = '';
 		
 		try {
-			// Save Groq API key
-			const currentSettings = settings.get();
-			settings.set({
-				...currentSettings,
-				groqApiKey: apiKey.trim()
-			});
-			
-			localStorage.setItem('oscar-settings', JSON.stringify({
+			// Save Groq API key using the settings store
+			settings.update(currentSettings => ({
 				...currentSettings,
 				groqApiKey: apiKey.trim()
 			}));
+			
+			// Also update localStorage for backward compatibility
+			localStorage.setItem('oscar_groq_api_key', apiKey.trim());
 			
 			// Configure PocketBase if URL provided
 			if (pbUrl.trim()) {

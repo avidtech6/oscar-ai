@@ -291,9 +291,12 @@ export async function createProjectAction(data: {
 		} as any);
 
 		// Set as current project
-		const currentSettings = get(settings);
-		settings.set({ ...currentSettings, currentProjectId: projectId as string });
-		localStorage.setItem('oscar_settings', JSON.stringify({ ...currentSettings, currentProjectId: projectId }));
+		settings.update(currentSettings => ({
+			...currentSettings,
+			currentProjectId: projectId as string
+		}));
+		// Also update localStorage for backward compatibility
+		localStorage.setItem('oscar_current_project_id', projectId as string);
 
 		return {
 			success: true,
