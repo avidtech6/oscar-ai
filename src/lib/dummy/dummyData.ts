@@ -222,7 +222,14 @@ export async function insertDummyData(): Promise<void> {
 
 // Helper function to remove all dummy data
 export async function removeDummyData(): Promise<void> {
-	await deleteAllDummyData();
+	console.log('removeDummyData: Starting removal of all dummy data');
+	try {
+		await deleteAllDummyData();
+		console.log('removeDummyData: Successfully removed all dummy data');
+	} catch (error) {
+		console.error('removeDummyData: Error removing dummy data:', error);
+		throw error;
+	}
 }
 
 // Helper function to check if dummy data exists

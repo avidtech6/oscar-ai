@@ -379,15 +379,29 @@ export async function getAllDummyReports(): Promise<Report[]> {
 
 export async function deleteAllDummyData(): Promise<void> {
 	await db.transaction('rw', [db.projects, db.trees, db.notes, db.reports, db.tasks], async () => {
-		// Delete all dummy items
-		const dummyProjects = await db.projects.where('isDummy').equals(1).toArray();
-		for (const project of dummyProjects) {
-			if (project.id) {
-				await deleteProject(project.id);
-			}
-		}
+		console.log('deleteAllDummyData: Starting deletion of all dummy data');
+		
+		// Delete all dummy items in correct order to avoid foreign key constraints
+		// First delete trees and reports (depend on projects)
+		await db.trees.where('isDummy').equals(1).delete();
+		await db.reports.where('isDummy').equals(1).delete();
+		
+		// Then delete tasks and notes (may have project references)
 		await db.tasks.where('isDummy').equals(1).delete();
 		await db.notes.where('isDummy').equals(1).delete();
+		
+		// Finally delete projects
+		const dummyProjects = await db.projects.where('isDummy').equals(1).toArray();
+		console.log('deleteAllDummyData: Found', dummyProjects.length, 'dummy projects to delete');
+		for (const project of dummyProjects) {
+			if (project.id) {
+				// Use deleteProject which handles related items
+				await deleteProject(project.id);
+				console.log('deleteAllDummyData: Deleted project', project.id, project.name);
+			}
+		}
+		
+		console.log('deleteAllDummyData: Completed deletion of all dummy data');
 	});
 }
 
