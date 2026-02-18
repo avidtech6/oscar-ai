@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { db, getAllNotes, type Note, getNotesByTag } from '$lib/db';
+	import { db, getAllNotes, type Note, getNotesByTag, type Project } from '$lib/db';
 	import { groqApiKey, groqModels } from '$lib/stores/settings';
 	// Unified architecture imports
 	import { actionExecutorService } from '$lib/services/unified/ActionExecutorService';
@@ -19,7 +19,7 @@
 	});
 
 	let notes: Note[] = [];
-	let projects: any[] = [];
+	let projects: Project[] = [];
 	let loading = true;
 	let error = '';
 	let searchQuery = '';
