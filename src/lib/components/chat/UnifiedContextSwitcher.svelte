@@ -1,42 +1,49 @@
-<!--
-DEPRECATED: This component has been replaced by UnifiedContextSwitcher.svelte
-Use the new unified context system from '$lib/services/unified/ProjectContextStore'
-This file is kept for backward compatibility only.
-
-MIGRATED TO UNIFIED ARCHITECTURE: Now uses ProjectContextStore directly
--->
-
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { projectContextStore, type Project } from '$lib/services/unified/ProjectContextStore';
+	import { projectContextStore, currentProjectId, currentProject, projectHistory } from '$lib/services/unified/ProjectContextStore';
 	import { db } from '$lib/db';
 
 	let isOpen = false;
-	let topProjects: Project[] = [];
+	let recentProjects: any[] = [];
 	let isLoading = false;
 
 	onMount(async () => {
-		await loadTopProjects();
+		await loadRecentProjects();
 	});
 
-	async function loadTopProjects() {
+	async function loadRecentProjects() {
 		isLoading = true;
 		try {
-			// Get projects from database and sort by updatedAt
-			const allProjects = await db.projects.getAll();
-			topProjects = allProjects
-				.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-				.slice(0, 3);
+			// Get projects from history
+			const historyIds = $projectHistory;
+			if (historyIds.length > 0) {
+				// Fetch project details for each ID in history
+				const projects = [];
+				for (const id of historyIds.slice(0, 5)) { // Limit to 5 most recent
+					try {
+						const project = await db.projects.get(id);
+						if (project) {
+							projects.push(project);
+						}
+					} catch (error) {
+						console.error(`Error loading project ${id}:`, error);
+					}
+				}
+				recentProjects = projects;
+			} else {
+				// Fallback: get all projects ordered by update time
+				recentProjects = await db.projects.orderBy('updatedAt').reverse().limit(5).toArray();
+			}
 		} catch (error) {
-			console.error('Error loading top projects:', error);
+			console.error('Error loading recent projects:', error);
 		} finally {
 			isLoading = false;
 		}
 	}
 
-	function handleModeSelect(mode: 'general' | 'global' | 'project', projectId?: string) {
-		if (mode === 'project' && projectId) {
+	function handleProjectSelect(projectId: string | null) {
+		if (projectId) {
 			projectContextStore.setCurrentProject(projectId);
 		} else {
 			projectContextStore.clearCurrentProject();
@@ -47,7 +54,7 @@ MIGRATED TO UNIFIED ARCHITECTURE: Now uses ProjectContextStore directly
 	function toggleDropdown() {
 		isOpen = !isOpen;
 		if (isOpen) {
-			loadTopProjects();
+			loadRecentProjects();
 		}
 	}
 
@@ -58,19 +65,17 @@ MIGRATED TO UNIFIED ARCHITECTURE: Now uses ProjectContextStore directly
 	// Handle click outside
 	function handleClickOutside(event: MouseEvent) {
 		const target = event.target as HTMLElement;
-		if (!target.closest('.context-picker')) {
+		if (!target.closest('.unified-context-switcher')) {
 			isOpen = false;
 		}
 	}
 
-	// Use the unified project context store
-	$: currentProjectId = $projectContextStore.currentProjectId;
-	$: currentProject = $projectContextStore.currentProject;
-	$: currentMode = currentProjectId ? 'project' : 'general';
-	$: currentProjectName = currentProject?.name || topProjects.find(p => p.id === currentProjectId)?.name || 'Select Project';
+	$: currentProjectIdValue = $currentProjectId;
+	$: currentProjectValue = $currentProject;
+	$: currentProjectName = currentProjectValue?.name || 'Select Project';
 </script>
 
-<div class="context-picker relative inline-block">
+<div class="unified-context-switcher relative inline-block">
 	<button
 		on:click={toggleDropdown}
 		on:keydown={(e) => e.key === 'Escape' && closeDropdown()}
@@ -78,18 +83,12 @@ MIGRATED TO UNIFIED ARCHITECTURE: Now uses ProjectContextStore directly
 		aria-haspopup="true"
 		aria-expanded={isOpen}
 	>
-		{#if currentMode === 'general'}
-			<span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-			<span>General Chat</span>
-		{:else if currentMode === 'global'}
-			<span class="w-2 h-2 bg-purple-500 rounded-full"></span>
-			<span>Global Workspace</span>
-		{:else if currentMode === 'project' && currentProjectId}
+		{#if currentProjectIdValue}
 			<span class="w-2 h-2 bg-green-500 rounded-full"></span>
 			<span>Project: {currentProjectName}</span>
 		{:else}
-			<span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-			<span>Select Context</span>
+			<span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+			<span>General Mode</span>
 		{/if}
 		<svg
 			class={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -107,31 +106,17 @@ MIGRATED TO UNIFIED ARCHITECTURE: Now uses ProjectContextStore directly
 		>
 			<!-- Mode Selection -->
 			<div class="px-3 py-2 border-b border-gray-100">
-				<h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Chat Mode</h3>
+				<h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Context Mode</h3>
 				<div class="space-y-1">
 					<button
-						on:click={() => handleModeSelect('general')}
+						on:click={() => handleProjectSelect(null)}
 						class="w-full text-left px-3 py-2 rounded hover:bg-blue-50 flex items-center gap-2"
-						class:bg-blue-50={currentMode === 'general'}
-						class:text-blue-700={currentMode === 'general'}
+						class:bg-blue-50={!currentProjectIdValue}
+						class:text-blue-700={!currentProjectIdValue}
 					>
 						<span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-						<span class="flex-1">General Chat</span>
-						{#if currentMode === 'general'}
-							<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-								<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-							</svg>
-						{/if}
-					</button>
-					<button
-						on:click={() => handleModeSelect('global')}
-						class="w-full text-left px-3 py-2 rounded hover:bg-purple-50 flex items-center gap-2"
-						class:bg-purple-50={currentMode === 'global'}
-						class:text-purple-700={currentMode === 'global'}
-					>
-						<span class="w-2 h-2 bg-purple-500 rounded-full"></span>
-						<span class="flex-1">Global Workspace</span>
-						{#if currentMode === 'global'}
+						<span class="flex-1">General Mode</span>
+						{#if !currentProjectIdValue}
 							<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
 								<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
 							</svg>
@@ -151,18 +136,18 @@ MIGRATED TO UNIFIED ARCHITECTURE: Now uses ProjectContextStore directly
 						</svg>
 					{/if}
 				</div>
-				{#if topProjects.length > 0}
+				{#if recentProjects.length > 0}
 					<div class="space-y-1">
-						{#each topProjects as project}
+						{#each recentProjects as project}
 							<button
-								on:click={() => handleModeSelect('project', project.id)}
+								on:click={() => handleProjectSelect(project.id)}
 								class="w-full text-left px-3 py-2 rounded hover:bg-green-50 flex items-center gap-2"
-								class:bg-green-50={currentMode === 'project' && currentProjectId === project.id}
-								class:text-green-700={currentMode === 'project' && currentProjectId === project.id}
+								class:bg-green-50={currentProjectIdValue === project.id}
+								class:text-green-700={currentProjectIdValue === project.id}
 							>
 								<span class="w-2 h-2 bg-green-500 rounded-full"></span>
 								<span class="flex-1 truncate">{project.name}</span>
-								{#if currentMode === 'project' && currentProjectId === project.id}
+								{#if currentProjectIdValue === project.id}
 									<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
 										<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
 									</svg>
@@ -230,16 +215,12 @@ MIGRATED TO UNIFIED ARCHITECTURE: Now uses ProjectContextStore directly
 </div>
 
 <style>
-	.click-outside {
-		/* This will be handled by the action */
-	}
-	
 	@keyframes fadeIn {
 		from { opacity: 0; transform: translateY(-10px); }
 		to { opacity: 1; transform: translateY(0); }
 	}
 	
-	:global(.context-picker-dropdown) {
+	:global(.unified-context-switcher-dropdown) {
 		animation: fadeIn 0.15s ease-out;
 	}
 </style>

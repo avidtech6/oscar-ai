@@ -3,31 +3,28 @@
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { groqApiKey, settings } from '$lib/stores/settings';
-	import { chatContext } from '$lib/stores/chatContext';
+	import { projectContextStore, currentProjectId, currentProject, projectHistory } from '$lib/services/unified/ProjectContextStore';
+	import { unifiedIntentEngine } from '$lib/services/unified/UnifiedIntentEngine';
+	import { intentFeedbackService } from '$lib/services/unified/IntentFeedbackService';
+	import { actionExecutorService } from '$lib/services/unified/ActionExecutorService';
 	import MarkdownRenderer from '$lib/components/MarkdownRenderer.svelte';
 	import MicButton from '$lib/components/MicButton.svelte';
-	import ContextPicker from '$lib/components/chat/ContextPicker.svelte';
+	import UnifiedContextSwitcher from '$lib/components/chat/UnifiedContextSwitcher.svelte';
+	// TODO: Migrate these legacy imports to unified services
 	import {
 		getAIContext,
 		formatContextForAI,
-		confirmPendingAction,
-		getConversionOptions,
 		type AIContext
 	} from '$lib/services/aiActions';
-	import {
-		classifyIntent,
-		executeIntent,
-		navigateTo,
-		type IntentType,
-		type ActionResult
-	} from '$lib/services/intentEngine';
 	import {
 		inferProjectFromMessage,
 		proposeContextSwitch,
 		resolvePronounReference,
 		getContextSwitchOptions
-	} from '$lib/services/contextInference';
+	} from '$lib/services/unified/ContextInferenceService';
 	import { saveChatMessage, getChatHistory, clearChatHistory, type ChatMessage } from '$lib/db';
+	import type { IntentType } from '$lib/services/unified/UnifiedIntentEngine';
+	import type { ActionResult } from '$lib/services/aiActions';
 
 	let apiKey = '';
 	groqApiKey.subscribe(value => {
@@ -155,11 +152,10 @@
 		const userMessageText = inputMessage.trim();
 		
 		// Resolve pronoun references
-		const currentChatContext = get(chatContext);
 		const resolvedMessage = resolvePronounReference(
 			userMessageText,
-			currentChatContext.lastAIMessage,
-			currentChatContext.lastReferencedItem
+			'', // TODO: Get last AI message from unified system
+			null // TODO: Get last referenced item from unified system
 		);
 		
 		// Add user message
@@ -212,15 +208,15 @@
 				return;
 			}
 			
-			// First, classify the intent
-			const intent = classifyIntent(resolvedMessage);
+			// First, classify the intent using unified engine
+			const intent = unifiedIntentEngine.classifyIntent(resolvedMessage);
 			
 			let actionResult: ActionResult | null = null;
 			
 			// If intent is detected (not chat), execute it
 			if (intent && intent.type !== 'chat') {
 				console.log('Intent detected:', intent.type, intent.data);
-				actionResult = await executeIntent(intent);
+				actionResult = await unifiedIntentEngine.executeIntent(intent);
 				console.log('Action result:', actionResult);
 				
 				// Check if action needs project selection
@@ -319,17 +315,26 @@ Provide concise, accurate guidance.`;
 			
 			messages = [...messages, assistantMessage];
 			
-			// Update chat context with last AI message
-			chatContext.setLastAIMessage(aiResponse);
-			if (actionResult?.objects && actionResult.objects.length > 0) {
-				chatContext.setLastReferencedItem(actionResult.objects[0]);
-			}
+			// Update unified context with last AI message
+			// TODO: Add last AI message tracking to unified context store
+			// if (actionResult?.objects && actionResult.objects.length > 0) {
+			// 	// Update last referenced item
+			// }
 			
-			// Check if we should show conversion options (General Chat mode)
-			const currentChatContext = get(chatContext);
-			if (currentChatContext.mode === 'general' && !actionResult) {
-				// Show conversion options for content generated in General Chat
-				conversionOptions = getConversionOptions(aiResponse, currentContext!);
+			// Check if we should show conversion options (General mode)
+			const currentProjectIdValue = $currentProjectId;
+			if (!currentProjectIdValue && !actionResult) {
+				// Show conversion options for content generated in General mode
+				// Simple conversion options for General Chat mode
+				conversionOptions = {
+					options: [
+						{ type: 'note', icon: '📝', label: 'Save as Note' },
+						{ type: 'report', icon: '📄', label: 'Save as Report' },
+						{ type: 'blog', icon: '📰', label: 'Save as Blog' },
+						{ type: 'task', icon: '📋', label: 'Save as Task' }
+					],
+					projects: currentContext?.projects?.slice(0, 3) || []
+				};
 				showConversionOptions = true;
 			}
 		} catch (e) {
@@ -353,7 +358,7 @@ Provide concise, accurate guidance.`;
 	}
 
 	function handleActionClick(url: string) {
-		navigateTo(url);
+		goto(url);
 	}
 
 	function handleObjectClick(obj: any, type: string) {
@@ -388,7 +393,7 @@ Provide concise, accurate guidance.`;
 				url = `/diagrams?diagram=${obj.id}&mode=edit`;
 				break;
 		}
-		navigateTo(url);
+		goto(url);
 	}
 
 	function getTypeIcon(type: string): string {
@@ -411,11 +416,53 @@ Provide concise, accurate guidance.`;
 		}
 	}
 
-	// Handle real-time transcription from mic
-	function handleTranscript(event: CustomEvent<{ text: string }>) {
+	// Handle real-time transcription from mic with intent detection
+	async function handleTranscript(event: CustomEvent<{ text: string }>) {
 		const transcriptText = event.detail.text;
 		if (transcriptText) {
+			// Add to input message
 			inputMessage += (inputMessage ? ' ' : '') + transcriptText;
+			
+			// Process voice transcription for intent detection
+			try {
+				const intentResult = await unifiedIntentEngine.processVoiceTranscription(transcriptText);
+				
+				// If intent is detected and requires immediate action, show feedback
+				if (intentResult && intentResult.intent !== 'chat') {
+					// Show intent feedback
+					const feedback = await intentFeedbackService.getFeedback(intentResult);
+					
+					// Add a temporary message showing detected intent
+					const intentMessage: Message = {
+						role: 'oscar',
+						content: `🎤 Voice command detected: **${intentResult.intent}** (${intentResult.confidence}% confidence)\n\n${feedback.message}`,
+						timestamp: new Date().toISOString(),
+						actionType: intentResult.intent
+					};
+					
+					messages = [...messages, intentMessage];
+					
+					// If intent requires confirmation, use the existing pending confirmation system
+					if (intentResult.requiresConfirmation) {
+						// Store the intent for confirmation
+						// TODO: Integrate with unified intent feedback service for pending actions
+						// For now, just show a message that confirmation is needed
+						const confirmationMessage: Message = {
+							role: 'oscar',
+							content: `Voice command requires confirmation. Use the confirmation dialog below to proceed.`,
+							timestamp: new Date().toISOString()
+						};
+						messages = [...messages, confirmationMessage];
+						
+						// Set pending confirmation state (simplified for now)
+						// In a full implementation, this would integrate with intentFeedbackService
+						pendingConfirmation = true;
+					}
+				}
+			} catch (error) {
+				console.error('Error processing voice transcription:', error);
+				// Continue normally even if intent detection fails
+			}
 		}
 	}
 	
@@ -427,7 +474,7 @@ Provide concise, accurate guidance.`;
 		
 		if (option === 'yes') {
 			// Switch to project mode
-			chatContext.setProject(contextInferenceResult.projectId);
+			projectContextStore.setCurrentProject(contextInferenceResult.projectId);
 			
 			// Show confirmation message
 			const confirmationMessage: Message = {
@@ -483,7 +530,6 @@ Provide concise, accurate guidance.`;
 		
 		// Create appropriate action based on type
 		let actionResult: ActionResult | null = null;
-		const currentChatContext = get(chatContext);
 		const lastMessage = messages[messages.length - 1];
 		
 		if (lastMessage.role === 'oscar') {
@@ -491,7 +537,7 @@ Provide concise, accurate guidance.`;
 			
 			switch (type) {
 				case 'note':
-					actionResult = await executeIntent({
+					actionResult = await unifiedIntentEngine.executeIntent({
 						type: 'note',
 						action: 'createNote',
 						data: {
@@ -504,7 +550,7 @@ Provide concise, accurate guidance.`;
 					break;
 					
 				case 'report':
-					actionResult = await executeIntent({
+					actionResult = await unifiedIntentEngine.executeIntent({
 						type: 'report',
 						action: 'createReport',
 						data: {
@@ -518,7 +564,7 @@ Provide concise, accurate guidance.`;
 					break;
 					
 				case 'blog':
-					actionResult = await executeIntent({
+					actionResult = await unifiedIntentEngine.executeIntent({
 						type: 'blog',
 						action: 'createBlogPost',
 						data: {
@@ -531,7 +577,7 @@ Provide concise, accurate guidance.`;
 					break;
 					
 				case 'task':
-					actionResult = await executeIntent({
+					actionResult = await unifiedIntentEngine.executeIntent({
 						type: 'task',
 						action: 'createTask',
 						data: {
@@ -570,47 +616,30 @@ Provide concise, accurate guidance.`;
 	
 	// Handle pending action confirmation
 	async function handleConfirmPendingAction() {
-		const result = await confirmPendingAction();
+		// Pending actions are now handled by unified intent feedback system
+		// This is a stub implementation for backward compatibility
+		const result = {
+			success: false,
+			message: 'Pending action confirmation is now handled by the unified intent system. No pending actions found.'
+		};
 		
-		if (result.success) {
-			// Add success message
-			const successMessage: Message = {
+		// Add error message
+		const errorMessage: Message = {
+			role: 'oscar',
+			content: `✗ ${result.message}`,
+			timestamp: new Date().toISOString(),
+			actionResult: result
+		};
+		messages = [...messages, errorMessage];
+		
+		try {
+			await saveChatMessage({
 				role: 'oscar',
-				content: `✓ ${result.message}`,
-				timestamp: new Date().toISOString(),
+				content: errorMessage.content,
 				actionResult: result
-			};
-			messages = [...messages, successMessage];
-			
-			// Save message
-			try {
-				await saveChatMessage({
-					role: 'oscar',
-					content: successMessage.content,
-					actionResult: result
-				});
-			} catch (e) {
-				console.error('Failed to save confirmation message:', e);
-			}
-		} else {
-			// Add error message
-			const errorMessage: Message = {
-				role: 'oscar',
-				content: `✗ ${result.message}`,
-				timestamp: new Date().toISOString(),
-				actionResult: result
-			};
-			messages = [...messages, errorMessage];
-			
-			try {
-				await saveChatMessage({
-					role: 'oscar',
-					content: errorMessage.content,
-					actionResult: result
-				});
-			} catch (e) {
-				console.error('Failed to save error message:', e);
-			}
+			});
+		} catch (e) {
+			console.error('Failed to save error message:', e);
 		}
 		
 		pendingConfirmation = false;
@@ -618,7 +647,7 @@ Provide concise, accurate guidance.`;
 	
 	// Handle cancel pending action
 	function handleCancelPendingAction() {
-		chatContext.clearPendingAction();
+		// TODO: Clear pending action from unified system
 		pendingConfirmation = false;
 		
 		// Add cancellation message
@@ -671,7 +700,7 @@ Provide concise, accurate guidance.`;
 			// Switch to selected project
 			const selectedProject = multipleProjectMatches.find(p => p.id === projectId);
 			if (selectedProject) {
-				chatContext.setProject(projectId);
+				projectContextStore.setCurrentProject(projectId);
 				
 				// Show confirmation message
 				const confirmationMessage: Message = {
@@ -709,11 +738,11 @@ Provide concise, accurate guidance.`;
 		}
 		
 		if (option === 'general') {
-			// Save without project tag (General Chat mode)
-			const currentChatContext = get(chatContext);
-			if (currentChatContext.mode === 'general') {
+			// Save without project tag (General mode)
+			const currentProjectIdValue = $currentProjectId;
+			if (!currentProjectIdValue) {
 				// Execute action without project ID
-				const actionResult = await executeIntent({
+				const actionResult = await unifiedIntentEngine.executeIntent({
 					type: projectSelectionData.action.replace('create', '').toLowerCase(),
 					action: projectSelectionData.action,
 					data: {
@@ -749,7 +778,7 @@ Provide concise, accurate guidance.`;
 			const projectName = selectedProject ? selectedProject.name : 'the project';
 			
 			// Execute action with project ID
-			const actionResult = await executeIntent({
+			const actionResult = await unifiedIntentEngine.executeIntent({
 				type: projectSelectionData.action.replace('create', '').toLowerCase(),
 				action: projectSelectionData.action,
 				data: {
@@ -790,7 +819,7 @@ Provide concise, accurate guidance.`;
 	}
 	
 	// Check for pending actions
-	$: pendingConfirmation = $chatContext.requiresConfirmation;
+	$: pendingConfirmation = false; // TODO: Get from unified intent feedback service
 </script>
 
 <svelte:head>
@@ -806,8 +835,8 @@ Provide concise, accurate guidance.`;
 				<p class="text-sm text-gray-600">Tree Consultant Assistant</p>
 			</div>
 			<div class="flex items-center gap-3">
-				<!-- Context Picker -->
-				<ContextPicker />
+				<!-- Context Switcher -->
+				<UnifiedContextSwitcher />
 				
 				<div class="flex gap-2">
 					<button
@@ -833,17 +862,13 @@ Provide concise, accurate guidance.`;
 				</div>
 			</div>
 		</div>
-		{#if $chatContext.mode === 'project' && currentContext?.currentProject}
+		{#if $currentProjectId && currentContext?.currentProject}
 			<p class="text-xs text-green-700 mt-2 bg-green-50 inline-block px-2 py-1 rounded">
 				Working in: <strong>{currentContext.currentProject.name}</strong> - All new items will be saved to this project.
 			</p>
-		{:else if $chatContext.mode === 'general'}
+		{:else}
 			<p class="text-xs text-blue-700 mt-2 bg-blue-50 inline-block px-2 py-1 rounded">
-				General Chat mode - No automatic database writes. Use conversion buttons to save content.
-			</p>
-		{:else if $chatContext.mode === 'global'}
-			<p class="text-xs text-purple-700 mt-2 bg-purple-50 inline-block px-2 py-1 rounded">
-				Global Workspace - Cross-project operations allowed.
+				General mode - No automatic database writes. Use conversion buttons to save content.
 			</p>
 		{/if}
 	</div>

@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import { getSetting, setSetting, deleteSetting, migrateLocalStorageToIndexedDB } from '$lib/db/index';
 
 const GROQ_API_KEY_STORAGE = 'oscar_groq_api_key';
 const THEME_STORAGE = 'oscar_theme';
@@ -38,22 +39,64 @@ export const settings = writable<Settings>({
     currentProjectId: ''
 });
 
-// Initialize from localStorage
-export function initSettings() {
-    // Load all settings from localStorage
-    const storedKey = localStorage.getItem(GROQ_API_KEY_STORAGE);
-    const storedTheme = localStorage.getItem(THEME_STORAGE) as 'light' | 'dark' | null;
-    const storedSidebar = localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE);
-    const storedDummyData = localStorage.getItem(DUMMY_DATA_ENABLED_KEY);
-    const storedProjectId = localStorage.getItem(CURRENT_PROJECT_ID_KEY);
+// Helper function to save setting to IndexedDB
+async function saveSettingToIndexedDB(key: string, value: any): Promise<void> {
+    try {
+        await setSetting(key, value);
+    } catch (error) {
+        console.error(`Failed to save setting ${key} to IndexedDB:`, error);
+        // Fallback to localStorage for backward compatibility
+        if (typeof value === 'string') {
+            localStorage.setItem(key, value);
+        } else {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+    }
+}
+
+// Helper function to delete setting from IndexedDB
+async function deleteSettingFromIndexedDB(key: string): Promise<void> {
+    try {
+        await deleteSetting(key);
+    } catch (error) {
+        console.error(`Failed to delete setting ${key} from IndexedDB:`, error);
+        // Fallback to localStorage
+        localStorage.removeItem(key);
+    }
+}
+
+// Initialize from IndexedDB (with localStorage fallback)
+export async function initSettings() {
+    // First, migrate any existing localStorage settings to IndexedDB
+    try {
+        await migrateLocalStorageToIndexedDB();
+    } catch (error) {
+        console.warn('Failed to migrate localStorage to IndexedDB:', error);
+    }
+
+    // Load all settings from IndexedDB (with localStorage fallback)
+    const [storedKey, storedTheme, storedSidebar, storedDummyData, storedProjectId] = await Promise.all([
+        getSetting(GROQ_API_KEY_STORAGE),
+        getSetting(THEME_STORAGE),
+        getSetting(SIDEBAR_COLLAPSED_STORAGE),
+        getSetting(DUMMY_DATA_ENABLED_KEY),
+        getSetting(CURRENT_PROJECT_ID_KEY)
+    ]);
+
+    // Fallback to localStorage if IndexedDB returns undefined
+    const finalKey = storedKey !== undefined ? storedKey : (localStorage.getItem(GROQ_API_KEY_STORAGE) || DEFAULT_GROQ_API_KEY || '');
+    const finalTheme = storedTheme !== undefined ? storedTheme : (localStorage.getItem(THEME_STORAGE) as 'light' | 'dark' | null);
+    const finalSidebar = storedSidebar !== undefined ? storedSidebar : localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE);
+    const finalDummyData = storedDummyData !== undefined ? storedDummyData : localStorage.getItem(DUMMY_DATA_ENABLED_KEY);
+    const finalProjectId = storedProjectId !== undefined ? storedProjectId : localStorage.getItem(CURRENT_PROJECT_ID_KEY);
 
     // Build initial settings object
     const initialSettings: Settings = {
-        groqApiKey: storedKey || DEFAULT_GROQ_API_KEY || '',
-        theme: storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'dark',
-        sidebarCollapsed: storedSidebar === 'true',
-        dummyDataEnabled: storedDummyData === 'true',
-        currentProjectId: storedProjectId || ''
+        groqApiKey: typeof finalKey === 'string' ? finalKey : '',
+        theme: finalTheme === 'light' || finalTheme === 'dark' ? finalTheme : 'dark',
+        sidebarCollapsed: finalSidebar === 'true' || finalSidebar === true,
+        dummyDataEnabled: finalDummyData === 'true' || finalDummyData === true,
+        currentProjectId: typeof finalProjectId === 'string' ? finalProjectId : ''
     };
 
     // Set the combined settings store
@@ -67,37 +110,37 @@ export function initSettings() {
     currentProjectId.set(initialSettings.currentProjectId);
 
     // Subscribe to changes in individual stores to keep combined store in sync
-    groqApiKey.subscribe(value => {
+    groqApiKey.subscribe(async value => {
         settings.update(s => ({ ...s, groqApiKey: value }));
         if (value) {
-            localStorage.setItem(GROQ_API_KEY_STORAGE, value);
+            await saveSettingToIndexedDB(GROQ_API_KEY_STORAGE, value);
         } else {
-            localStorage.removeItem(GROQ_API_KEY_STORAGE);
+            await deleteSettingFromIndexedDB(GROQ_API_KEY_STORAGE);
         }
     });
 
-    theme.subscribe(value => {
+    theme.subscribe(async value => {
         settings.update(s => ({ ...s, theme: value }));
-        localStorage.setItem(THEME_STORAGE, value);
+        await saveSettingToIndexedDB(THEME_STORAGE, value);
         document.documentElement.classList.toggle('dark', value === 'dark');
     });
 
-    sidebarCollapsed.subscribe(value => {
+    sidebarCollapsed.subscribe(async value => {
         settings.update(s => ({ ...s, sidebarCollapsed: value }));
-        localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE, String(value));
+        await saveSettingToIndexedDB(SIDEBAR_COLLAPSED_STORAGE, value);
     });
 
-    dummyDataEnabled.subscribe(value => {
+    dummyDataEnabled.subscribe(async value => {
         settings.update(s => ({ ...s, dummyDataEnabled: value }));
-        localStorage.setItem(DUMMY_DATA_ENABLED_KEY, String(value));
+        await saveSettingToIndexedDB(DUMMY_DATA_ENABLED_KEY, value);
     });
 
-    currentProjectId.subscribe(value => {
+    currentProjectId.subscribe(async value => {
         settings.update(s => ({ ...s, currentProjectId: value }));
         if (value) {
-            localStorage.setItem(CURRENT_PROJECT_ID_KEY, value);
+            await saveSettingToIndexedDB(CURRENT_PROJECT_ID_KEY, value);
         } else {
-            localStorage.removeItem(CURRENT_PROJECT_ID_KEY);
+            await deleteSettingFromIndexedDB(CURRENT_PROJECT_ID_KEY);
         }
     });
 
@@ -111,8 +154,31 @@ export function initSettings() {
     });
 }
 
-export function clearAllData() {
+export async function clearAllData() {
+    // Clear localStorage
     localStorage.clear();
-    indexedDB.deleteDatabase('OscarAI');
+    
+    // Clear IndexedDB database
+    try {
+        indexedDB.deleteDatabase('OscarAI');
+    } catch (error) {
+        console.error('Failed to delete IndexedDB database:', error);
+    }
+    
+    // Reset all stores to default values
+    groqApiKey.set('');
+    theme.set('dark');
+    sidebarCollapsed.set(false);
+    dummyDataEnabled.set(false);
+    currentProjectId.set('');
+    settings.set({
+        groqApiKey: '',
+        theme: 'dark',
+        sidebarCollapsed: false,
+        dummyDataEnabled: false,
+        currentProjectId: ''
+    });
+    
+    // Reload the page to ensure clean state
     window.location.reload();
 }

@@ -3,9 +3,12 @@
 	import { page } from '$app/stores';
 	import { db, getAllNotes, type Note, getNotesByTag } from '$lib/db';
 	import { groqApiKey, groqModels } from '$lib/stores/settings';
-	import { chatContext } from '$lib/stores/chatContext';
-	import { executeAction, getConversionOptions, confirmPendingAction } from '$lib/services/aiActions';
-	import { inferProjectFromMessage, resolvePronounReference } from '$lib/services/contextInference';
+	// Unified architecture imports
+	import { actionExecutorService } from '$lib/services/unified/ActionExecutorService';
+	import { unifiedIntentEngine } from '$lib/services/unified/UnifiedIntentEngine';
+	import { projectContextStore } from '$lib/services/unified/ProjectContextStore';
+	import { voiceRecordingService } from '$lib/services/unified/VoiceRecordingService';
+	import { inferProjectFromMessage, resolvePronounReference } from '$lib/services/unified/ContextInferenceService';
 	import { goto } from '$app/navigation';
 	import { fade, slide } from 'svelte/transition';
 	import MicButton from '$lib/components/MicButton.svelte';
@@ -194,22 +197,35 @@
 
 	async function startRecording() {
 		try {
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			mediaRecorder = new MediaRecorder(stream);
-			audioChunks = [];
+			// Use unified voice recording service with intent detection
+			const success = await voiceRecordingService.startRecordingWithIntentDetection(
+				{
+					autoTranscribe: true,
+					maxDuration: 30000, // 30 seconds max for notes
+				},
+				{
+					onTranscription: (text: string, isFinal: boolean) => {
+						if (isFinal && text.trim()) {
+							// Add transcription to note content
+							noteForm.content += (noteForm.content ? '\n\n' : '') + text;
+							noteForm.type = 'voice';
+						}
+					},
+					onIntentDetected: (intentResult: any) => {
+						// Log intent detection for voice notes
+						console.log('Voice intent detected in notes:', intentResult);
+					},
+					onError: (errorMsg: string) => {
+						error = `Voice recording error: ${errorMsg}`;
+					}
+				}
+			);
 			
-			mediaRecorder.ondataavailable = (e) => {
-				audioChunks.push(e.data);
-			};
-			
-			mediaRecorder.onstop = async () => {
-				const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-				await transcribeAudio(audioBlob);
-				stream.getTracks().forEach(track => track.stop());
-			};
-			
-			mediaRecorder.start();
-			isRecording = true;
+			if (success) {
+				isRecording = true;
+			} else {
+				error = 'Failed to start recording';
+			}
 		} catch (e) {
 			error = 'Failed to start recording';
 			console.error(e);
@@ -217,8 +233,8 @@
 	}
 
 	function stopRecording() {
-		if (mediaRecorder && isRecording) {
-			mediaRecorder.stop();
+		if (isRecording) {
+			voiceRecordingService.stopRecording();
 			isRecording = false;
 		}
 	}
@@ -292,11 +308,11 @@
 	}
 
 	function switchToProjectContext() {
-		if (contextSwitchProjectId) {
-			$chatContext.switchToProjectMode(contextSwitchProjectId);
-			hideContextSwitchPrompt();
-		}
-	}
+	 if (contextSwitchProjectId) {
+	   projectContextStore.setCurrentProject(contextSwitchProjectId);
+	   hideContextSwitchPrompt();
+	 }
+}
 
 	function showConfirmationDialogFn(message: string, action: () => void, cancel?: () => void) {
 		confirmationMessage = message;
@@ -329,15 +345,15 @@
 		aiAction = 'Summarizing...';
 		
 		try {
-			// Get current chat context
-			const context = $chatContext;
+			// Get current context from unified ProjectContextStore
+			const hasCurrentProject = !!$projectContextStore.currentProjectId;
 			
 			// Prepare the AI request
 			const userMessage = `Summarize the following note concisely:\n\n${noteForm.content}`;
 			
 			// Check for project references in the note content
 			const inferredProject = inferProjectFromMessage(noteForm.content, projects);
-			if (inferredProject && context.mode === 'general') {
+			if (inferredProject && !hasCurrentProject) {
 				// Show context switch prompt
 				showContextSwitchPromptFn(
 					inferredProject.id,
@@ -347,30 +363,27 @@
 				return;
 			}
 			
-			// Use the unified executeAction function
-			const result = await executeAction({
-				message: userMessage,
-				context: {
-					mode: context.mode,
-					selectedProjectId: context.selectedProjectId,
-					lastItem: context.lastItem,
-					pendingAction: context.pendingAction
-				},
+			// Use unified intent engine to detect intent
+			const intentResult = await unifiedIntentEngine.detectIntent(userMessage);
+			
+			// Execute using unified action executor
+			const result = await actionExecutorService.execute(intentResult, {
+				content: noteForm.content,
 				noteId: editingNote?.id,
-				noteContent: noteForm.content,
-				noteTitle: noteForm.title
+				noteTitle: noteForm.title,
+				action: 'summarize'
 			});
 			
 			if (result.success) {
 				// If we're in General Chat mode, we might get conversion options instead of direct result
-				if (context.mode === 'general' && result.conversionOptions) {
+				if (!hasCurrentProject && result.requiresConfirmation) {
 					// Show conversion options dialog
 					showConfirmationDialogFn(
 						`AI can't directly modify notes in General Chat mode. Choose an option:`,
 						() => {
-							// User confirmed - use first conversion option
-							if (result.conversionOptions && result.conversionOptions.length > 0) {
-								noteForm.content = result.conversionOptions[0].content;
+							// User confirmed - use the message as content
+							if (result.message) {
+								noteForm.content = result.message;
 							}
 						},
 						() => {
@@ -378,11 +391,11 @@
 							console.log('User cancelled conversion');
 						}
 					);
-				} else if (result.content) {
-					noteForm.content = result.content;
+				} else if (result.message) {
+					noteForm.content = result.message;
 				}
 			} else {
-				error = result.error || 'Failed to summarize';
+				error = result.message || 'Failed to summarize';
 			}
 		} catch (e) {
 			error = 'Failed to summarize';
@@ -400,15 +413,15 @@
 		aiAction = 'Expanding...';
 		
 		try {
-			// Get current chat context
-			const context = $chatContext;
+			// Get current context from unified ProjectContextStore
+			const hasCurrentProject = !!$projectContextStore.currentProjectId;
 			
 			// Prepare the AI request
 			const userMessage = `Expand and elaborate on the following note with more detail:\n\n${noteForm.content}`;
 			
 			// Check for project references in the note content
 			const inferredProject = inferProjectFromMessage(noteForm.content, projects);
-			if (inferredProject && context.mode === 'general') {
+			if (inferredProject && !hasCurrentProject) {
 				// Show context switch prompt
 				showContextSwitchPromptFn(
 					inferredProject.id,
@@ -418,30 +431,27 @@
 				return;
 			}
 			
-			// Use the unified executeAction function
-			const result = await executeAction({
-				message: userMessage,
-				context: {
-					mode: context.mode,
-					selectedProjectId: context.selectedProjectId,
-					lastItem: context.lastItem,
-					pendingAction: context.pendingAction
-				},
+			// Use unified intent engine to detect intent
+			const intentResult = await unifiedIntentEngine.detectIntent(userMessage);
+			
+			// Execute using unified action executor
+			const result = await actionExecutorService.execute(intentResult, {
+				content: noteForm.content,
 				noteId: editingNote?.id,
-				noteContent: noteForm.content,
-				noteTitle: noteForm.title
+				noteTitle: noteForm.title,
+				action: 'expand'
 			});
 			
 			if (result.success) {
 				// If we're in General Chat mode, we might get conversion options instead of direct result
-				if (context.mode === 'general' && result.conversionOptions) {
+				if (!hasCurrentProject && result.requiresConfirmation) {
 					// Show conversion options dialog
 					showConfirmationDialogFn(
 						`AI can't directly modify notes in General Chat mode. Choose an option:`,
 						() => {
-							// User confirmed - use first conversion option
-							if (result.conversionOptions && result.conversionOptions.length > 0) {
-								noteForm.content = result.conversionOptions[0].content;
+							// User confirmed - use the message as content
+							if (result.message) {
+								noteForm.content = result.message;
 							}
 						},
 						() => {
@@ -449,11 +459,11 @@
 							console.log('User cancelled conversion');
 						}
 					);
-				} else if (result.content) {
-					noteForm.content = result.content;
+				} else if (result.message) {
+					noteForm.content = result.message;
 				}
 			} else {
-				error = result.error || 'Failed to expand';
+				error = result.message || 'Failed to expand';
 			}
 		} catch (e) {
 			error = 'Failed to expand';
@@ -495,8 +505,8 @@
 				return;
 			}
 			
-			// Get current chat context
-			const context = $chatContext;
+			// Get current context from unified ProjectContextStore
+			const hasCurrentProject = !!$projectContextStore.currentProjectId;
 			
 			// Prepare the AI request with note context
 			const userMessage = `Regarding the note titled "${note.title}" with content: ${note.content}\n\n${aiPromptText}`;
@@ -504,7 +514,7 @@
 			// Check for project references in the note content and prompt
 			const combinedText = note.content + ' ' + aiPromptText;
 			const inferredProject = inferProjectFromMessage(combinedText, projects);
-			if (inferredProject && context.mode === 'general') {
+			if (inferredProject && !hasCurrentProject) {
 				// Show context switch prompt
 				showContextSwitchPromptFn(
 					inferredProject.id,
@@ -514,32 +524,30 @@
 				return;
 			}
 			
-			// Use the unified executeAction function
-			const result = await executeAction({
-				message: userMessage,
-				context: {
-					mode: context.mode,
-					selectedProjectId: context.selectedProjectId,
-					lastItem: context.lastItem,
-					pendingAction: context.pendingAction
-				},
+			// Use unified intent engine to detect intent
+			const intentResult = await unifiedIntentEngine.detectIntent(userMessage);
+			
+			// Execute using unified action executor
+			const result = await actionExecutorService.execute(intentResult, {
+				content: note.content,
 				noteId: note.id,
-				noteContent: note.content,
 				noteTitle: note.title,
 				noteTags: note.tags,
-				noteType: note.type
+				noteType: note.type,
+				prompt: aiPromptText,
+				action: 'process_prompt'
 			});
 			
 			if (result.success) {
 				// If we're in General Chat mode, we might get conversion options instead of direct result
-				if (context.mode === 'general' && result.conversionOptions) {
+				if (!hasCurrentProject && result.requiresConfirmation) {
 					// Show conversion options dialog
 					showConfirmationDialogFn(
 						`AI can't directly modify notes in General Chat mode. Choose an option:`,
 						() => {
-							// User confirmed - use first conversion option
-							if (result.conversionOptions && result.conversionOptions.length > 0) {
-								aiPromptResult = result.conversionOptions[0].content;
+							// User confirmed - use the message as content
+							if (result.message) {
+								aiPromptResult = result.message;
 							}
 						},
 						() => {
@@ -547,11 +555,11 @@
 							console.log('User cancelled conversion');
 						}
 					);
-				} else if (result.content) {
-					aiPromptResult = result.content;
+				} else if (result.message) {
+					aiPromptResult = result.message;
 				}
 			} else {
-				error = result.error || 'Failed to process AI request';
+				error = result.message || 'Failed to process AI request';
 			}
 		} catch (e) {
 			error = 'Failed to process AI request';
@@ -701,8 +709,8 @@
 			const selected = getSelectedNotes();
 			if (selected.length === 0) return;
 			
-			// Get current chat context
-			const context = $chatContext;
+			// Get current context from unified ProjectContextStore
+			const hasCurrentProject = !!$projectContextStore.currentProjectId;
 			
 			// Prepare combined content from all selected notes
 			const combinedContent = selected.map(note =>
@@ -715,7 +723,7 @@
 			// Check for project references
 			const allContent = combinedContent + ' ' + bulkAIPrompt;
 			const inferredProject = inferProjectFromMessage(allContent, projects);
-			if (inferredProject && context.mode === 'general') {
+			if (inferredProject && !hasCurrentProject) {
 				// Show context switch prompt
 				showContextSwitchPromptFn(
 					inferredProject.id,
@@ -725,39 +733,38 @@
 				return;
 			}
 			
-			// Use the unified executeAction function
-			const result = await executeAction({
-				message: userMessage,
-				context: {
-					mode: context.mode,
-					selectedProjectId: context.selectedProjectId,
-					lastItem: context.lastItem,
-					pendingAction: context.pendingAction
-				},
+			// Use unified intent engine to detect intent
+			const intentResult = await unifiedIntentEngine.detectIntent(userMessage);
+			
+			// Execute using unified action executor
+			const result = await actionExecutorService.execute(intentResult, {
+				content: combinedContent,
 				noteIds: selected.map(n => n.id).filter(Boolean) as string[],
-				noteContent: combinedContent,
-				noteTitle: `Bulk action on ${selected.length} notes`
+				noteTitle: `Bulk action on ${selected.length} notes`,
+				prompt: bulkAIPrompt,
+				action: 'bulk_process'
 			});
 			
 			if (result.success) {
-				if (context.mode === 'general' && result.conversionOptions) {
+				if (!hasCurrentProject && result.requiresConfirmation) {
 					// Show conversion options dialog
 					showConfirmationDialogFn(
 						`AI can't directly modify notes in General Chat mode. Choose an option:`,
 						() => {
-							if (result.conversionOptions && result.conversionOptions.length > 0) {
-								bulkAIResult = result.conversionOptions[0].content;
+							// User confirmed - use the message as content
+							if (result.message) {
+								bulkAIResult = result.message;
 							}
 						},
 						() => {
 							console.log('User cancelled conversion');
 						}
 					);
-				} else if (result.content) {
-					bulkAIResult = result.content;
+				} else if (result.message) {
+					bulkAIResult = result.message;
 				}
 			} else {
-				error = result.error || 'Failed to process bulk AI request';
+				error = result.message || 'Failed to process bulk AI request';
 			}
 		} catch (e) {
 			error = 'Failed to process bulk AI request';

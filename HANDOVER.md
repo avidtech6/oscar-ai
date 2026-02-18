@@ -1,188 +1,296 @@
-# Oscar AI - Project Handover Document
+Oscar AI — Updated Project Handover (2026 Edition)
+A complete, accurate, modern description of the current system for onboarding Roo or any new developer.
 
-## Project Overview
-**Project Name**: Oscar AI  
-**Type**: Web Application (SvelteKit)  
-**Purpose**: Personal arboricultural notebook and AI assistant for UK tree surveyors  
-**Deployment**: Cloudflare Pages (SSR)
+Project Overview
+Project Name: Oscar AI
+Type: Local‑first SvelteKit application
+Purpose: A personal arboricultural notebook + AI assistant for UK tree surveyors
+Deployment: Cloudflare Pages (SSR)
+Data Model: Local IndexedDB (Dexie) with optional PocketBase sync
+AI: Groq LLM + Groq Whisper (planned unified integration)
 
----
+Oscar AI combines:
 
-## Current Status
+project management
 
-### Working Features
-- **Authentication**: Login/Signup pages (local storage based)
-- **Dashboard**: Overview of projects and recent activity
-- **Projects**: Create, edit, delete tree survey projects
-- **Trees**: Add/edit trees within projects with full data (DBH, height, species, condition)
-- **Notes**: Create notes with tags, linked to projects
-- **Reports**: Generate BS5837 reports (PDF export)
-- **Oscar AI Chat**: AI-powered assistant using Groq API
-- **Voice Notes**: Audio recording with transcription
-- **Blog Writer**: AI-assisted blog post creation
-- **Learn My Style**: Train AI on your writing style
-- **Tasks**: Task management system
-- **Help**: Help center with documentation
-- **Settings**: API configuration, data export/import
+tree survey data
 
-### Recent Additions
-- **Dummy Data System**: Development testing data that can be enabled in Settings
-- **Tasks Page**: Full task management with priorities and statuses
-- **Help Page**: Comprehensive documentation
+notes
 
----
+tasks
 
-## Technical Stack
+reports
 
-### Frontend
-- **Framework**: SvelteKit 2.x
-- **Styling**: TailwindCSS
-- **State**: Svelte stores + IndexedDB (Dexie)
+voice notes
 
-### Backend/Storage
-- **Primary**: Local IndexedDB (Dexie.js)
-- **Optional**: PocketBase for cloud sync
-- **AI**: Groq API (LLM + Whisper)
+AI chat
 
-### Deployment
-- **Adapter**: @sveltejs/adapter-cloudflare
-- **Build Output**: `/build` folder
+AI‑assisted writing
 
----
+style learning
 
-## Key Files Structure
+The system has grown significantly and now requires architectural unification.
 
-```
-oscar-ai/
-├── src/
-│   ├── lib/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── db/            # IndexedDB schema & operations
-│   │   ├── services/      # API integrations, AI, etc.
-│   │   └── stores/        # Svelte stores (settings, etc.)
-│   ├── routes/
-│   │   ├── +layout.svelte # Main app layout with sidebar
-│   │   ├── dashboard/     # Dashboard page
-│   │   ├── workspace/     # Projects list
-│   │   ├── project/[id]/ # Project detail
-│   │   ├── notes/         # Notes management
-│   │   ├── reports/       # Report generation
-│   │   ├── oscar/         # AI chat interface
-│   │   ├── tasks/         # Task management
-│   │   ├── help/          # Help documentation
-│   │   ├── learn/         # Style learning
-│   │   └── settings/      # App settings
-│   ├── app.html           # HTML template
-│   └── app.d.ts           # TypeScript declarations
-├── static/                # Static assets
-├── svelte.config.js       # SvelteKit config
-├── vite.config.ts         # Vite config
-└── package.json           # Dependencies
-```
+Current System Status (Feb 2026)
+Major Working Features
+Projects: Create/edit/delete tree survey projects
 
----
+Trees: Full BS5837 tree data entry
 
-## Database Schema (IndexedDB)
+Notes: Text notes + tags + project linking
 
-### Tables
-- **projects**: id, name, description, location, client, createdAt, updatedAt
-- **trees**: id, projectId, number, species, scientificName, DBH, height, age, category, condition, photos
-- **notes**: id, projectId, title, content, transcript, tags, type, createdAt, updatedAt
-- **tasks**: id, title, content, status, priority, dueDate, projectId, tags, createdAt, updatedAt
-- **reports**: id, projectId, title, type, pdfBlob, generatedAt
-- **links**: id, sourceId, targetId, sourceType, targetType, relationType
-- **chatMessages**: id, role, content, timestamp
+Tasks: Multi‑project task manager
 
-### Key Functions (in `src/lib/db/index.ts`)
-- `createProject()`, `getProjects()`, `updateProject()`, `deleteProject()`
-- `createTree()`, `getTrees()`, `updateTree()`, `deleteTree()`
-- `createNote()`, `getNotes()`, `updateNote()`, `deleteNote()`
-- `createTask()`, `getAllTasks()`, `updateTask()`, `deleteTask()`
-- `createLink()`, `getLinksForObject()`
-- `saveChatMessage()`, `getChatHistory()`
+Reports: BS5837 report generator
 
----
+AI Chat: Groq‑powered assistant
 
-## Environment Variables
+Blog Writer: AI‑assisted blog creation
 
-### Required
-- **Groq API Key**: Configure in Settings page (or use default dev key)
+Learn My Style: Train AI on writing samples
 
-### Optional
-- **PocketBase URL**: For cloud sync (Settings → Cloud Backend)
+Help Center: Documentation
 
----
+Settings: API keys, dummy data, export/import
 
-## Deployment Instructions
+Voice Notes: Audio recording + transcription (inconsistent)
 
-### Cloudflare Pages (Recommended)
+Dictation: Browser SpeechRecognition (inconsistent)
 
-1. **Connect GitHub to Cloudflare**:
-   - Go to Cloudflare Dashboard → Pages
-   - Connect your GitHub repository
-   - Select "SvelteKit" as the framework
+Recently Identified Architectural Problems
+Voice System Issues
+Three different recording implementations
 
-2. **Configure Build Settings**:
-   - Build command: `npm run build`
-   - Build output directory: `build`
+Two Whisper integrations
 
-3. **Deploy**:
-   - Push to main branch
-   - Cloudflare will auto-deploy
+No audio saving
 
-### Local Development
-```bash
-cd oscar-ai
-npm install
-npm run dev
-```
+No playback
 
-### Production Build
-```bash
-npm run build
-# Output in build/ folder
-```
+No unified API
 
----
+No unified UX
 
-## Known Issues / Limitations
+No error handling consistency
 
-1. **Local Storage Only**: Data stored in browser IndexedDB, not synced between devices (unless PocketBase is configured)
-2. **Authentication**: Simple local auth, not secure for production
-3. **Voice Notes**: Require microphone permissions
-4. **PDF Generation**: Basic implementation, may need refinement
+No voice intents
 
----
+Intent & Context Issues
+Two project ID systems
 
-## Future Improvements (Suggested)
+Two confirmation systems
 
-1. **Secure Authentication**: Implement proper auth with PocketBase
-2. **Cloud Sync**: Full PocketBase integration
-3. **Google Drive**: Connect to Google Drive for file storage
-4. **Offline Support**: PWA capabilities
-5. **Advanced Reports**: More BS5837 report templates
-6. **Maps Integration**: Interactive site maps
+Mixed storage (localStorage + IndexedDB)
 
----
+Task extraction over‑triggering
 
-## Support
+General chat misclassified as tasks
 
-For issues or questions:
-- Check `/help` in the app for documentation
-- Review source code in `/src/lib`
-- Console logs available for debugging
+Project mode leaking into general chat
 
----
+UI claiming tasks were created when none were
 
-## Handover Checklist
+No voice integration into intent system
 
-- [x] Project builds successfully
-- [x] All routes functional
-- [x] Database schema documented
-- [x] Deployment configuration ready
-- [x] Dummy data system implemented
+No “don’t be dumb” rules
 
----
+Chat & UI Issues
+Misleading system messages
 
-**Last Updated**: February 2026  
-**Version**: 1.0.0 (Dev)
+Inconsistent context switching UI
+
+No unified feedback model
+
+No unified action execution pipeline
+
+Technical Stack
+Frontend:
+
+SvelteKit 2.x
+
+TailwindCSS
+
+Svelte stores
+
+Dexie.js (IndexedDB)
+
+Backend / Storage:
+
+Local IndexedDB (primary)
+
+Optional PocketBase (not fully integrated)
+
+Groq API (LLM + Whisper)
+
+Deployment:
+
+Cloudflare Pages
+
+SSR enabled
+
+Updated File Structure (2026)
+src/
+lib/
+components/
+chat/
+voice/
+reports/
+tasks/
+ui/
+db/
+index.ts
+services/
+intentEngine.ts
+contextInference.ts
+aiActions.ts
+textProcessing.ts
+whisper.ts
+groq.ts
+pocketbase.ts
+stores/
+chatContext.ts
+settings.ts
+uiState.ts
+utils/
+routes/
+oscar/            (AI chat)
+project/[id]/     (Project dashboard)
+tasks/            (Task manager)
+notes/            (Notes)
+reports/          (Reports)
+learn/            (Style learning)
+help/             (Help center)
+settings/         (Settings)
+dashboard/        (Home)
+
+Database Schema (Updated)
+Tables:
+
+projects
+
+trees
+
+notes (includes voice notes)
+
+tasks
+
+reports
+
+links
+
+chatMessages
+
+Known Issues:
+
+Voice notes do not save audio
+
+No audio playback
+
+No unified schema for voice metadata
+
+Some features still use localStorage
+
+Recent Audits (Critical)
+Voice System Audit found:
+
+3 recording systems
+
+2 Whisper integrations
+
+No audio saving
+
+No playback
+
+No unified API
+
+No unified UX
+
+No error handling
+
+Unused components
+
+Missing endpoints
+
+Intent & Context Audit found:
+
+11 intent types
+
+sophisticated but inconsistent context inference
+
+duplicated project ID logic
+
+duplicated confirmation logic
+
+mixed storage
+
+task extraction over‑triggering
+
+general chat misclassified
+
+misleading UI messages
+
+no voice intents
+
+Refactor Status (Accurate)
+IMPORTANT: No refactor has actually been completed.
+
+Roo hallucinated a full refactor.
+No files were created.
+No code was changed.
+No migrations happened.
+No new services exist.
+No UI components were added.
+No TypeScript compilation occurred.
+No build occurred.
+
+The system is still in its pre‑refactor state.
+
+The audits are real.
+The hallucinated refactor is not.
+
+Next Steps (Correct Path)
+Update Handover.md
+✔ Done — this is the updated version.
+
+Feed this document to Roo
+So it understands the real state of the project.
+
+Give Roo the Hallucination‑Proof Multi‑Phase Mega‑Prompt
+This ensures:
+
+no hallucinated completion
+
+no invented files
+
+no skipped phases
+
+no code before Phase 3
+
+strict validation gates
+
+safe autonomous execution
+
+Roo begins Phase 1: Unified Architecture Redesign
+No code.
+Just design.
+
+Handover Checklist (Updated)
+Architecture audits completed
+
+Handover.md updated
+
+Roo re‑initialized
+
+Hallucination‑proof mega‑prompt given
+
+Phase 1 redesign
+
+Phase 2 implementation plan
+
+Phase 3 code refactor
+
+Phase 4 validation
+
+Final Notes
+This document is now the single source of truth for the current state of Oscar AI.
+It replaces the old handover entirely.

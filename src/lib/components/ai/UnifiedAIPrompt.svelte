@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { db } from '$lib/db';
 	import { groqApiKey } from '$lib/stores/settings';
-	import { parseUserAnswer } from '$lib/services/aiActions';
 	import { getProjectReviewStatus } from '$lib/services/projectReview';
 
 	export let projectId: string = '';

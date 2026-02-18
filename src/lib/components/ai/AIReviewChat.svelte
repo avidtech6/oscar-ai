@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { db, type Project } from '$lib/db';
 	import { groqApiKey } from '$lib/stores/settings';
+	// TODO: parseUserAnswer is a specialized AI function for parsing free-text answers
+	// This doesn't need migration to unified architecture as it's not part of intent system
 	import { parseUserAnswer } from '$lib/services/aiActions';
 	import type { Issue } from '$lib/types/aiReview';
 

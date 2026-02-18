@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
+	import { voiceRecordingService } from '$lib/services/unified/VoiceRecordingService';
+	import { unifiedIntentEngine } from '$lib/services/unified/UnifiedIntentEngine';
+	import { intentFeedbackService } from '$lib/services/unified/IntentFeedbackService';
+	import { projectContextStore } from '$lib/services/unified/ProjectContextStore';
 	
 	export let accessToken: string = '';
 	export let projectFolderId: string = '';
@@ -17,12 +21,6 @@
 	let recordingDuration = 0;
 	let recordingInterval: ReturnType<typeof setInterval>;
 	
-	// Audio
-	let mediaRecorder: MediaRecorder | null = null;
-	let audioChunks: Blob[] = [];
-	let audioBlob: Blob | null = null;
-	let audioUrl: string = '';
-	
 	// Transcription
 	let transcript = '';
 	let finalTranscript = '';
@@ -30,6 +28,12 @@
 	// Summary
 	let summary = '';
 	let isSummarizing = false;
+	
+	// Audio playback
+	let audioUrl: string | null = null;
+	let isPlaying = false;
+	let audioElement: HTMLAudioElement | null = null;
+	let currentAudioBlob: Blob | null = null;
 	
 	// Mode switching
 	function setMode(newMode: 'chat' | 'dictation' | 'voice-note') {
@@ -40,47 +44,53 @@
 		dispatch('modeChange', { mode: newMode });
 	}
 	
-	// Start recording
+	// Start recording using unified service with intent detection
 	async function startRecording() {
 		try {
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			
-			mediaRecorder = new MediaRecorder(stream, {
-				mimeType: 'audio/webm;codecs=opus'
-			});
-			
-			audioChunks = [];
-			
-			mediaRecorder.ondataavailable = (event) => {
-				if (event.data.size > 0) {
-					audioChunks.push(event.data);
-				}
-			};
-			
-			mediaRecorder.onstop = async () => {
-				audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-				audioUrl = URL.createObjectURL(audioBlob);
-				
-				if (mode === 'dictation') {
-					await transcribeAudio();
-				}
-				
-				// Stop all tracks
-				stream.getTracks().forEach(track => track.stop());
-			};
-			
-			// Start recording
-			if (mode === 'dictation') {
-				// For dictation, record in chunks for real-time transcription
-				mediaRecorder.start(2000); // Send chunks every 2 seconds
-			} else {
-				// For voice notes, record continuously
-				mediaRecorder.start(1000);
-			}
-			
 			isRecording = true;
 			recordingDuration = 0;
 			
+			// Start recording with intent detection for enhanced voice processing
+			const success = await voiceRecordingService.startRecordingWithIntentDetection(
+				{
+					autoTranscribe: true,
+					maxDuration: 60000, // 60 seconds max
+				},
+				{
+					onTranscription: (text: string, isFinal: boolean) => {
+						if (mode === 'dictation') {
+							if (isFinal) {
+								finalTranscript = text;
+								transcript = text;
+								dispatch('transcript', { text: transcript, final: true });
+							} else {
+								transcript = text;
+								dispatch('transcript', { text: transcript, final: false });
+							}
+						}
+					},
+					onIntentDetected: (intentResult: any) => {
+						// Display intent feedback in real-time
+						if (intentResult && mode === 'voice-note') {
+							dispatch('intentDetected', {
+								intent: intentResult.intent,
+								confidence: intentResult.confidence,
+								requiresConfirmation: intentResult.requiresConfirmation
+							});
+						}
+					},
+					onError: (error: string) => {
+						console.error('Voice recording error:', error);
+						dispatch('error', { message: error });
+					}
+				}
+			);
+			
+			if (!success) {
+				throw new Error('Failed to start recording');
+			}
+			
+			// Start duration timer
 			recordingInterval = setInterval(() => {
 				recordingDuration++;
 			}, 1000);
@@ -88,238 +98,114 @@
 		} catch (error) {
 			console.error('Error starting recording:', error);
 			dispatch('error', { message: 'Could not access microphone. Please check permissions.' });
+			isRecording = false;
 		}
 	}
 	
 	// Stop recording
 	function stopRecording() {
-		if (mediaRecorder && isRecording) {
-			mediaRecorder.stop();
+		if (isRecording) {
+			voiceRecordingService.stopRecording();
 			isRecording = false;
 			clearInterval(recordingInterval);
 		}
 	}
 	
-	// Transcribe audio using Whisper
-	async function transcribeAudio() {
-		if (!audioBlob) return;
-		
+	// Process voice note using unified services with enhanced voice processing
+	async function processVoiceNote(audioBlob: Blob) {
 		isProcessing = true;
 		
 		try {
-			const formData = new FormData();
-			formData.append('audio', audioBlob, 'audio.webm');
+			// 1. Transcribe audio
+			finalTranscript = await voiceRecordingService.transcribeAudio(audioBlob) || '';
 			
-			const response = await fetch('/api/whisper/transcribe', {
-				method: 'POST',
-				body: formData
-			});
-			
-			const data = await response.json();
-			
-			if (data.success && data.text) {
-				if (mode === 'dictation') {
-					transcript += ' ' + data.text;
-					dispatch('transcript', { text: transcript, final: false });
-				} else {
-					finalTranscript = data.text;
+			if (finalTranscript) {
+				// 2. Process voice transcription with enhanced intent detection
+				const intentResult = await unifiedIntentEngine.processVoiceTranscription(finalTranscript, {
+					audioBlob,
+					duration: recordingDuration * 1000, // Convert to milliseconds
+				});
+				
+				// 3. Get feedback based on intent
+				const feedback = intentFeedbackService.getFeedback(intentResult);
+				
+				// 4. Generate summary using intent context
+				summary = await voiceRecordingService.generateSummary(finalTranscript, {
+					intent: intentResult.intent,
+					confidence: intentResult.confidence,
+					entities: intentResult.data?.entities || {}
+				}) || '';
+				
+				// 5. Save to database if in project context
+				const projectContext = projectContextStore;
+				const currentProjectId = projectContext.currentProjectId;
+				
+				if (currentProjectId) {
+					await voiceRecordingService.saveVoiceNote({
+						projectId: currentProjectId,
+						audioBlob,
+						transcript: finalTranscript,
+						summary,
+						intent: intentResult.intent,
+						metadata: {
+							duration: recordingDuration,
+							timestamp: new Date(),
+							intentConfidence: intentResult.confidence,
+							feedback: feedback.message,
+							voiceMetadata: intentResult.data?.voiceMetadata || {}
+						}
+					});
 				}
-			} else {
-				console.error('Transcription failed:', data.error);
-				dispatch('error', { message: 'Transcription failed' });
+				
+				// Store audio blob for playback
+				await playAudio(audioBlob);
+				
+				dispatch('complete', {
+					transcript: finalTranscript,
+					summary,
+					intent: intentResult.intent,
+					confidence: intentResult.confidence,
+					requiresConfirmation: intentResult.requiresConfirmation,
+					feedback: feedback.message,
+					voiceData: intentResult.data?.voiceMetadata
+				});
 			}
 		} catch (error) {
-			console.error('Transcription error:', error);
-			dispatch('error', { message: 'Failed to transcribe audio' });
-		} finally {
-			isProcessing = false;
-		}
-	}
-	
-	// Upload audio to Google Drive
-	async function uploadToDrive(): Promise<string | null> {
-		if (!audioBlob || !accessToken || !projectFolderId) {
-			return null;
-		}
-		
-		try {
-			const response = await fetch('/api/drive/upload-audio', {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${accessToken}`
-				},
-				body: (() => {
-					const formData = new FormData();
-					formData.append('audio', audioBlob, 'voice-note.webm');
-					formData.append('folderId', projectFolderId);
-					formData.append('projectName', projectName || 'Voice Note');
-					return formData;
-				})()
-			});
-			
-			const data = await response.json();
-			return data.fileId || null;
-		} catch (error) {
-			console.error('Upload error:', error);
-			return null;
-		}
-	}
-	
-	// Save transcript to Drive
-	async function saveTranscriptToDrive(audioFileId: string): Promise<string | null> {
-		if (!finalTranscript || !accessToken || !projectFolderId) {
-			return null;
-		}
-		
-		try {
-			const response = await fetch('/api/drive/save-transcript', {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${accessToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					content: finalTranscript,
-					folderId: projectFolderId,
-					title: `VoiceNote_${new Date().toISOString().split('T')[0]}`,
-					type: 'transcript',
-					audioFileId
-				})
-			});
-			
-			const data = await response.json();
-			return data.fileId || null;
-		} catch (error) {
-			console.error('Save transcript error:', error);
-			return null;
-		}
-	}
-	
-	// Generate summary using Llama 3
-	async function generateSummary(): Promise<string> {
-		if (!finalTranscript) return '';
-		
-		isSummarizing = true;
-		
-		try {
-			const response = await fetch('/api/chat', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					message: `Please summarize the following voice note. Include:
-1. Key points (bullet list)
-2. Action items (if any)
-3. A brief overview (2-3 sentences)
-
-Voice Note:
-${finalTranscript}`,
-					context: ''
-				})
-			});
-			
-			const data = await response.json();
-			return data.response || '';
-		} catch (error) {
-			console.error('Summary error:', error);
-			return 'Failed to generate summary';
-		} finally {
-			isSummarizing = false;
-		}
-	}
-	
-	// Save summary to Drive
-	async function saveSummaryToDrive(audioFileId: string, transcriptFileId: string): Promise<string | null> {
-		if (!summary || !accessToken || !projectFolderId) {
-			return null;
-		}
-		
-		try {
-			const response = await fetch('/api/drive/save-summary', {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${accessToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					content: summary,
-					folderId: projectFolderId,
-					title: `VoiceNote_${new Date().toISOString().split('T')[0]}`,
-					metadata: {
-						audioFileId,
-						transcriptFileId,
-						generatedAt: new Date().toISOString()
-					}
-				})
-			});
-			
-			const data = await response.json();
-			return data.fileId || null;
-		} catch (error) {
-			console.error('Save summary error:', error);
-			return null;
-		}
-	}
-	
-	// Complete voice note flow
-	async function completeVoiceNote() {
-		if (!audioBlob || !accessToken) return;
-		
-		isProcessing = true;
-		
-		try {
-			// 1. Upload audio to Drive
-			const audioFileId = await uploadToDrive();
-			
-			// 2. Transcribe audio (if not already done)
-			if (!finalTranscript) {
-				await transcribeAudio();
-			}
-			
-			// 3. Save transcript to Drive
-			const transcriptFileId = audioFileId ? await saveTranscriptToDrive(audioFileId) : null;
-			
-			// 4. Generate summary
-			summary = await generateSummary();
-			
-			// 5. Save summary to Drive
-			if (summary && audioFileId) {
-				await saveSummaryToDrive(audioFileId, transcriptFileId || '');
-			}
-			
-			dispatch('complete', {
-				audioFileId,
-				transcriptFileId,
-				transcript: finalTranscript,
-				summary
-			});
-			
-			// Reset
-			reset();
-			
-		} catch (error) {
-			console.error('Complete voice note error:', error);
+			console.error('Error processing voice note:', error);
 			dispatch('error', { message: 'Failed to process voice note' });
 		} finally {
 			isProcessing = false;
 		}
 	}
 	
-	// Reset everything
-	function reset() {
-		audioBlob = null;
-		audioUrl = '';
-		transcript = '';
-		finalTranscript = '';
-		summary = '';
-		recordingDuration = 0;
-		audioChunks = [];
-	}
-	
-	// Send message in chat mode
-	function sendMessage(text: string) {
-		dispatch('send', { message: text });
+	// Send message in chat mode with intent analysis
+	async function sendMessage(text: string) {
+		if (!text.trim()) return;
+		
+		isProcessing = true;
+		
+		try {
+			// Analyze intent from text
+			const intentResult = await unifiedIntentEngine.detectIntent(text);
+			
+			// Get feedback
+			const feedback = intentFeedbackService.getFeedback(intentResult);
+			
+			// Dispatch with intent context
+			dispatch('send', { 
+				message: text,
+				intent: intentResult.intent,
+				confidence: intentResult.confidence,
+				entities: intentResult.entities,
+				feedback: feedback.message
+			});
+		} catch (error) {
+			console.error('Error analyzing intent:', error);
+			// Fall back to simple message dispatch
+			dispatch('send', { message: text });
+		} finally {
+			isProcessing = false;
+		}
 	}
 	
 	// Format duration
@@ -329,6 +215,84 @@ ${finalTranscript}`,
 		return `${mins}:${secs.toString().padStart(2, '0')}`;
 	}
 	
+	// Reset everything
+	function reset() {
+		transcript = '';
+		finalTranscript = '';
+		summary = '';
+		recordingDuration = 0;
+		
+		// Clean up audio URL
+		if (audioUrl) {
+			URL.revokeObjectURL(audioUrl);
+			audioUrl = null;
+		}
+		
+		// Stop audio playback
+		if (audioElement) {
+			audioElement.pause();
+			audioElement = null;
+		}
+		
+		// Clear audio blob
+		currentAudioBlob = null;
+		isPlaying = false;
+	}
+
+	// Play audio from blob
+	async function playAudio(audioBlob: Blob) {
+		// Clean up previous audio
+		if (audioUrl) {
+			URL.revokeObjectURL(audioUrl);
+		}
+		if (audioElement) {
+			audioElement.pause();
+		}
+		
+		// Store the blob for later use
+		currentAudioBlob = audioBlob;
+		
+		// Create new audio URL and element
+		audioUrl = URL.createObjectURL(audioBlob);
+		audioElement = new Audio(audioUrl);
+		
+		audioElement.onplay = () => {
+			isPlaying = true;
+		};
+		
+		audioElement.onpause = () => {
+			isPlaying = false;
+		};
+		
+		audioElement.onended = () => {
+			isPlaying = false;
+		};
+		
+		try {
+			await audioElement.play();
+		} catch (error) {
+			console.error('Error playing audio:', error);
+			isPlaying = false;
+		}
+	}
+	
+	// Pause audio
+	function pauseAudio() {
+		if (audioElement) {
+			audioElement.pause();
+			isPlaying = false;
+		}
+	}
+	
+	// Stop audio
+	function stopAudio() {
+		if (audioElement) {
+			audioElement.pause();
+			audioElement.currentTime = 0;
+			isPlaying = false;
+		}
+	}
+
 	onDestroy(() => {
 		if (isRecording) {
 			stopRecording();
@@ -336,8 +300,16 @@ ${finalTranscript}`,
 		if (recordingInterval) {
 			clearInterval(recordingInterval);
 		}
+		
+		// Clean up audio URL
 		if (audioUrl) {
 			URL.revokeObjectURL(audioUrl);
+		}
+		
+		// Clean up audio element
+		if (audioElement) {
+			audioElement.pause();
+			audioElement = null;
 		}
 	});
 </script>
@@ -440,74 +412,105 @@ ${finalTranscript}`,
 	<!-- Voice Note Mode UI -->
 	{#if mode === 'voice-note'}
 		<div class="voice-note-container" transition:slide>
-			{#if audioUrl && !isRecording}
-				<div class="audio-preview">
-					<audio controls src={audioUrl}></audio>
+			{#if finalTranscript}
+				<div class="transcript-section">
+					<h4>Transcript</h4>
+					<p>{finalTranscript}</p>
 				</div>
-				
-				{#if finalTranscript}
-					<div class="transcript-section">
-						<h4>Transcript</h4>
-						<p>{finalTranscript}</p>
-					</div>
-				{/if}
-				
-				{#if summary}
-					<div class="summary-section">
-						<h4>AI Summary</h4>
-						<p>{summary}</p>
-					</div>
-				{/if}
-				
-				<div class="voice-note-actions">
-					{#if !finalTranscript}
-						<button class="transcribe-btn" on:click={transcribeAudio} disabled={isProcessing}>
-							Transcribe
-						</button>
-					{/if}
-					
-					{#if finalTranscript && !summary}
-						<button class="summarize-btn" on:click={generateSummary} disabled={isSummarizing}>
-							{#if isSummarizing}
-								Generating Summary...
+			{/if}
+			
+			{#if summary}
+				<div class="summary-section">
+					<h4>AI Summary</h4>
+					<p>{summary}</p>
+				</div>
+			{/if}
+			
+			<!-- Audio Playback Section -->
+			{#if audioUrl && finalTranscript}
+				<div class="audio-preview">
+					<h4>Audio Playback</h4>
+					<div class="audio-controls">
+						<button
+							class="audio-btn"
+							on:click={() => isPlaying ? pauseAudio() : currentAudioBlob && playAudio(currentAudioBlob)}
+							disabled={!audioUrl || !currentAudioBlob}
+						>
+							{#if isPlaying}
+								<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+									<rect x="6" y="4" width="4" height="16" rx="1"/>
+									<rect x="14" y="4" width="4" height="16" rx="1"/>
+								</svg>
+								Pause
 							{:else}
-								Generate Summary
+								<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+									<polygon points="5,4 19,12 5,20" />
+								</svg>
+								Play
 							{/if}
 						</button>
-					{/if}
-					
-					{#if summary}
-						<button class="save-btn" on:click={completeVoiceNote} disabled={isProcessing}>
-							Save to Drive
+						
+						<button
+							class="audio-btn secondary"
+							on:click={stopAudio}
+							disabled={!audioUrl || !isPlaying}
+						>
+							<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+								<rect x="4" y="4" width="16" height="16" rx="2"/>
+							</svg>
+							Stop
 						</button>
-					{/if}
+						
+						<span class="audio-hint">
+							{#if isPlaying}
+								Playing...
+							{:else}
+								Ready to play
+							{/if}
+						</span>
+					</div>
+				</div>
+			{/if}
+			
+			<div class="voice-note-actions">
+				{#if !isRecording && !finalTranscript}
+					<button
+						class="record-btn large"
+						on:click={startRecording}
+						disabled={isProcessing}
+					>
+						<svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+						</svg>
+						<span>Start Recording</span>
+					</button>
+				{/if}
+				
+				{#if isRecording}
+					<button
+						class="record-btn large recording"
+						on:click={stopRecording}
+					>
+						<svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+							<rect x="6" y="6" width="12" height="12" rx="2"/>
+						</svg>
+						<span>Stop Recording</span>
+					</button>
+				{/if}
+				
+				{#if finalTranscript}
+					<button class="save-btn" on:click={reset}>
+						New Recording
+					</button>
 					
 					<button class="discard-btn" on:click={reset}>
 						Discard
 					</button>
-				</div>
-			{:else}
-				<div class="record-prompt">
-					<button 
-						class="record-btn large" 
-						class:recording={isRecording}
-						on:click={() => isRecording ? stopRecording() : startRecording()}
-						disabled={isProcessing}
-					>
-						{#if isRecording}
-							<svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-								<rect x="6" y="6" width="12" height="12" rx="2"/>
-							</svg>
-							<span>Stop Recording</span>
-						{:else}
-							<svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
-							</svg>
-							<span>Start Recording</span>
-						{/if}
-					</button>
-					<p class="hint">Record a voice note to transcribe and summarize</p>
-				</div>
+				{/if}
+			</div>
+			
+			{#if !isRecording && !finalTranscript}
+				<p class="hint">Record a voice note to transcribe and summarize</p>
 			{/if}
 		</div>
 	{/if}
@@ -724,15 +727,62 @@ ${finalTranscript}`,
 		font-size: 13px;
 		color: #6b7280;
 	}
-
+	
 	.audio-preview {
 		padding: 16px;
 		background: #f9fafb;
 		border-radius: 8px;
+		margin-bottom: 12px;
 	}
-
-	.audio-preview audio {
-		width: 100%;
+	
+	.audio-preview h4 {
+		font-size: 13px;
+		font-weight: 600;
+		color: #374151;
+		margin-bottom: 12px;
+	}
+	
+	.audio-controls {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+	
+	.audio-btn {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 16px;
+		border: none;
+		border-radius: 8px;
+		background: #2f5233;
+		color: white;
+		font-size: 14px;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+	
+	.audio-btn:hover {
+		background: #234026;
+	}
+	
+	.audio-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+	
+	.audio-btn.secondary {
+		background: #6b7280;
+	}
+	
+	.audio-btn.secondary:hover {
+		background: #4b5563;
+	}
+	
+	.audio-hint {
+		font-size: 13px;
+		color: #6b7280;
+		margin-left: auto;
 	}
 
 	.transcript-section,

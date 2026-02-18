@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
-	import { transcribeAudio, getSupportedMimeType } from '$lib/services/whisper';
+	import { voiceRecordingService } from '$lib/services/unified/VoiceRecordingService';
+	import { intentFeedbackService } from '$lib/services/unified/IntentFeedbackService';
 
 	export let projectId: string;
 
@@ -10,14 +11,10 @@
 	let isProcessing = false;
 	let recordingTime = 0;
 	let error = '';
-	let mediaRecorder: MediaRecorder | null = null;
-	let audioChunks: Blob[] = [];
-	let stream: MediaStream | null = null;
 	let timerInterval: number | null = null;
 
 	// Visual feedback
 	let audioLevel = 0;
-	let analyser: AnalyserNode | null = null;
 	let animationFrame: number | null = null;
 
 	onMount(() => {
@@ -38,45 +35,19 @@
 		console.log('VoiceRecorder: Starting recording...');
 		
 		try {
-			console.log('VoiceRecorder: Requesting microphone access...');
-			stream = await navigator.mediaDevices.getUserMedia({
-				audio: {
-					echoCancellation: true,
-					noiseSuppression: true,
-					autoGainControl: true
-				}
+			// Use unified voice recording service
+			const started = await voiceRecordingService.startRecording({
+				maxDuration: 300000, // 5 minutes in milliseconds
+				autoTranscribe: false
 			});
-			console.log('VoiceRecorder: Microphone access granted');
-
-			const mimeType = getSupportedMimeType();
-			console.log('VoiceRecorder: Using mimeType:', mimeType);
-			mediaRecorder = new MediaRecorder(stream, { mimeType });
-
-			audioChunks = [];
-
-			mediaRecorder.ondataavailable = (event) => {
-				if (event.data.size > 0) {
-					audioChunks.push(event.data);
-					console.log('VoiceRecorder: Data chunk received, size:', event.data.size);
-				}
-			};
-
-			mediaRecorder.onstop = async () => {
-				console.log('VoiceRecorder: Recording stopped, audio chunks:', audioChunks.length);
-				const audioBlob = new Blob(audioChunks, { type: mimeType });
-				console.log('VoiceRecorder: Audio blob created, size:', audioBlob.size);
-				await processAudio(audioBlob);
-			};
-
-			// Set up audio analyser for visual feedback
-			const audioContext = new AudioContext();
-			const source = audioContext.createMediaStreamSource(stream);
-			analyser = audioContext.createAnalyser();
-			analyser.fftSize = 256;
-			source.connect(analyser);
-			visualize();
-
-			mediaRecorder.start(100); // Collect data every 100ms
+			
+			if (!started) {
+				throw new Error('Failed to start recording');
+			}
+			
+			// Show feedback
+			intentFeedbackService.showVoiceRecording('started');
+			
 			isRecording = true;
 			recordingTime = 0;
 			console.log('VoiceRecorder: Recording started successfully');
@@ -84,11 +55,17 @@
 			// Start timer
 			timerInterval = setInterval(() => {
 				recordingTime++;
+				// Update audio level for visualization
+				audioLevel = voiceRecordingService.getAudioLevel() / 100;
+				
 				// Max 5 minutes
 				if (recordingTime >= 300) {
 					stopRecording();
 				}
 			}, 1000);
+			
+			// Start visualization
+			visualize();
 
 		} catch (err) {
 			console.error('VoiceRecorder: Failed to start recording:', err);
@@ -103,18 +80,32 @@
 			} else {
 				error = 'Failed to start recording. Please check your microphone permissions.';
 			}
+			
+			// Show error feedback
+			intentFeedbackService.showVoiceRecording('error', error);
 		}
 	}
 
 	function stopRecording() {
-		if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-			mediaRecorder.stop();
-		}
+		if (!isRecording) return;
 		
-		if (stream) {
-			stream.getTracks().forEach(track => track.stop());
-			stream = null;
-		}
+		// Stop recording using unified service
+		voiceRecordingService.stopRecording().then(async (result) => {
+			if (result.success && result.audioBlob) {
+				// Show feedback
+				intentFeedbackService.showVoiceRecording('stopped');
+				
+				// Process the audio
+				await processAudio(result.audioBlob);
+			} else {
+				error = result.error || 'Recording failed';
+				intentFeedbackService.showVoiceRecording('error', error);
+			}
+		}).catch(err => {
+			console.error('Error stopping recording:', err);
+			error = 'Failed to stop recording';
+			intentFeedbackService.showVoiceRecording('error', error);
+		});
 		
 		if (timerInterval) {
 			clearInterval(timerInterval);
@@ -131,7 +122,7 @@
 
 	async function processAudio(audioBlob: Blob) {
 		console.log('VoiceRecorder: Processing audio, blob size:', audioBlob.size);
-		if (audioChunks.length === 0 || audioBlob.size < 100) {
+		if (audioBlob.size < 100) {
 			error = 'Recording too short. Please try again.';
 			console.log('VoiceRecorder: Recording too short');
 			return;
@@ -140,22 +131,26 @@
 		isProcessing = true;
 		error = '';
 		console.log('VoiceRecorder: Starting transcription...');
+		
+		// Show processing feedback
+		intentFeedbackService.showVoiceRecording('processing');
 
 		try {
 			console.log('VoiceRecorder: Calling transcribeAudio...');
-			const result = await transcribeAudio(audioBlob);
-			console.log('VoiceRecorder: Transcription result:', result);
+			const transcript = await voiceRecordingService.transcribeAudio(audioBlob);
+			console.log('VoiceRecorder: Transcription result length:', transcript?.length || 0);
 			
-			if (result.text && result.text.trim()) {
-				console.log('VoiceRecorder: Transcription successful, text length:', result.text.length);
+			if (transcript && transcript.trim()) {
+				console.log('VoiceRecorder: Transcription successful, text length:', transcript.length);
 				// Dispatch the transcribed text to parent
 				dispatch('transcript', {
-					text: result.text.trim(),
+					text: transcript.trim(),
 					projectId
 				});
 			} else {
 				error = 'No speech detected in recording. Please try again.';
 				console.log('VoiceRecorder: No speech detected');
+				intentFeedbackService.showVoiceRecording('error', error);
 			}
 		} catch (err) {
 			console.error('VoiceRecorder: Transcription error:', err);
@@ -165,6 +160,7 @@
 			} else {
 				error = 'Transcription failed. Please try again.';
 			}
+			intentFeedbackService.showVoiceRecording('error', error);
 		} finally {
 			isProcessing = false;
 			recordingTime = 0;
@@ -173,16 +169,9 @@
 	}
 
 	function visualize() {
-		if (!analyser) return;
-		
-		const dataArray = new Uint8Array(analyser.frequencyBinCount);
-		analyser.getByteFrequencyData(dataArray);
-		
-		// Calculate average level
-		const sum = dataArray.reduce((a, b) => a + b, 0);
-		audioLevel = sum / dataArray.length / 255;
-		
+		// Update audio level from service
 		if (isRecording) {
+			audioLevel = voiceRecordingService.getAudioLevel() / 100;
 			animationFrame = requestAnimationFrame(visualize);
 		}
 	}
