@@ -1,5 +1,5 @@
 REPORT INTELLIGENCE SYSTEM — PHASE INDEX
-This subsystem governs all intelligent reporting capabilities in AgentV, including report classification, schema evolution, style learning, self‑healing, and reproduction of professional arboricultural reports.
+This subsystem governs all intelligent reporting capabilities in AgentV, including report classification, schema evolution, style learning, self‑healing, visual reproduction, and full PDF ingestion.
 
 Each phase is explicit, self‑contained, and hallucination‑proof.
 No phase may be started until the previous one is fully completed and validated.
@@ -46,6 +46,50 @@ Learn how each user works: their habits, preferred order of operations, typical 
 
 PHASE 14 — FINAL INTEGRATION & VALIDATION
 Integrate all components, run full system tests, validate against real reports (e.g., BS5837), and ensure stability and correctness.
+
+PHASE 15 — HTML RENDERING & VISUAL REPRODUCTION ENGINE
+Add a full visual rendering subsystem capable of producing layout‑accurate HTML and PDF reports with:
+
+Headers & footers
+
+Cover pages
+
+Images & logos
+
+Page breaks
+
+Typography & spacing
+
+Multi‑page PDF export
+
+Visual preview window
+
+Snapshot capture for gallery & reproduction testing
+
+This phase enables true visual reproduction of reports and integrates with Phases 8, 10, 13, and 14.
+
+PHASE 16 — DIRECT PDF PARSING & LAYOUT EXTRACTION ENGINE
+Add native PDF ingestion so the system can read .pdf files directly and extract:
+
+Text (with correct reading order)
+
+Images
+
+Tables
+
+Page geometry
+
+Layout structure
+
+Fonts & typography
+
+Header/footer regions
+
+Cover page structure
+
+Page breaks
+
+This phase completes the ingestion pipeline, enabling raw PDF → structured data → visual reproduction → template generation with no manual steps.
 
 EXECUTION RULES
 Phases must be executed in order.

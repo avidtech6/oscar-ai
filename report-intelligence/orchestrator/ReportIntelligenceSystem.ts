@@ -49,6 +49,7 @@ export interface SystemStatus {
     typeExpansion: boolean;
     aiReasoning: boolean;
     workflowLearning: boolean;
+    visualRendering: boolean;
   };
   pipelineStatus: 'idle' | 'running' | 'completed' | 'error';
   lastPipelineRun?: Date;
@@ -82,6 +83,7 @@ export class ReportIntelligenceSystem {
   private typeExpansion: any;
   private aiReasoning: any;
   private workflowLearning: any;
+  private visualRendering: any;
 
   // Event system
   private eventListeners: Map<SystemEvent, Set<EventListener>> = new Map();
@@ -101,7 +103,8 @@ export class ReportIntelligenceSystem {
       reproductionTester: false,
       typeExpansion: false,
       aiReasoning: false,
-      workflowLearning: false
+      workflowLearning: false,
+      visualRendering: false
     },
     pipelineStatus: 'idle',
     errors: [],
@@ -259,6 +262,113 @@ export class ReportIntelligenceSystem {
       const { UserWorkflowLearningEngine } = await import('../workflow-learning/UserWorkflowLearningEngine');
       this.workflowLearning = new UserWorkflowLearningEngine();
       this.status.subsystems.workflowLearning = true;
+
+      // Note: Phase 15 (Visual Rendering Engine) may not exist - we'll handle gracefully
+      try {
+        const { VisualRenderingEngine } = await import('../visual-rendering/engines/VisualRenderingEngine');
+        // Create with default options
+        const defaultOptions: any = {
+          layout: {
+            size: 'A4' as const,
+            orientation: 'portrait' as const,
+            margins: { top: 25, right: 20, bottom: 25, left: 20 }
+          },
+          typography: {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: 11,
+            lineHeight: 1.5,
+            fontWeight: 'normal' as const,
+            fontColor: '#000000',
+            headingFontFamily: 'Arial, sans-serif',
+            headingFontSizeMultiplier: 1.2
+          },
+          spacing: {
+            paragraphSpacing: 12,
+            sectionSpacing: 24,
+            indentSize: 36,
+            listItemSpacing: 6
+          },
+          colors: {
+            primary: '#2f5233',
+            secondary: '#6b7280',
+            accent: '#059669',
+            background: '#ffffff',
+            text: '#000000',
+            headings: '#2f5233',
+            borders: '#e5e7eb'
+          },
+          header: {
+            enabled: true,
+            height: 15,
+            showOnFirstPage: true,
+            showPageNumbers: true
+          },
+          footer: {
+            enabled: true,
+            height: 15,
+            showOnFirstPage: true,
+            showPageNumbers: true
+          },
+          coverPage: {
+            enabled: true,
+            includeLogo: true,
+            includeTitle: true,
+            includeSubtitle: true,
+            includeMetadata: true,
+            includeDate: true
+          },
+          images: {
+            maxWidth: 800,
+            maxHeight: 600,
+            quality: 85,
+            format: 'original' as const,
+            embedMethod: 'base64' as const,
+            lazyLoading: true
+          },
+          pageBreaks: {
+            automatic: true,
+            avoidWidowOrphan: true,
+            minLinesBeforeBreak: 3,
+            minLinesAfterBreak: 3,
+            breakBeforeSections: [],
+            breakAfterSections: []
+          },
+          pdf: {
+            quality: 'standard' as const,
+            includeHyperlinks: true,
+            includeBookmarks: true,
+            compress: true
+          },
+          preview: {
+            interactive: true,
+            zoomLevel: 1.0,
+            showRulers: false,
+            showGrid: false,
+            showMargins: true,
+            autoRefresh: true
+          },
+          snapshot: {
+            format: 'png' as const,
+            quality: 90,
+            scale: 1,
+            includeBackground: true,
+            captureDelay: 100
+          },
+          responsive: true,
+          accessibility: true,
+          language: 'en',
+          timezone: 'UTC',
+          title: 'Untitled Document',
+          author: 'Oscar AI',
+          creator: 'Oscar AI Visual Rendering Engine',
+          creationDate: new Date()
+        };
+        this.visualRendering = new VisualRenderingEngine(defaultOptions);
+        await this.visualRendering.initialize();
+        this.status.subsystems.visualRendering = true;
+      } catch (error) {
+        this.status.warnings.push('Visual Rendering Engine not available (Phase 15)');
+      }
 
       this.emitEvent('system:ready', {
         timestamp: new Date(),
@@ -645,7 +755,8 @@ export class ReportIntelligenceSystem {
       reproductionTester: this.reproductionTester,
       typeExpansion: this.typeExpansion,
       aiReasoning: this.aiReasoning,
-      workflowLearning: this.workflowLearning
+      workflowLearning: this.workflowLearning,
+      visualRendering: this.visualRendering
     };
 
     return subsystemMap[subsystemName] as T;
