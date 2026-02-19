@@ -1,5 +1,5 @@
 REPORT INTELLIGENCE SYSTEM — PHASE INDEX
-This subsystem governs all intelligent reporting capabilities in AgentV, including report classification, schema evolution, style learning, self‑healing, visual reproduction, and full PDF ingestion.
+This subsystem governs all intelligent reporting capabilities in AgentV/Oscar AI, including report classification, schema evolution, style learning, self‑healing, visual reproduction, PDF ingestion, and now cross‑system content intelligence.
 
 Each phase is explicit, self‑contained, and hallucination‑proof.
 No phase may be started until the previous one is fully completed and validated.
@@ -91,6 +91,88 @@ Page breaks
 
 This phase completes the ingestion pipeline, enabling raw PDF → structured data → visual reproduction → template generation with no manual steps.
 
+⭐ NEW CROSS‑SYSTEM PHASES (POST‑REPORT INTELLIGENCE)
+These phases extend Oscar AI beyond reporting into a full content and productivity platform.
+
+PHASE 17 — CONTENT INTELLIGENCE & BLOG POST ENGINE
+Add a full content‑creation subsystem including:
+
+Blog post intelligence
+
+SEO metadata
+
+Brand‑aware writing
+
+WordPress publishing
+
+Social post generation
+
+Gallery integration
+
+Template‑driven content
+
+AI rewriting, optimisation, and tone control
+
+This phase introduces the first non‑report content engine.
+
+PHASE 18 — UNIFIED MULTI‑DEVICE EDITOR & SUPABASE INTEGRATION
+Introduce the unified editor and cloud layer:
+
+Single editor for all content types
+
+Unified Copilot layer
+
+Unified preview engine
+
+Unified metadata panels
+
+Unified gallery panel
+
+Supabase user accounts
+
+Supabase cloud sync
+
+Supabase storage
+
+Real‑time updates
+
+Local‑first architecture with offline mode
+
+Admin‑controlled backend keys
+
+This phase transforms Oscar AI into a cloud‑connected platform.
+
+PHASE 19 — UNIFIED EMAIL, CALENDAR & TASK INTELLIGENCE LAYER
+Add the productivity brain:
+
+Email integration (IMAP)
+
+Attachment reference system
+
+Calendar system
+
+Task system
+
+Meeting scheduling
+
+Cross‑system intelligence
+
+Email → task
+
+Email → event
+
+Task → event
+
+Blog scheduling
+
+Report scheduling
+
+Real‑time sync
+
+Offline mode
+
+This phase completes the productivity subsystem and prepares Oscar AI for future expansions.
+
 EXECUTION RULES
 Phases must be executed in order.
 
@@ -103,5 +185,3 @@ Each phase must produce a completion report.
 Each phase must update the CHANGELOG.
 
 Roo must wait for explicit approval before starting each phase.
-
-END OF INDEX
