@@ -1,0 +1,63 @@
+[
+  {
+    "id": "example_profile_1",
+    "profile": {
+      "id": "example_profile_1",
+      "userId": "user_123",
+      "reportTypeId": "BS5837",
+      "commonSectionOrder": ["introduction", "methodology", "findings", "recommendations"],
+      "commonOmissions": ["appendix", "references"],
+      "commonCorrections": [
+        {
+          "from": "tree condition: good",
+          "to": "tree condition: fair",
+          "frequency": 3,
+          "lastObserved": "2026-02-19T10:00:00.000Z"
+        }
+      ],
+      "preferredInteractionPatterns": [
+        {
+          "pattern": "template_applied",
+          "frequency": 5,
+          "confidence": 0.8
+        }
+      ],
+      "typicalDataSources": ["site_photos", "measurement_data", "historical_records"],
+      "workflowHeuristics": {
+        "averageSectionTime": {
+          "introduction": 120000,
+          "methodology": 180000,
+          "findings": 240000
+        },
+        "orderConsistency": 0.85,
+        "templateUsageFrequency": 0.7,
+        "commonStartingPoints": ["introduction", "executive_summary"],
+        "validationPatterns": ["spell_check", "compliance_check"],
+        "revisionPatterns": [
+          {
+            "pattern": "section_revision",
+            "frequency": 2
+          }
+        ]
+      },
+      "confidenceScore": 0.75,
+      "timestamps": {
+        "createdAt": "2026-02-18T10:00:00.000Z",
+        "updatedAt": "2026-02-19T09:00:00.000Z",
+        "lastUsedAt": "2026-02-19T09:30:00.000Z",
+        "observationCount": 25
+      },
+      "metadata": {
+        "version": 1,
+        "isActive": true,
+        "tags": ["example", "BS5837", "auto-learned"],
+        "source": "example"
+      }
+    },
+    "version": 1,
+    "timestamps": {
+      "storedAt": "2026-02-19T10:00:00.000Z",
+      "lastAccessed": "2026-02-19T10:00:00.000Z"
+    }
+  }
+]

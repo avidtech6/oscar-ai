@@ -45,12 +45,8 @@ async function saveSettingToIndexedDB(key: string, value: any): Promise<void> {
         await setSetting(key, value);
     } catch (error) {
         console.error(`Failed to save setting ${key} to IndexedDB:`, error);
-        // Fallback to localStorage for backward compatibility
-        if (typeof value === 'string') {
-            localStorage.setItem(key, value);
-        } else {
-            localStorage.setItem(key, JSON.stringify(value));
-        }
+        // Phase 5: No localStorage fallback - migration should be complete
+        throw error; // Re-throw to handle at higher level
     }
 }
 
@@ -60,8 +56,8 @@ async function deleteSettingFromIndexedDB(key: string): Promise<void> {
         await deleteSetting(key);
     } catch (error) {
         console.error(`Failed to delete setting ${key} from IndexedDB:`, error);
-        // Fallback to localStorage
-        localStorage.removeItem(key);
+        // Phase 5: No localStorage fallback - migration should be complete
+        throw error; // Re-throw to handle at higher level
     }
 }
 
@@ -83,12 +79,13 @@ export async function initSettings() {
         getSetting(CURRENT_PROJECT_ID_KEY)
     ]);
 
-    // Fallback to localStorage if IndexedDB returns undefined
-    const finalKey = storedKey !== undefined ? storedKey : (localStorage.getItem(GROQ_API_KEY_STORAGE) || DEFAULT_GROQ_API_KEY || '');
-    const finalTheme = storedTheme !== undefined ? storedTheme : (localStorage.getItem(THEME_STORAGE) as 'light' | 'dark' | null);
-    const finalSidebar = storedSidebar !== undefined ? storedSidebar : localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE);
-    const finalDummyData = storedDummyData !== undefined ? storedDummyData : localStorage.getItem(DUMMY_DATA_ENABLED_KEY);
-    const finalProjectId = storedProjectId !== undefined ? storedProjectId : localStorage.getItem(CURRENT_PROJECT_ID_KEY);
+    // Phase 5: No localStorage fallback - migration should be complete
+    // Use IndexedDB values only, with defaults if undefined
+    const finalKey = storedKey !== undefined ? storedKey : DEFAULT_GROQ_API_KEY || '';
+    const finalTheme = storedTheme !== undefined ? storedTheme : 'dark';
+    const finalSidebar = storedSidebar !== undefined ? storedSidebar : false;
+    const finalDummyData = storedDummyData !== undefined ? storedDummyData : false;
+    const finalProjectId = storedProjectId !== undefined ? storedProjectId : '';
 
     // Build initial settings object
     const initialSettings: Settings = {

@@ -117,18 +117,25 @@ export class StorageMigrationService {
 		try {
 			console.log('Starting storage migration from localStorage to IndexedDB...');
 
+			// Validate environment before migration
+			const validationResult = await this.validateMigrationEnvironment();
+			if (!validationResult.valid) {
+				result.errors.push(...validationResult.errors);
+				return result;
+			}
+
 			// Create backup before migration
 			await this.createBackup();
 
-			// Migrate blogs
+			// Migrate blogs with validation
 			const blogsMigrated = await this.migrateBlogs();
 			result.migratedItems.blogs = blogsMigrated;
 
-			// Migrate diagrams
+			// Migrate diagrams with validation
 			const diagramsMigrated = await this.migrateDiagrams();
 			result.migratedItems.diagrams = diagramsMigrated;
 
-			// Migrate reports
+			// Migrate reports with validation
 			const reportsMigrated = await this.migrateReports();
 			result.migratedItems.reports = reportsMigrated;
 
@@ -139,6 +146,13 @@ export class StorageMigrationService {
 			// Migrate settings (already in IndexedDB via ProjectContextStore)
 			const settingsMigrated = await this.migrateSettings();
 			result.migratedItems.settings = settingsMigrated;
+
+			// Validate migration results
+			const migrationValidation = await this.validateMigrationResults(result.migratedItems);
+			if (!migrationValidation.valid) {
+				result.warnings.push(...migrationValidation.warnings);
+				console.warn('Migration validation warnings:', migrationValidation.warnings);
+			}
 
 			// Mark migration as completed
 			localStorage.setItem('oscar_migration_completed', 'true');
@@ -179,6 +193,7 @@ export class StorageMigrationService {
 			console.log(`Migrating ${blogs.length} blog posts...`);
 
 			let migratedCount = 0;
+			let validationErrors = 0;
 			
 			for (const blog of blogs) {
 				try {
@@ -194,6 +209,14 @@ export class StorageMigrationService {
 						updatedAt: new Date(blog.updatedAt || blog.createdAt || new Date().toISOString())
 					};
 
+					// Validate blog schema
+					const validation = this.validateDataSchema(dbBlog, 'blog');
+					if (!validation.valid) {
+						console.warn('Blog validation failed:', validation.errors);
+						validationErrors++;
+						continue;
+					}
+
 					// Save to IndexedDB
 					await db.blogPosts.add(dbBlog as any);
 					migratedCount++;
@@ -202,10 +225,11 @@ export class StorageMigrationService {
 				}
 			}
 
-			// Keep localStorage data for backward compatibility during transition
-			// localStorage.removeItem('oscar_blog_posts'); // Don't remove yet
+			// Remove localStorage data after successful migration
+			// Phase 5: Remove localStorage dependency
+			localStorage.removeItem('oscar_blog_posts');
 
-			console.log(`Successfully migrated ${migratedCount} blog posts`);
+			console.log(`Successfully migrated ${migratedCount} blog posts (${validationErrors} validation errors)`);
 			return migratedCount;
 		} catch (error) {
 			console.error('Error migrating blogs:', error);
@@ -227,6 +251,7 @@ export class StorageMigrationService {
 			console.log(`Migrating ${diagrams.length} diagrams...`);
 
 			let migratedCount = 0;
+			let validationErrors = 0;
 			
 			for (const diagram of diagrams) {
 				try {
@@ -239,6 +264,14 @@ export class StorageMigrationService {
 						createdAt: new Date(diagram.createdAt || new Date().toISOString())
 					};
 
+					// Validate diagram schema
+					const validation = this.validateDataSchema(dbDiagram, 'diagram');
+					if (!validation.valid) {
+						console.warn('Diagram validation failed:', validation.errors);
+						validationErrors++;
+						continue;
+					}
+
 					// Save to IndexedDB
 					await db.diagrams.add(dbDiagram as any);
 					migratedCount++;
@@ -247,10 +280,11 @@ export class StorageMigrationService {
 				}
 			}
 
-			// Keep localStorage data for backward compatibility during transition
-			// localStorage.removeItem('oscar_diagrams'); // Don't remove yet
+			// Remove localStorage data after successful migration
+			// Phase 5: Remove localStorage dependency
+			localStorage.removeItem('oscar_diagrams');
 
-			console.log(`Successfully migrated ${migratedCount} diagrams`);
+			console.log(`Successfully migrated ${migratedCount} diagrams (${validationErrors} validation errors)`);
 			return migratedCount;
 		} catch (error) {
 			console.error('Error migrating diagrams:', error);
@@ -274,6 +308,7 @@ export class StorageMigrationService {
 			// Reports already have a table in IndexedDB, but the structure is different
 			// We need to convert localStorage reports to the IndexedDB format
 			let migratedCount = 0;
+			let validationErrors = 0;
 			
 			for (const report of reports) {
 				try {
@@ -286,6 +321,14 @@ export class StorageMigrationService {
 						generatedAt: new Date(report.generatedAt || new Date().toISOString())
 					};
 
+					// Validate report schema
+					const validation = this.validateDataSchema(dbReport, 'report');
+					if (!validation.valid) {
+						console.warn('Report validation failed:', validation.errors);
+						validationErrors++;
+						continue;
+					}
+
 					// Save to IndexedDB
 					await db.reports.add(dbReport as any);
 					migratedCount++;
@@ -294,9 +337,11 @@ export class StorageMigrationService {
 				}
 			}
 
-			// Keep localStorage data for backward compatibility during transition
-			// localStorage.removeItem('oscar_reports'); // Don't remove yet
+			// Remove localStorage data after successful migration
+			// Phase 5: Remove localStorage dependency
+			localStorage.removeItem('oscar_reports');
 
+			console.log(`Successfully migrated ${migratedCount} reports (${validationErrors} validation errors)`);
 			return migratedCount;
 		} catch (error) {
 			console.error('Error migrating reports:', error);
@@ -325,8 +370,8 @@ export class StorageMigrationService {
 				console.log(`Migrated project context: ${chatContext.selectedProjectId}`);
 			}
 			
-			// Also migrate to localStorage for backward compatibility (already done by chatContext.ts)
-			// The new unified store uses 'oscar_project_context' key
+			// Phase 5: Remove localStorage dependency after successful migration
+			localStorage.removeItem('oscar_chat_context');
 			
 			return true;
 		} catch (error) {
@@ -432,11 +477,14 @@ export class StorageMigrationService {
 
 			console.log(`Migrated ${migratedCount} settings to IndexedDB`);
 			
-			// Phase 5: After migration, we could optionally remove localStorage items
-			// But keep them for backward compatibility during transition
-			// localStorage.removeItem('oscar_current_project_id');
-			// localStorage.removeItem('oscar_groq_api_key');
-			// etc.
+			// Phase 5: Remove localStorage items after successful migration
+			// Remove all migrated localStorage keys
+			for (const setting of settingsToMigrate) {
+				localStorage.removeItem(setting.localStorageKey);
+			}
+			
+			// Also remove legacy oscar_settings object
+			localStorage.removeItem('oscar_settings');
 
 			return migratedCount > 0;
 		} catch (error) {
@@ -564,6 +612,156 @@ export class StorageMigrationService {
 		};
 	}
 
+	/**
+	 * Validate migration environment before starting
+	 */
+	private async validateMigrationEnvironment(): Promise<{valid: boolean; errors: string[]}> {
+		const errors: string[] = [];
+		
+		// Check IndexedDB support
+		if (!window.indexedDB) {
+			errors.push('IndexedDB not supported in this browser');
+		}
+		
+		// Check database connection
+		try {
+			await db.open();
+			const isOpen = db.isOpen();
+			if (!isOpen) {
+				errors.push('Database failed to open');
+			}
+		} catch (error) {
+			errors.push(`Database connection error: ${error instanceof Error ? error.message : String(error)}`);
+		}
+		
+		// Check localStorage access
+		try {
+			const testKey = 'oscar_migration_test';
+			localStorage.setItem(testKey, 'test');
+			localStorage.removeItem(testKey);
+		} catch (error) {
+			errors.push(`LocalStorage access error: ${error instanceof Error ? error.message : String(error)}`);
+		}
+		
+		return {
+			valid: errors.length === 0,
+			errors
+		};
+	}
+	
+	/**
+	 * Validate migration results
+	 */
+	private async validateMigrationResults(migratedItems: MigrationResult['migratedItems']): Promise<{valid: boolean; warnings: string[]}> {
+		const warnings: string[] = [];
+		
+		// Validate blog migration
+		if (migratedItems.blogs > 0) {
+			try {
+				const dbBlogCount = await db.blogPosts.count();
+				if (dbBlogCount < migratedItems.blogs) {
+					warnings.push(`Blog migration incomplete: ${migratedItems.blogs} attempted, ${dbBlogCount} actually migrated`);
+				}
+			} catch (error) {
+				warnings.push(`Failed to validate blog migration: ${error instanceof Error ? error.message : String(error)}`);
+			}
+		}
+		
+		// Validate diagram migration
+		if (migratedItems.diagrams > 0) {
+			try {
+				const dbDiagramCount = await db.diagrams.count();
+				if (dbDiagramCount < migratedItems.diagrams) {
+					warnings.push(`Diagram migration incomplete: ${migratedItems.diagrams} attempted, ${dbDiagramCount} actually migrated`);
+				}
+			} catch (error) {
+				warnings.push(`Failed to validate diagram migration: ${error instanceof Error ? error.message : String(error)}`);
+			}
+		}
+		
+		// Validate report migration
+		if (migratedItems.reports > 0) {
+			try {
+				const dbReportCount = await db.reports.count();
+				if (dbReportCount < migratedItems.reports) {
+					warnings.push(`Report migration incomplete: ${migratedItems.reports} attempted, ${dbReportCount} actually migrated`);
+				}
+			} catch (error) {
+				warnings.push(`Failed to validate report migration: ${error instanceof Error ? error.message : String(error)}`);
+			}
+		}
+		
+		// Validate settings migration
+		if (migratedItems.settings) {
+			try {
+				const dbSettingsCount = await db.settings.count();
+				if (dbSettingsCount === 0) {
+					warnings.push('Settings migration may have failed: no settings found in IndexedDB');
+				}
+			} catch (error) {
+				warnings.push(`Failed to validate settings migration: ${error instanceof Error ? error.message : String(error)}`);
+			}
+		}
+		
+		return {
+			valid: warnings.length === 0,
+			warnings
+		};
+	}
+	
+	/**
+	 * Validate data schema for migrated items
+	 */
+	private validateDataSchema(data: any, type: 'blog' | 'diagram' | 'report'): {valid: boolean; errors: string[]} {
+		const errors: string[] = [];
+		
+		switch (type) {
+			case 'blog':
+				if (!data.title || typeof data.title !== 'string') {
+					errors.push('Blog missing title or invalid title type');
+				}
+				if (!data.bodyHTML || typeof data.bodyHTML !== 'string') {
+					errors.push('Blog missing bodyHTML or invalid bodyHTML type');
+				}
+				if (!data.createdAt || !(data.createdAt instanceof Date)) {
+					errors.push('Blog missing createdAt or invalid createdAt type');
+				}
+				break;
+				
+			case 'diagram':
+				if (!data.title || typeof data.title !== 'string') {
+					errors.push('Diagram missing title or invalid title type');
+				}
+				if (!data.content || typeof data.content !== 'string') {
+					errors.push('Diagram missing content or invalid content type');
+				}
+				if (!data.createdAt || !(data.createdAt instanceof Date)) {
+					errors.push('Diagram missing createdAt or invalid createdAt type');
+				}
+				break;
+				
+			case 'report':
+				if (!data.title || typeof data.title !== 'string') {
+					errors.push('Report missing title or invalid title type');
+				}
+				if (!data.pdfBlob || !(data.pdfBlob instanceof Blob)) {
+					errors.push('Report missing pdfBlob or invalid pdfBlob type');
+				}
+				if (!data.type || !['bs5837', 'impact', 'method'].includes(data.type)) {
+					errors.push(`Report has invalid type: ${data.type}`);
+				}
+				if (!data.generatedAt || !(data.generatedAt instanceof Date)) {
+					errors.push('Report missing generatedAt or invalid generatedAt type');
+				}
+				break;
+		}
+		
+		return {
+			valid: errors.length === 0,
+			errors
+		};
+	}
+	
 	/**
 	 * Clear migration data (for testing)
 	 */

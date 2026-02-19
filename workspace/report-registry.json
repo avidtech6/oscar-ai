@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-02-18T14:25:18.471Z",
+  "typeCount": 7,
+  "types": [
+    {
+      "id": "bs5837-2012",
+      "name": "BS5837:2012 Tree Survey",
+      "description": "Comprehensive tree survey report compliant with BS5837:2012 standards.",
+      "category": "survey",
+      "version": "1.0.0",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "deprecated": false
+    },
+    {
+      "id": "arb-impact-assessment",
+      "name": "Arboricultural Impact Assessment (AIA)",
+      "description": "Assessment of potential impacts of proposed development on existing trees.",
+      "category": "assessment",
+      "version": "1.0.0",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "deprecated": false
+    },
+    {
+      "id": "arb-method-statement",
+      "name": "Arboricultural Method Statement (AMS)",
+      "description": "Detailed methodology for construction works near trees.",
+      "category": "method",
+      "version": "1.0.0",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "deprecated": false
+    },
+    {
+      "id": "tree-condition-report",
+      "name": "Tree Condition Report",
+      "description": "Assessment of tree health, structural condition, and safety.",
+      "category": "condition",
+      "version": "1.0.0",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "deprecated": false
+    },
+    {
+      "id": "tree-safety-report",
+      "name": "Tree Safety / Hazard Report",
+      "description": "Focused assessment of tree safety hazards and risk to people/property.",
+      "category": "safety",
+      "version": "1.0.0",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "deprecated": false
+    },
+    {
+      "id": "mortgage-insurance-report",
+      "name": "Mortgage / Insurance Report",
+      "description": "Assessment of trees in relation to property for mortgage/insurance purposes.",
+      "category": "insurance",
+      "version": "1.0.0",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "deprecated": false
+    },
+    {
+      "id": "custom-report",
+      "name": "Custom / User-Defined Report",
+      "description": "Template for user-defined custom reports with flexible structure.",
+      "category": "custom",
+      "version": "1.0.0",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "deprecated": false
+    }
+  ]
+}

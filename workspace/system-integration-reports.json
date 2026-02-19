@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "storageFormat": "system-integration-reports",
+  "description": "Storage for Report Intelligence System integration validation reports",
+  "reports": [],
+  "statistics": {
+    "totalReports": 0,
+    "passedReports": 0,
+    "failedReports": 0,
+    "lastRun": null,
+    "averageDurationMs": 0
+  },
+  "createdAt": "2026-02-19T11:01:00.000Z",
+  "updatedAt": "2026-02-19T11:01:00.000Z"
+}

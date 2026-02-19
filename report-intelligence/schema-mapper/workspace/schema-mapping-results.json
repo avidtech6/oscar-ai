@@ -1,0 +1,23 @@
+[
+  {
+    "decompiledReportId": "storage_test_123",
+    "reportTypeId": "test_type",
+    "mappedFields": [],
+    "unmappedSections": [],
+    "missingRequiredSections": [],
+    "extraSections": [],
+    "unknownTerminology": [],
+    "schemaGaps": [],
+    "confidenceScore": 0.85,
+    "mappingCoverage": 75,
+    "completenessScore": 90,
+    "processingTimeMs": 150,
+    "mappingStrategy": "automatic",
+    "mapperVersion": "1.0.0",
+    "warnings": [],
+    "errors": [],
+    "id": "mapping_test_123",
+    "createdAt": "2026-02-18T16:54:10.256Z",
+    "processedAt": "2026-02-18T16:54:10.256Z"
+  }
+]

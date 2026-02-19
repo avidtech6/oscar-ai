@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { db, type Project, type Tree, type Note, type Task } from '$lib/db';
+	import { db, type Project, type Tree, type Note, type Task, saveReport, getReports } from '$lib/db';
 	import { groqApiKey } from '$lib/stores/settings';
 	import {
 		availableTemplates,
@@ -81,16 +81,48 @@
 		
 		// If report ID is provided, load that report for editing
 		if (reportId && mode === 'edit') {
-			const storedReports = localStorage.getItem('oscar_reports');
-			if (storedReports) {
-				const allReports = JSON.parse(storedReports);
-				const report = allReports.find((r: any) => r.id === reportId);
+			try {
+				// Load report from IndexedDB
+				const report = await db.reports.get(reportId);
 				if (report) {
-					generatedReport = report.content || '';
+					// Convert Blob to HTML string for editing
+					const htmlContent = await report.pdfBlob.text();
+					generatedReport = htmlContent;
+					
+					// Map report type to template
 					selectedTemplate = availableTemplates.find(t => t.id === report.type) || null;
 					selectedProjectId = report.projectId;
 					await loadProjectContext();
 					currentStep = 'edit';
+				}
+			} catch (error) {
+				console.error('Failed to load report from IndexedDB:', error);
+				// Fallback to localStorage for backward compatibility during migration
+				const storedReports = localStorage.getItem('oscar_reports');
+				if (storedReports) {
+					const allReports = JSON.parse(storedReports);
+					const report = allReports.find((r: any) => r.id === reportId);
+					if (report) {
+						generatedReport = report.content || '';
+						selectedTemplate = availableTemplates.find(t => t.id === report.type) || null;
+						selectedProjectId = report.projectId;
+						await loadProjectContext();
+						currentStep = 'edit';
+						
+						// Migrate this report to IndexedDB
+						try {
+							const blob = new Blob([report.content], { type: 'text/html' });
+							await saveReport({
+								projectId: report.projectId,
+								title: report.title || `${selectedTemplate?.name || 'Report'} - ${selectedProject?.name || ''}`,
+								type: report.type as any,
+								pdfBlob: blob
+							});
+							console.log('Migrated report from localStorage to IndexedDB:', reportId);
+						} catch (migrationError) {
+							console.warn('Failed to migrate report to IndexedDB:', migrationError);
+						}
+					}
 				}
 			}
 		}
@@ -313,20 +345,59 @@
 			generatedReport = htmlContent;
 			currentStep = 'generate';
 			
-			// Save to local storage for later editing
-			const report = {
-				id: crypto.randomUUID(),
-				projectId: selectedProjectId,
-				type: selectedTemplate?.id,
-				title: `${selectedTemplate?.name} - ${selectedProject?.name}`,
-				content: htmlContent,
-				generatedAt: new Date().toISOString()
-			};
+			// Save to IndexedDB for later editing
+			const reportId = crypto.randomUUID();
+			const reportTitle = `${selectedTemplate?.name} - ${selectedProject?.name}`;
 			
-			const storedReports = localStorage.getItem('oscar_reports');
-			const allReports = storedReports ? JSON.parse(storedReports) : [];
-			allReports.push(report);
-			localStorage.setItem('oscar_reports', JSON.stringify(allReports));
+			// Convert HTML to Blob for storage
+			const pdfBlob = new Blob([htmlContent], { type: 'text/html' });
+			
+			// Map template ID to report type (ensure it matches Report interface)
+			let reportType: 'bs5837' | 'impact' | 'method' = 'bs5837';
+			if (selectedTemplate?.id === 'impact') reportType = 'impact';
+			if (selectedTemplate?.id === 'method') reportType = 'method';
+			if (selectedTemplate?.id === 'condition') reportType = 'bs5837'; // Fallback for condition template
+			
+			try {
+				await saveReport({
+					projectId: selectedProjectId,
+					title: reportTitle,
+					type: reportType,
+					pdfBlob
+				});
+				console.log('Report saved to IndexedDB:', reportId);
+				
+				// Also save to localStorage for backward compatibility during migration
+				const report = {
+					id: reportId,
+					projectId: selectedProjectId,
+					type: selectedTemplate?.id,
+					title: reportTitle,
+					content: htmlContent,
+					generatedAt: new Date().toISOString()
+				};
+				
+				const storedReports = localStorage.getItem('oscar_reports');
+				const allReports = storedReports ? JSON.parse(storedReports) : [];
+				allReports.push(report);
+				localStorage.setItem('oscar_reports', JSON.stringify(allReports));
+			} catch (saveError) {
+				console.error('Failed to save report to IndexedDB:', saveError);
+				// Fallback to localStorage only
+				const report = {
+					id: reportId,
+					projectId: selectedProjectId,
+					type: selectedTemplate?.id,
+					title: reportTitle,
+					content: htmlContent,
+					generatedAt: new Date().toISOString()
+				};
+				
+				const storedReports = localStorage.getItem('oscar_reports');
+				const allReports = storedReports ? JSON.parse(storedReports) : [];
+				allReports.push(report);
+				localStorage.setItem('oscar_reports', JSON.stringify(allReports));
+			}
 			
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to generate report';
@@ -673,7 +744,7 @@
 	}
 
 	// Helper function to escape curly braces for Svelte template safety
-	function escapeForSvelte(html) {
+	function escapeForSvelte(html: string): string {
 		if (!html) return '';
 		// Replace { with &#123; and } with &#125; to prevent Svelte parsing errors
 		return html.replace(/{/g, '&#123;').replace(/}/g, '&#125;');
