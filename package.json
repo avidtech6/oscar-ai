@@ -1,6 +1,6 @@
 {
   "name": "oscar-ai-dev",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Oscar AI Dev - Local-first Arboricultural Notebook + Assistant",
   "type": "module",
   "scripts": {
