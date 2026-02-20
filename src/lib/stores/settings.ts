@@ -1,6 +1,6 @@
 import { writable, derived } from 'svelte/store';
 import { getSetting, setSetting, deleteSetting, migrateLocalStorageToIndexedDB } from '$lib/db/index';
-import { DROP_API_KEY } from '$lib/config/keys';
+import { GROQ_API_KEY } from '$lib/config/keys';
 
 const GROQ_API_KEY_STORAGE = 'oscar_groq_api_key';
 const GROK_API_KEY_STORAGE = 'oscar_grok_api_key';
@@ -10,7 +10,7 @@ const DUMMY_DATA_ENABLED_KEY = 'oscar_dummy_data_enabled';
 const CURRENT_PROJECT_ID_KEY = 'oscar_current_project_id';
 
 // Load API keys from hardcoded constants
-const DEFAULT_GROQ_API_KEY = DROP_API_KEY || '';
+const DEFAULT_GROQ_API_KEY = GROQ_API_KEY || '';
 const DEFAULT_GROK_API_KEY = '';
 
 export const groqApiKey = writable<string>('');
