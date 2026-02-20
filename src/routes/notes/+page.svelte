@@ -55,6 +55,11 @@
 	let confirmationAction: () => void = () => {};
 	let confirmationCancel: () => void = () => {};
 
+	// Quick note state
+	let quickNoteTitle = '';
+	let quickNoteContent = '';
+	let showQuickNoteExpanded = false;
+
 	// Multi-select state
 	let selectedNotes = new Set<string>();
 	let showMultiSelectActions = false;
@@ -590,6 +595,40 @@
 		}
 	}
 
+	// Quick note functions
+	function focusQuickNoteContent() {
+		// This would focus the content textarea, but we can't directly focus in Svelte without a ref
+		// We'll just expand the note
+		showQuickNoteExpanded = true;
+	}
+
+	async function saveQuickNote() {
+		if (!quickNoteContent.trim()) return;
+		
+		try {
+			await db.notes.add({
+				title: quickNoteTitle.trim() || `Note ${new Date().toLocaleString()}`,
+				content: quickNoteContent,
+				tags: [],
+				projectId: $projectContextStore.currentProjectId || undefined,
+				type: 'general',
+				createdAt: new Date(),
+				updatedAt: new Date()
+			});
+			
+			// Clear and reset
+			quickNoteTitle = '';
+			quickNoteContent = '';
+			showQuickNoteExpanded = false;
+			
+			// Reload notes
+			await loadNotes();
+		} catch (e) {
+			error = 'Failed to save quick note';
+			console.error(e);
+		}
+	}
+
 	function formatDate(date: Date) {
 		return new Date(date).toLocaleDateString('en-GB', {
 			day: 'numeric',
@@ -614,6 +653,97 @@
 		}
 	}
 
+	// Handle Ask AI - creates a new note with AI output
+	async function handleAskAI(prompt: string) {
+		if (!prompt.trim()) return;
+		
+		bulkAIProcessing = true;
+		bulkAIResult = '';
+		
+		try {
+			// Get current context from unified ProjectContextStore
+			const hasCurrentProject = !!$projectContextStore.currentProjectId;
+			
+			// Prepare the AI request
+			const userMessage = prompt;
+			
+			// Check for project references
+			const inferredProject = inferProjectFromMessage(prompt, projects);
+			if (inferredProject && !hasCurrentProject) {
+				// Show context switch prompt
+				showContextSwitchPromptFn(
+					inferredProject.id,
+					inferredProject.name,
+					`This request mentions "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+				);
+				return;
+			}
+			
+			// Use unified intent engine to detect intent
+			const intentResult = await unifiedIntentEngine.detectIntent(userMessage);
+			
+			// Execute using unified action executor
+			const result = await actionExecutorService.execute(intentResult, {
+				content: prompt,
+				action: 'create_note_from_ai'
+			});
+			
+			if (result.success) {
+				if (!hasCurrentProject && result.requiresConfirmation) {
+					// Show conversion options dialog
+					showConfirmationDialogFn(
+						`AI can't directly create notes in General Chat mode. Choose an option:`,
+						() => {
+							// User confirmed - create a new note with AI output
+							if (result.message) {
+								createNoteFromAIOutput(result.message, prompt);
+							}
+						},
+						() => {
+							console.log('User cancelled conversion');
+						}
+					);
+				} else if (result.message) {
+					createNoteFromAIOutput(result.message, prompt);
+				}
+			} else {
+				error = result.message || 'Failed to process AI request';
+			}
+		} catch (e) {
+			error = 'Failed to process AI request';
+			console.error(e);
+		} finally {
+			bulkAIProcessing = false;
+		}
+	}
+	
+	// Create a new note from AI output
+	async function createNoteFromAIOutput(aiOutput: string, prompt: string) {
+		try {
+			// Create a new note with AI output
+			const noteTitle = `AI: ${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}`;
+			
+			await db.notes.add({
+				title: noteTitle,
+				content: `AI Prompt: ${prompt}\n\n---\n\nAI Response:\n${aiOutput}`,
+				tags: ['ai-generated'],
+				projectId: $projectContextStore.currentProjectId || undefined,
+				type: 'general',
+				createdAt: new Date(),
+				updatedAt: new Date()
+			});
+			
+			// Reload notes to show the new one
+			await loadNotes();
+			
+			// Show success message
+			bulkAIResult = aiOutput;
+		} catch (e) {
+			error = 'Failed to create note from AI output';
+			console.error(e);
+		}
+	}
+	
 	// Multi-select functions
 	function toggleNoteSelection(noteId: string) {
 		if (selectedNotes.has(noteId)) {
@@ -884,6 +1014,65 @@
 		</button>
 	</div>
 
+	<!-- Quick Note Input -->
+	<div class="mb-6">
+		<div class="bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+			<div class="p-4">
+				<div class="flex items-start gap-3">
+					<div class="flex-1">
+						<input
+							type="text"
+							bind:value={quickNoteTitle}
+							placeholder="Note title (optional)"
+							class="input mb-3 text-sm"
+							on:keydown={(e) => e.key === 'Enter' && focusQuickNoteContent()}
+						/>
+						<textarea
+							bind:value={quickNoteContent}
+							placeholder="Take a note..."
+							rows={showQuickNoteExpanded ? 4 : 2}
+							class="input w-full resize-none text-sm"
+							on:focus={() => showQuickNoteExpanded = true}
+							on:keydown={(e) => {
+								if (e.key === 'Enter' && e.ctrlKey) {
+									e.preventDefault();
+									saveQuickNote();
+								}
+							}}
+						></textarea>
+						
+						{#if showQuickNoteExpanded}
+							<div class="mt-3 flex items-center justify-between">
+								<div class="flex gap-2">
+									<button
+										on:click={saveQuickNote}
+										disabled={!quickNoteContent.trim()}
+										class="btn btn-primary text-sm px-3 py-1"
+									>
+										Save Note
+									</button>
+									<button
+										on:click={() => {
+											quickNoteTitle = '';
+											quickNoteContent = '';
+											showQuickNoteExpanded = false;
+										}}
+										class="btn btn-secondary text-sm px-3 py-1"
+									>
+										Cancel
+									</button>
+								</div>
+								<div class="text-xs text-gray-500">
+									Ctrl+Enter to save
+								</div>
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Persistent AI Prompt Box -->
 	<div class="mb-6">
 		<div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
@@ -903,7 +1092,13 @@
 					on:keydown={(e) => e.key === 'Enter' && processBulkAIPrompt()}
 				/>
 				<button
-					on:click={processBulkAIPrompt}
+					on:click={() => {
+						if (selectedNotes.size > 0) {
+							processBulkAIPrompt();
+						} else {
+							handleAskAI(bulkAIPrompt);
+						}
+					}}
 					disabled={bulkAIProcessing || !bulkAIPrompt.trim()}
 					class="btn btn-primary text-sm"
 				>
@@ -920,25 +1115,57 @@
 			</div>
 			<div class="mt-3 flex flex-wrap gap-2">
 				<button
-					on:click={() => bulkAIPrompt = 'Summarize the key points from these notes'}
+					on:click={() => {
+						const prompt = 'Summarize the key points from these notes';
+						bulkAIPrompt = prompt;
+						if (selectedNotes.size > 0) {
+							processBulkAIPrompt();
+						} else {
+							handleAskAI(prompt);
+						}
+					}}
 					class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
 				>
 					Summarize
 				</button>
 				<button
-					on:click={() => bulkAIPrompt = 'Find common themes across these notes'}
+					on:click={() => {
+						const prompt = 'Find common themes across these notes';
+						bulkAIPrompt = prompt;
+						if (selectedNotes.size > 0) {
+							processBulkAIPrompt();
+						} else {
+							handleAskAI(prompt);
+						}
+					}}
 					class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
 				>
 					Find Themes
 				</button>
 				<button
-					on:click={() => bulkAIPrompt = 'Create action items from these notes'}
+					on:click={() => {
+						const prompt = 'Create action items from these notes';
+						bulkAIPrompt = prompt;
+						if (selectedNotes.size > 0) {
+							processBulkAIPrompt();
+						} else {
+							handleAskAI(prompt);
+						}
+					}}
 					class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
 				>
 					Action Items
 				</button>
 				<button
-					on:click={() => bulkAIPrompt = 'Organize these notes into categories'}
+					on:click={() => {
+						const prompt = 'Organize these notes into categories';
+						bulkAIPrompt = prompt;
+						if (selectedNotes.size > 0) {
+							processBulkAIPrompt();
+						} else {
+							handleAskAI(prompt);
+						}
+					}}
 					class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
 				>
 					Organize

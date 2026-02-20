@@ -823,7 +823,7 @@ Provide concise, accurate guidance.`;
 </script>
 
 <svelte:head>
-	<title>Oscar AI Assistant</title>
+	<title>Oscar AI</title>
 </svelte:head>
 
 <div class="max-w-4xl mx-auto h-full flex flex-col">

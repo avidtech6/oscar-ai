@@ -139,7 +139,7 @@
 </script>
 
 <svelte:head>
-	<title>Workspace - Oscar AI</title>
+	<title>Projects - Oscar AI</title>
 </svelte:head>
 
 <div class="max-w-6xl mx-auto">

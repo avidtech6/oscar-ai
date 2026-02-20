@@ -33,8 +33,9 @@
 	let error = '';
 	let success = '';
 
-	// Selected project for blog posts
+	// Selected project for blog posts (optional)
 	let selectedProjectId = '';
+	let showProjectSelector = false;
 
 	// New blog post form
 	let newPost = {
@@ -43,7 +44,8 @@
 		tags: '',
 		prompt: '',
 		includePhotos: true,
-		styleProfile: ''
+		styleProfile: '',
+		attachProject: false
 	};
 
 	// Style profiles
@@ -103,12 +105,18 @@
 
 	async function loadProjectContext() {
 		try {
-			project = await db.projects.get(selectedProjectId);
-			if (project) {
-				trees = await db.trees.where('projectId').equals(selectedProjectId).toArray();
-				notes = await db.notes.where('projectId').equals(selectedProjectId).toArray();
-				blogPosts = await loadBlogPosts();
+			if (selectedProjectId) {
+				project = await db.projects.get(selectedProjectId);
+				if (project) {
+					trees = await db.trees.where('projectId').equals(selectedProjectId).toArray();
+					notes = await db.notes.where('projectId').equals(selectedProjectId).toArray();
+				}
+			} else {
+				project = undefined;
+				trees = [];
+				notes = [];
 			}
+			blogPosts = await loadBlogPosts();
 		} catch (e) {
 			error = 'Failed to load project';
 			console.error(e);
@@ -119,7 +127,12 @@
 		const stored = localStorage.getItem('oscar_blog_posts');
 		if (stored) {
 			const allPosts: BlogPost[] = JSON.parse(stored);
-			return allPosts.filter(p => p.projectId === selectedProjectId);
+			// If a project is selected, filter by project; otherwise show all posts
+			if (selectedProjectId) {
+				return allPosts.filter(p => p.projectId === selectedProjectId);
+			} else {
+				return allPosts.filter(p => !p.projectId || p.projectId === '');
+			}
 		}
 		return [];
 	}
@@ -128,8 +141,10 @@
 		const stored = localStorage.getItem('oscar_blog_posts');
 		let allPosts: BlogPost[] = stored ? JSON.parse(stored) : [];
 		
-		// Remove old posts for this project
-		allPosts = allPosts.filter(p => p.projectId !== selectedProjectId);
+		// Remove old posts with matching IDs
+		posts.forEach(newPost => {
+			allPosts = allPosts.filter(p => p.id !== newPost.id);
+		});
 		
 		// Add new posts
 		allPosts = [...allPosts, ...posts];
@@ -154,16 +169,16 @@
 		success = '';
 
 		try {
-			// Build context from project data
+			// Build context from project data (optional)
 			let context = '';
 			
-			if (project) {
+			if (newPost.attachProject && project) {
 				context += `PROJECT: ${project.name}\n`;
 				if (project.clientName) context += `Client: ${project.clientName}\n`;
 				if (project.siteAddress) context += `Location: ${project.siteAddress}\n\n`;
 			}
 
-			if (trees.length > 0 && newPost.includePhotos) {
+			if (newPost.attachProject && trees.length > 0 && newPost.includePhotos) {
 				context += `TREES SURVEYED:\n`;
 				trees.slice(0, 10).forEach(tree => {
 					context += `- ${tree.number}: ${tree.species} (${tree.condition || 'Not specified'})\n`;
@@ -171,11 +186,16 @@
 				context += '\n';
 			}
 
-			if (notes.length > 0) {
+			if (newPost.attachProject && notes.length > 0) {
 				context += `FIELD NOTES:\n`;
 				notes.slice(0, 5).forEach(note => {
 					context += `- ${note.title}: ${note.content.substring(0, 200)}...\n`;
 				});
+			}
+
+			// If no project context, provide generic context
+			if (!context.trim()) {
+				context = 'This is a general blog post about tree care and arboriculture.';
 			}
 
 			// Get style profile if selected
@@ -197,8 +217,7 @@
 Title: ${newPost.title}
 Subtitle: ${newPost.subtitle || 'A comprehensive guide'}
 
-Context from our tree survey:
-${context}
+Context: ${context}
 
 Additional instructions: ${newPost.prompt || 'Write in an engaging, informative style suitable for property owners.'}
 
@@ -238,7 +257,7 @@ Use markdown formatting for headings, lists, and emphasis.`;
 			// Save the blog post
 			const post: BlogPost = {
 				id: crypto.randomUUID(),
-				projectId: selectedProjectId,
+				projectId: newPost.attachProject ? selectedProjectId : '',
 				title: newPost.title,
 				subtitle: newPost.subtitle,
 				bodyHTML: generatedContent,
@@ -261,7 +280,8 @@ Use markdown formatting for headings, lists, and emphasis.`;
 				tags: '',
 				prompt: '',
 				includePhotos: true,
-				styleProfile: ''
+				styleProfile: '',
+				attachProject: false
 			};
 
 		} catch (e) {
@@ -310,10 +330,7 @@ Created: ${new Date(post.createdAt).toLocaleString()}
 	}
 
 	async function onProjectChange() {
-		selectedProjectId = projectId || selectedProjectId;
-		if (selectedProjectId) {
-			await loadProjectContext();
-		}
+		await loadProjectContext();
 	}
 </script>
 
@@ -344,51 +361,63 @@ Created: ${new Date(post.createdAt).toLocaleString()}
 			<p class="text-gray-500">Loading...</p>
 		</div>
 	{:else}
-		<!-- Project Selection -->
+		<!-- Project Selection (Optional) -->
 		<div class="card p-6 mb-6">
-			<h2 class="text-lg font-semibold mb-4">Select Project</h2>
-			<div class="flex gap-4 items-end">
-				<div class="flex-1">
-					<label for="project" class="block text-sm font-medium text-gray-700 mb-1">
-						Project
+			<h2 class="text-lg font-semibold mb-4">Project Context (Optional)</h2>
+			<div class="space-y-4">
+				<div class="flex items-center gap-2">
+					<input
+						id="toggleProjectSelector"
+						type="checkbox"
+						bind:checked={showProjectSelector}
+						class="rounded text-forest-600"
+					/>
+					<label for="toggleProjectSelector" class="text-sm font-medium text-gray-700">
+						Attach to a project for context
 					</label>
-					<select
-						id="project"
-						bind:value={selectedProjectId}
-						on:change={onProjectChange}
-						class="input w-full"
-					>
-						<option value="">Select a project...</option>
-						{#await db.projects.toArray() then projects}
-							{#each projects as proj}
-								<option value={proj.id}>{proj.name}</option>
-							{/each}
-						{/await}
-					</select>
 				</div>
+	
+				{#if showProjectSelector}
+					<div class="border-l-4 border-forest-100 pl-4">
+						<label for="project" class="block text-sm font-medium text-gray-700 mb-1">
+							Select Project
+						</label>
+						<select
+							id="project"
+							bind:value={selectedProjectId}
+							on:change={onProjectChange}
+							class="input w-full"
+						>
+							<option value="">No project (general blog post)</option>
+							{#await db.projects.toArray() then projects}
+								{#each projects as proj}
+									<option value={proj.id}>{proj.name}</option>
+								{/each}
+							{/await}
+						</select>
+						<p class="text-xs text-gray-500 mt-1">
+							Project data will be included as context for AI generation.
+						</p>
+					</div>
+				{/if}
 			</div>
 		</div>
-
-		{#if !selectedProjectId}
-			<div class="text-center py-12 text-gray-500">
-				<p>Please select a project to create blog posts.</p>
-			</div>
-		{:else}
-			<!-- Action Buttons -->
-			<div class="flex gap-4 mb-6">
-				<button
-					on:click={() => { viewMode = 'create'; selectedPost = null; }}
-					class="btn btn-primary"
-				>
-					Create New Post
-				</button>
-				<button
-					on:click={() => viewMode = 'list'}
-					class="btn btn-secondary"
-				>
-					View Posts ({blogPosts.length})
-				</button>
-			</div>
+	
+		<!-- Action Buttons -->
+		<div class="flex gap-4 mb-6">
+			<button
+				on:click={() => { viewMode = 'create'; selectedPost = null; }}
+				class="btn btn-primary"
+			>
+				Create New Post
+			</button>
+			<button
+				on:click={() => viewMode = 'list'}
+				class="btn btn-secondary"
+			>
+				View Posts ({blogPosts.length})
+			</button>
+		</div>
 
 			<!-- Create Mode -->
 			{#if viewMode === 'create'}
@@ -453,15 +482,29 @@ Created: ${new Date(post.createdAt).toLocaleString()}
 
 						<div class="flex items-center gap-2">
 							<input
-								id="includePhotos"
+								id="attachProject"
 								type="checkbox"
-								bind:checked={newPost.includePhotos}
+								bind:checked={newPost.attachProject}
 								class="rounded text-forest-600"
 							/>
-							<label for="includePhotos" class="text-sm text-gray-700">
-								Include tree data in context
+							<label for="attachProject" class="text-sm font-medium text-gray-700">
+								Use project context (if a project is selected above)
 							</label>
 						</div>
+
+						{#if newPost.attachProject}
+							<div class="flex items-center gap-2 pl-4">
+								<input
+									id="includePhotos"
+									type="checkbox"
+									bind:checked={newPost.includePhotos}
+									class="rounded text-forest-600"
+								/>
+								<label for="includePhotos" class="text-sm text-gray-700">
+									Include tree data in context
+								</label>
+							</div>
+						{/if}
 
 						<div>
 							<label for="prompt" class="block text-sm font-medium text-gray-700 mb-1">

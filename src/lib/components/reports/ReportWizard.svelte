@@ -64,16 +64,27 @@
 	<!-- Project Confirmation Step -->
 	{#if aiFlowStep === 'project-confirm'}
 		<div class="mb-6">
-			<h3 class="font-medium mb-3">Confirm Project Context</h3>
-			<div class="p-4 bg-green-50 border border-green-200 rounded-lg">
-				<p class="text-green-700">
-					<strong>✓ Project confirmed:</strong> {selectedProject.name}
-				</p>
-				<p class="text-green-600 text-sm mt-1">
-					Client: {selectedProject.client || 'Not specified'}<br>
-					Site: {selectedProject.location || 'Not specified'}
-				</p>
-			</div>
+			<h3 class="font-medium mb-3">Confirm Report Context</h3>
+			{#if selectedProject}
+				<div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+					<p class="text-green-700">
+						<strong>✓ Project confirmed:</strong> {selectedProject.name}
+					</p>
+					<p class="text-green-600 text-sm mt-1">
+						Client: {selectedProject.client || 'Not specified'}<br>
+						Site: {selectedProject.location || 'Not specified'}
+					</p>
+				</div>
+			{:else}
+				<div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+					<p class="text-blue-700">
+						<strong>✓ Generic Report</strong>
+					</p>
+					<p class="text-blue-600 text-sm mt-1">
+						Creating a report without a project. You can attach it to a project later.
+					</p>
+				</div>
+			{/if}
 			<div class="mt-4">
 				<button
 					on:click={continueAIFlow}
@@ -88,56 +99,67 @@
 	<!-- Data Pull Step -->
 	{#if aiFlowStep === 'data-pull'}
 		<div class="mb-6">
-			<h3 class="font-medium mb-3">Pull in Project Data</h3>
-			<p class="text-gray-600 mb-4">
-				Do you want me to pull in all trees, notes, voice memos, and tasks tagged to this project?
-			</p>
-			
-			<div class="grid gap-3 mb-6">
-				<label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
-					class:border-forest-500={localPullProjectData}
-					class:bg-forest-50={localPullProjectData}
-					class:border-gray-200={!localPullProjectData}
-				>
-					<input
-						type="radio"
-						name="pullData"
-						checked={localPullProjectData}
-						on:change={() => {
-							localPullProjectData = true;
-							pullProjectData = localPullProjectData;
-						}}
-						class="mt-0"
-					/>
-					<div>
-						<div class="font-medium text-gray-900">Yes, pull in all project data</div>
-						<div class="text-sm text-gray-500">
-							{trees.length} trees, {notes.length} notes, {tasks.length} tasks will be included
-						</div>
-					</div>
-				</label>
+			<h3 class="font-medium mb-3">Report Data</h3>
+			{#if selectedProject}
+				<p class="text-gray-600 mb-4">
+					Do you want me to pull in all trees, notes, voice memos, and tasks tagged to this project?
+				</p>
 				
-				<label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
-					class:border-forest-500={!localPullProjectData}
-					class:bg-forest-50={!localPullProjectData}
-					class:border-gray-200={localPullProjectData}
-				>
-					<input
-						type="radio"
-						name="pullData"
-						checked={!localPullProjectData}
-						on:change={() => {
-							localPullProjectData = false;
-							pullProjectData = localPullProjectData;
-						}}
-						class="mt-0"
-					/>
-					<div>
-						<div class="font-medium text-gray-900">Let me choose what to include</div>
-						<div class="text-sm text-gray-500">Select specific items later</div>
-					</div>
-				</label>
-			</div>
+				<div class="grid gap-3 mb-6">
+					<label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
+						class:border-forest-500={localPullProjectData}
+						class:bg-forest-50={localPullProjectData}
+						class:border-gray-200={!localPullProjectData}
+					>
+						<input
+							type="radio"
+							name="pullData"
+							checked={localPullProjectData}
+							on:change={() => {
+								localPullProjectData = true;
+								pullProjectData = localPullProjectData;
+							}}
+							class="mt-0"
+						/>
+						<div>
+							<div class="font-medium text-gray-900">Yes, pull in all project data</div>
+							<div class="text-sm text-gray-500">
+								{trees.length} trees, {notes.length} notes, {tasks.length} tasks will be included
+							</div>
+						</div>
+					</label>
+					
+					<label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
+						class:border-forest-500={!localPullProjectData}
+						class:bg-forest-50={!localPullProjectData}
+						class:border-gray-200={localPullProjectData}
+					>
+						<input
+							type="radio"
+							name="pullData"
+							checked={!localPullProjectData}
+							on:change={() => {
+								localPullProjectData = false;
+								pullProjectData = localPullProjectData;
+							}}
+							class="mt-0"
+						/>
+						<div>
+							<div class="font-medium text-gray-900">Let me choose what to include</div>
+							<div class="text-sm text-gray-500">Select specific items later</div>
+						</div>
+					</label>
+				</div>
+			{:else}
+				<p class="text-gray-600 mb-4">
+					No project selected. You can create a generic report or add project data manually.
+				</p>
+				<div class="p-4 bg-gray-50 border border-gray-200 rounded-lg mb-6">
+					<p class="text-gray-700 text-sm">
+						To include project data (trees, notes, tasks), please select a project first.
+					</p>
+				</div>
+			{/if}
 
 			<div class="flex gap-4">
 				<button

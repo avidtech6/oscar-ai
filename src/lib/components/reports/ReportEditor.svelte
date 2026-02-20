@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { groqApiKey } from '$lib/stores/settings';
+	
 	export let generatedReport = '';
 	export let selectedTemplate: any = null;
 	export let selectedProject: any = undefined;
@@ -7,6 +9,209 @@
 	export let copyToClipboard: () => void;
 	export let downloadAsHtml: () => void;
 	export let startOver: () => void;
+	
+	let apiKey = '';
+	groqApiKey.subscribe(value => {
+		apiKey = value;
+	});
+	
+	let aiProcessing = false;
+	let aiAction = '';
+	let aiPrompt = '';
+	
+	async function rewriteWithAI() {
+		if (!generatedReport.trim() || !apiKey) return;
+		
+		aiProcessing = true;
+		aiAction = 'Rewriting with AI...';
+		
+		try {
+			const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${apiKey}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					model: 'llama-3.1-8b-instant',
+					messages: [
+						{
+							role: 'system',
+							content: 'You are an expert arboricultural report writer. Rewrite the provided report text to be more professional, clear, and suitable for a formal report. Maintain all technical details and data.'
+						},
+						{
+							role: 'user',
+							content: `Please rewrite this report to be more professional:\n\n${generatedReport}`
+						}
+					],
+					temperature: 0.7,
+					max_tokens: 4096
+				})
+			});
+			
+			if (!response.ok) {
+				throw new Error('Failed to rewrite with AI');
+			}
+			
+			const data = await response.json();
+			generatedReport = data.choices[0].message.content;
+		} catch (e) {
+			console.error('AI rewrite failed:', e);
+			alert('Failed to rewrite with AI. Please check your API key in Settings.');
+		} finally {
+			aiProcessing = false;
+			aiAction = '';
+		}
+	}
+	
+	async function improveSectionWithAI() {
+		if (!generatedReport.trim() || !apiKey) return;
+		
+		const section = prompt('Which section would you like to improve? (e.g., "Introduction", "Methodology", "Results", "Conclusion")');
+		if (!section) return;
+		
+		aiProcessing = true;
+		aiAction = `Improving ${section} section...`;
+		
+		try {
+			const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${apiKey}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					model: 'llama-3.1-8b-instant',
+					messages: [
+						{
+							role: 'system',
+							content: 'You are an expert arboricultural report writer. Improve the specified section of the report to be more detailed, professional, and comprehensive.'
+						},
+						{
+							role: 'user',
+							content: `Please improve the "${section}" section of this report:\n\n${generatedReport}`
+						}
+					],
+					temperature: 0.7,
+					max_tokens: 2048
+				})
+			});
+			
+			if (!response.ok) {
+				throw new Error('Failed to improve section with AI');
+			}
+			
+			const data = await response.json();
+			generatedReport = data.choices[0].message.content;
+		} catch (e) {
+			console.error('AI section improvement failed:', e);
+			alert('Failed to improve section with AI. Please check your API key in Settings.');
+		} finally {
+			aiProcessing = false;
+			aiAction = '';
+		}
+	}
+	
+	async function generateSectionWithAI() {
+		if (!selectedTemplate || !apiKey) return;
+		
+		const section = prompt('What section would you like to generate? (e.g., "Executive Summary", "Recommendations", "Appendices")');
+		if (!section) return;
+		
+		aiProcessing = true;
+		aiAction = `Generating ${section} section...`;
+		
+		try {
+			const context = selectedProject ?
+				`Project: ${selectedProject.name}\nClient: ${selectedProject.client || 'Not specified'}\nLocation: ${selectedProject.location || 'Not specified'}` :
+				'No project context available';
+			
+			const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${apiKey}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					model: 'llama-3.1-8b-instant',
+					messages: [
+						{
+							role: 'system',
+							content: `You are an expert arboricultural report writer. Generate a professional ${section} section for a ${selectedTemplate?.name || 'arboricultural'} report.`
+						},
+						{
+							role: 'user',
+							content: `Generate a ${section} section for an arboricultural report with the following context:\n\n${context}`
+						}
+					],
+					temperature: 0.7,
+					max_tokens: 2048
+				})
+			});
+			
+			if (!response.ok) {
+				throw new Error('Failed to generate section with AI');
+			}
+			
+			const data = await response.json();
+			const newSection = data.choices[0].message.content;
+			
+			// Append the new section to the report
+			generatedReport += '\n\n' + newSection;
+		} catch (e) {
+			console.error('AI section generation failed:', e);
+			alert('Failed to generate section with AI. Please check your API key in Settings.');
+		} finally {
+			aiProcessing = false;
+			aiAction = '';
+		}
+	}
+	
+	async function processAIPrompt() {
+		if (!aiPrompt.trim() || !apiKey) return;
+		
+		aiProcessing = true;
+		aiAction = 'Processing AI request...';
+		
+		try {
+			const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${apiKey}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					model: 'llama-3.1-8b-instant',
+					messages: [
+						{
+							role: 'system',
+							content: 'You are an expert arboricultural report writer. Help the user modify their report based on their request.'
+						},
+						{
+							role: 'user',
+							content: `Current report:\n\n${generatedReport}\n\nUser request: ${aiPrompt}`
+						}
+					],
+					temperature: 0.7,
+					max_tokens: 4096
+				})
+			});
+			
+			if (!response.ok) {
+				throw new Error('Failed to process AI request');
+			}
+			
+			const data = await response.json();
+			generatedReport = data.choices[0].message.content;
+			aiPrompt = '';
+		} catch (e) {
+			console.error('AI prompt processing failed:', e);
+			alert('Failed to process AI request. Please check your API key in Settings.');
+		} finally {
+			aiProcessing = false;
+			aiAction = '';
+		}
+	}
 </script>
 
 <div class="card">
@@ -41,6 +246,89 @@
 	</div>
 	
 	<div class="p-6">
+		<!-- AI Tools Section -->
+		<div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+			<h3 class="font-medium text-blue-900 mb-3">AI Report Tools</h3>
+			<div class="flex flex-wrap gap-2 mb-4">
+				<button
+					on:click={rewriteWithAI}
+					disabled={aiProcessing || !generatedReport.trim() || !apiKey}
+					class="btn btn-primary text-sm"
+				>
+					{#if aiProcessing && aiAction === 'Rewriting with AI...'}
+						<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+						</svg>
+						Rewriting...
+					{:else}
+						Rewrite with AI
+					{/if}
+				</button>
+				<button
+					on:click={improveSectionWithAI}
+					disabled={aiProcessing || !generatedReport.trim() || !apiKey}
+					class="btn btn-primary text-sm"
+				>
+					{#if aiProcessing && aiAction.includes('Improving')}
+						<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+						</svg>
+						Improving...
+					{:else}
+						Improve Section
+					{/if}
+				</button>
+				<button
+					on:click={generateSectionWithAI}
+					disabled={aiProcessing || !apiKey}
+					class="btn btn-primary text-sm"
+				>
+					{#if aiProcessing && aiAction.includes('Generating')}
+						<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+						</svg>
+						Generating...
+					{:else}
+						Generate Section
+					{/if}
+				</button>
+			</div>
+			
+			<div class="flex gap-2">
+				<input
+					type="text"
+					bind:value={aiPrompt}
+					placeholder="Ask AI to modify the report (e.g., 'Make it more concise', 'Add more technical details')"
+					class="input flex-1 text-sm"
+					on:keydown={(e) => e.key === 'Enter' && processAIPrompt()}
+					disabled={aiProcessing || !apiKey}
+				/>
+				<button
+					on:click={processAIPrompt}
+					disabled={aiProcessing || !aiPrompt.trim() || !apiKey}
+					class="btn btn-primary text-sm"
+				>
+					{#if aiProcessing && aiAction === 'Processing AI request...'}
+						<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+						</svg>
+						Processing
+					{:else}
+						Ask AI
+					{/if}
+				</button>
+			</div>
+			{#if !apiKey}
+				<p class="text-xs text-red-600 mt-2">
+					⚠️ API key required. Set your Groq API key in Settings.
+				</p>
+			{/if}
+		</div>
+		
 		<div class="mb-4">
 			<textarea
 				bind:value={generatedReport}

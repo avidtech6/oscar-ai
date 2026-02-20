@@ -22,6 +22,7 @@
 	import ReportEditor from '$lib/components/reports/ReportEditor.svelte';
 	import SectionEditor from '$lib/components/reports/SectionEditor.svelte';
 	import ProjectContextBar from '$lib/components/reports/ProjectContextBar.svelte';
+	import UnifiedAIPrompt from '$lib/components/ai/UnifiedAIPrompt.svelte';
 
 	let apiKey = '';
 	groqApiKey.subscribe(value => {
@@ -61,6 +62,9 @@
 	let sections: ReportSection[] = [];
 	let currentSectionIndex = 0;
 	let editMode: 'full' | 'sections' = 'full';
+	
+	// AI Assistant state
+	let showAIAssistant = false;
 
 	onMount(async () => {
 		// Load all projects for selection
@@ -171,7 +175,7 @@
 	async function selectTemplate(template: Template) {
 		selectedTemplate = template;
 		
-		// Check for missing data
+		// Check for missing data (only if we have a project)
 		if (selectedProjectId) {
 			const data = await prepareTemplateData(selectedProjectId);
 			missingData = checkMissingData(data, template.id);
@@ -179,6 +183,11 @@
 			
 			// Generate gap fill questions
 			generateGapFillQuestions();
+		} else {
+			// No project selected, so no missing data to check
+			missingData = [];
+			showMissingDataWarning = false;
+			gapFillQuestions = [];
 		}
 		
 		// Start AI-guided flow
@@ -222,40 +231,72 @@
 	function generateStaticGapFillQuestions() {
 		gapFillQuestions = [];
 		
-		if (!selectedProject?.client || selectedProject.client === 'Not specified') {
+		// If no project selected, ask for basic information
+		if (!selectedProject) {
 			gapFillQuestions.push({
 				id: crypto.randomUUID(),
-				question: 'What is the client name?',
+				question: 'What is the client or organization name?',
 				answer: '',
 				field: 'client'
 			});
-		}
-		
-		if (!selectedProject?.location || selectedProject.location === 'Not specified') {
+			
 			gapFillQuestions.push({
 				id: crypto.randomUUID(),
-				question: 'What is the site address?',
+				question: 'What is the site address or location?',
 				answer: '',
 				field: 'location'
 			});
-		}
-		
-		if (trees.length === 0) {
+			
 			gapFillQuestions.push({
 				id: crypto.randomUUID(),
-				question: 'Do you have a tree plan or survey data?',
+				question: 'Do you have any tree survey data to include?',
 				answer: '',
 				field: 'trees'
 			});
-		}
-		
-		if (notes.length === 0) {
+			
 			gapFillQuestions.push({
 				id: crypto.randomUUID(),
-				question: 'Do you have any field notes or observations?',
+				question: 'Any field notes or observations to include?',
 				answer: '',
 				field: 'notes'
 			});
+		} else {
+			// Project selected, check for missing data
+			if (!selectedProject.client || selectedProject.client === 'Not specified') {
+				gapFillQuestions.push({
+					id: crypto.randomUUID(),
+					question: 'What is the client name?',
+					answer: '',
+					field: 'client'
+				});
+			}
+			
+			if (!selectedProject.location || selectedProject.location === 'Not specified') {
+				gapFillQuestions.push({
+					id: crypto.randomUUID(),
+					question: 'What is the site address?',
+					answer: '',
+					field: 'location'
+				});
+			}
+			
+			if (trees.length === 0) {
+				gapFillQuestions.push({
+					id: crypto.randomUUID(),
+					question: 'Do you have a tree plan or survey data?',
+					answer: '',
+					field: 'trees'
+				});
+			}
+			
+			if (notes.length === 0) {
+				gapFillQuestions.push({
+					id: crypto.randomUUID(),
+					question: 'Do you have any field notes or observations?',
+					answer: '',
+					field: 'notes'
+				});
+			}
 		}
 	}
 
@@ -280,7 +321,7 @@
 	}
 
 	async function generateReport() {
-		if (!selectedTemplate || !selectedProjectId) return;
+		if (!selectedTemplate) return;
 		
 		generating = true;
 		error = '';
@@ -293,14 +334,17 @@
 				// Load template HTML
 				const templateHtml = await loadTemplateHtml(selectedTemplate.id);
 				
-				// Prepare data
-				const templateData = await prepareTemplateData(selectedProjectId);
-				
-				// Apply gap fill answers
-				const updatedData = applyGapFillAnswers(templateData);
+				// Prepare data (only if we have a project)
+				let templateData: any = { project: { name: 'Generic Report', client: 'Not specified', siteAddress: 'Not specified' } };
+				if (selectedProjectId) {
+					templateData = await prepareTemplateData(selectedProjectId);
+					// Apply gap fill answers
+					const updatedData = applyGapFillAnswers(templateData);
+					templateData = updatedData;
+				}
 				
 				// Render template
-				htmlContent = renderTemplate(templateHtml, updatedData);
+				htmlContent = renderTemplate(templateHtml, templateData);
 			} else {
 				// AI-generated report
 				if (!apiKey) {
@@ -347,7 +391,9 @@
 			
 			// Save to IndexedDB for later editing
 			const reportId = crypto.randomUUID();
-			const reportTitle = `${selectedTemplate?.name} - ${selectedProject?.name}`;
+			const reportTitle = selectedProject
+				? `${selectedTemplate?.name} - ${selectedProject?.name}`
+				: `${selectedTemplate?.name} - Generic Report`;
 			
 			// Convert HTML to Blob for storage
 			const pdfBlob = new Blob([htmlContent], { type: 'text/html' });
@@ -358,9 +404,12 @@
 			if (selectedTemplate?.id === 'method') reportType = 'method';
 			if (selectedTemplate?.id === 'condition') reportType = 'bs5837'; // Fallback for condition template
 			
+			// Use empty string for projectId if no project selected
+			const projectIdForSave = selectedProjectId || '';
+			
 			try {
 				await saveReport({
-					projectId: selectedProjectId,
+					projectId: projectIdForSave,
 					title: reportTitle,
 					type: reportType,
 					pdfBlob
@@ -370,7 +419,7 @@
 				// Also save to localStorage for backward compatibility during migration
 				const report = {
 					id: reportId,
-					projectId: selectedProjectId,
+					projectId: projectIdForSave,
 					type: selectedTemplate?.id,
 					title: reportTitle,
 					content: htmlContent,
@@ -386,7 +435,7 @@
 				// Fallback to localStorage only
 				const report = {
 					id: reportId,
-					projectId: selectedProjectId,
+					projectId: projectIdForSave,
 					type: selectedTemplate?.id,
 					title: reportTitle,
 					content: htmlContent,
@@ -408,44 +457,62 @@
 	}
 
 	function buildContextText(): string {
-		let context = 'PROJECT: ' + selectedProject?.name + '\n';
+		let context = '';
 		
-		// Apply gap fill answers
-		let clientName = selectedProject?.client || 'Not specified';
-		let siteAddress = selectedProject?.location || 'Not specified';
-		
-		for (const gap of gapFillQuestions) {
-			if (gap.answer && gap.field === 'client') clientName = gap.answer;
-			if (gap.answer && gap.field === 'location') siteAddress = gap.answer;
-		}
-		
-		context += 'Client: ' + clientName + '\n';
-		context += 'Site: ' + siteAddress + '\n\n';
-		
-		context += 'TREES:\n';
-		if (trees.length > 0) {
-			trees.forEach(tree => {
-				context += `- ${tree.number}: ${tree.species} (${tree.scientificName || 'N/A'})\n`;
-				context += `  DBH: ${tree.DBH}mm, Height: ${tree.height || 'N/A'}m\n`;
-				context += `  Category: ${tree.category || 'Not assessed'}, Condition: ${tree.condition || 'N/A'}\n`;
-				context += '\n';
-			});
+		if (selectedProject) {
+			context += 'PROJECT: ' + selectedProject.name + '\n';
+			
+			// Apply gap fill answers
+			let clientName = selectedProject.client || 'Not specified';
+			let siteAddress = selectedProject.location || 'Not specified';
+			
+			for (const gap of gapFillQuestions) {
+				if (gap.answer && gap.field === 'client') clientName = gap.answer;
+				if (gap.answer && gap.field === 'location') siteAddress = gap.answer;
+			}
+			
+			context += 'Client: ' + clientName + '\n';
+			context += 'Site: ' + siteAddress + '\n\n';
+			
+			context += 'TREES:\n';
+			if (trees.length > 0) {
+				trees.forEach(tree => {
+					context += `- ${tree.number}: ${tree.species} (${tree.scientificName || 'N/A'})\n`;
+					context += `  DBH: ${tree.DBH}mm, Height: ${tree.height || 'N/A'}m\n`;
+					context += `  Category: ${tree.category || 'Not assessed'}, Condition: ${tree.condition || 'N/A'}\n`;
+					context += '\n';
+				});
+			} else {
+				context += 'No trees recorded yet.\n\n';
+			}
+			
+			if (notes.length > 0) {
+				context += 'FIELD NOTES:\n';
+				notes.forEach(note => {
+					context += `- ${new Date(note.createdAt).toLocaleString('en-GB')}: ${note.content}\n`;
+				});
+			}
+			
+			if (tasks.length > 0) {
+				context += 'TASKS:\n';
+				tasks.forEach(task => {
+					context += `- ${task.title}: ${task.status}\n`;
+				});
+			}
 		} else {
-			context += 'No trees recorded yet.\n\n';
-		}
-		
-		if (notes.length > 0) {
-			context += 'FIELD NOTES:\n';
-			notes.forEach(note => {
-				context += `- ${new Date(note.createdAt).toLocaleString('en-GB')}: ${note.content}\n`;
-			});
-		}
-		
-		if (tasks.length > 0) {
-			context += 'TASKS:\n';
-			tasks.forEach(task => {
-				context += `- ${task.title}: ${task.status}\n`;
-			});
+			context += 'GENERIC REPORT: No specific project selected.\n\n';
+			context += 'This is a generic report template. Please add project-specific details as needed.\n\n';
+			
+			// Include any gap fill answers even without a project
+			if (gapFillQuestions.length > 0) {
+				context += 'USER-PROVIDED INFORMATION:\n';
+				for (const gap of gapFillQuestions) {
+					if (gap.answer) {
+						context += `- ${gap.question}: ${gap.answer}\n`;
+					}
+				}
+				context += '\n';
+			}
 		}
 		
 		return context;
@@ -453,6 +520,11 @@
 
 	function applyGapFillAnswers(data: any): any {
 		const updatedData = { ...data };
+		
+		// Ensure project object exists
+		if (!updatedData.project) {
+			updatedData.project = { name: 'Generic Report', client: 'Not specified', siteAddress: 'Not specified' };
+		}
 		
 		for (const gap of gapFillQuestions) {
 			if (gap.answer) {
@@ -629,8 +701,11 @@
 		if (currentQuestion.field !== 'client') return;
 		
 		try {
-			// Prepare project data for AI
-			const projectData = await prepareTemplateData(selectedProjectId);
+			// Prepare project data for AI (if we have a project)
+			let projectData: any = { project: { name: 'Generic Report', client: 'Not specified', siteAddress: 'Not specified' } };
+			if (selectedProjectId) {
+				projectData = await prepareTemplateData(selectedProjectId);
+			}
 			const result = await suggestClientName(projectData);
 			
 			// For Step 18: Auto-fill when confidence is high (≥ 80%)
@@ -661,8 +736,11 @@
 		if (currentQuestion.field !== 'location') return;
 		
 		try {
-			// Prepare project data for AI
-			const projectData = await prepareTemplateData(selectedProjectId);
+			// Prepare project data for AI (if we have a project)
+			let projectData: any = { project: { name: 'Generic Report', client: 'Not specified', siteAddress: 'Not specified' } };
+			if (selectedProjectId) {
+				projectData = await prepareTemplateData(selectedProjectId);
+			}
 			const result = await suggestSiteAddress(projectData);
 			
 			// For Step 18: Auto-fill when confidence is high (≥ 80%)
@@ -772,7 +850,18 @@
 		}}
 	/>
 
-	<h1 class="text-2xl font-bold text-gray-900 mb-6">HTML Report Builder</h1>
+	<div class="flex items-center justify-between mb-6">
+		<h1 class="text-2xl font-bold text-gray-900">HTML Report Builder</h1>
+		<button
+			on:click={() => showAIAssistant = true}
+			class="btn btn-primary flex items-center gap-2"
+		>
+			<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+			</svg>
+			AI Assistant
+		</button>
+	</div>
 
 	{#if error && !generatedReport}
 		<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
@@ -785,39 +874,74 @@
 			<p class="text-gray-500">Loading project data...</p>
 		</div>
 	{:else}
-		<!-- Step 1: Project Selection -->
+		<!-- Step 1: Project Selection (Optional) -->
 		{#if currentStep === 'project-select'}
 			<div class="card p-6 mb-6">
-				<h2 class="text-lg font-semibold mb-4">Select a Project</h2>
-				<p class="text-gray-600 mb-6">All reports must be linked to a project. Choose a project to continue.</p>
+				<h2 class="text-lg font-semibold mb-4">Start a Report</h2>
+				<p class="text-gray-600 mb-6">You can create a report with or without a project. Reports can be attached to a project later.</p>
 				
-				{#if allProjects.length === 0}
-					<div class="text-center py-8">
-						<p class="text-gray-500 mb-4">No projects found.</p>
-						<a href="/project" class="btn btn-primary">Create a Project</a>
+				<div class="grid gap-4 md:grid-cols-2">
+					<!-- Option 1: Start without a project -->
+					<button
+						on:click={() => {
+							selectedProjectId = '';
+							selectedProject = undefined;
+							trees = [];
+							notes = [];
+							tasks = [];
+							currentStep = 'template-select';
+						}}
+						class="flex flex-col items-start p-6 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left"
+					>
+						<div class="flex items-center gap-3 mb-3">
+							<span class="text-2xl">📄</span>
+							<div>
+								<div class="font-medium text-gray-900">Generic Report</div>
+								<div class="text-sm text-gray-500">Create a report without linking to a project</div>
+							</div>
+						</div>
+						<div class="text-xs text-gray-400 mt-2">Ideal for templates, drafts, or general use</div>
+					</button>
+					
+					<!-- Option 2: Select a project -->
+					<div class="border rounded-lg p-6">
+						<h3 class="font-medium text-gray-900 mb-3">Link to a Project</h3>
+						<p class="text-sm text-gray-600 mb-4">Choose a project to include its data (trees, notes, tasks) in the report.</p>
+						
+						{#if allProjects.length === 0}
+							<div class="text-center py-4">
+								<p class="text-gray-500 mb-3">No projects found.</p>
+								<a href="/project" class="btn btn-primary text-sm">Create a Project</a>
+							</div>
+						{:else}
+							<div class="space-y-3 max-h-60 overflow-y-auto">
+								{#each allProjects as project}
+									<button
+										on:click={() => project.id && selectProject(project.id)}
+										class="flex items-start gap-3 p-3 border rounded hover:bg-gray-50 transition-colors text-left w-full"
+									>
+										<div class="flex-1">
+											<div class="font-medium text-gray-900 text-sm">{project.name}</div>
+											<div class="text-xs text-gray-500">{project.client || 'No client specified'}</div>
+										</div>
+										<div class="text-blue-600">→</div>
+									</button>
+								{/each}
+							</div>
+						{/if}
 					</div>
-				{:else}
-					<div class="grid gap-3">
-						{#each allProjects as project}
-							<button
-								on:click={() => project.id && selectProject(project.id)}
-								class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors text-left"
-							>
-								<div class="flex-1">
-									<div class="font-medium text-gray-900">{project.name}</div>
-									<div class="text-sm text-gray-500">{project.client || 'No client specified'}</div>
-									<div class="text-xs text-gray-400 mt-1">{project.location || 'No location specified'}</div>
-								</div>
-								<div class="text-blue-600">→</div>
-							</button>
-						{/each}
-					</div>
-				{/if}
+				</div>
+				
+				<!-- AI Assistant -->
+				<UnifiedAIPrompt
+					projectId={selectedProjectId}
+					isOpen={showAIAssistant}
+				/>
 			</div>
 		{/if}
 
 		<!-- Step 2: Template Selection -->
-		{#if currentStep === 'template-select' && selectedProject}
+		{#if currentStep === 'template-select'}
 			<div class="card p-6 mb-6">
 				<h2 class="text-lg font-semibold mb-4">Select Report Template</h2>
 				<p class="text-gray-600 mb-6">Choose a template to generate a professional report. Templates are pre-formatted with all necessary sections and styling.</p>
@@ -840,18 +964,27 @@
 					{/each}
 				</div>
 
-				<div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-					<h3 class="font-medium text-blue-800 mb-2">Project Context</h3>
-					<p class="text-blue-700 text-sm">
-						Generating report for: <strong>{selectedProject.name}</strong><br>
-						{trees.length} trees, {notes.length} notes, {tasks.length} tasks available
-					</p>
-				</div>
+				{#if selectedProject}
+					<div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+						<h3 class="font-medium text-blue-800 mb-2">Project Context</h3>
+						<p class="text-blue-700 text-sm">
+							Generating report for: <strong>{selectedProject.name}</strong><br>
+							{trees.length} trees, {notes.length} notes, {tasks.length} tasks available
+						</p>
+					</div>
+				{:else}
+					<div class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+						<h3 class="font-medium text-gray-800 mb-2">No Project Selected</h3>
+						<p class="text-gray-700 text-sm">
+							Creating a generic report. You can attach this to a project later.
+						</p>
+					</div>
+				{/if}
 			</div>
 		{/if}
 
 		<!-- Step 3: AI-Guided Flow -->
-		{#if currentStep === 'ai-guided' && selectedTemplate && selectedProject}
+		{#if currentStep === 'ai-guided' && selectedTemplate}
 			<ReportWizard
 				selectedTemplate={selectedTemplate}
 				selectedProject={selectedProject}
