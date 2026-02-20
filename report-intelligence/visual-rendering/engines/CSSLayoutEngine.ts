@@ -486,7 +486,6 @@ export class CSSLayoutEngine {
     
     return rules;
   }
-}
   
   /**
    * Calculate layout for a page
@@ -1125,4 +1124,5 @@ export class CSSLayoutEngine {
     });
     
     return rules;
+  }
   }
