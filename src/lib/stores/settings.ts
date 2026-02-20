@@ -2,15 +2,18 @@ import { writable, derived } from 'svelte/store';
 import { getSetting, setSetting, deleteSetting, migrateLocalStorageToIndexedDB } from '$lib/db/index';
 
 const GROQ_API_KEY_STORAGE = 'oscar_groq_api_key';
+const GROK_API_KEY_STORAGE = 'oscar_grok_api_key';
 const THEME_STORAGE = 'oscar_theme';
 const SIDEBAR_COLLAPSED_STORAGE = 'oscar_sidebar_collapsed';
 const DUMMY_DATA_ENABLED_KEY = 'oscar_dummy_data_enabled';
 const CURRENT_PROJECT_ID_KEY = 'oscar_current_project_id';
 
-// Load API key from environment (correct + safe)
+// Load API keys from environment (correct + safe)
 const DEFAULT_GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
+const DEFAULT_GROK_API_KEY = import.meta.env.VITE_GROK_API_KEY || '';
 
 export const groqApiKey = writable<string>('');
+export const grokApiKey = writable<string>('');
 export const theme = writable<'light' | 'dark'>('dark');
 export const sidebarCollapsed = writable<boolean>(false);
 export const dummyDataEnabled = writable<boolean>(false);
@@ -24,6 +27,7 @@ export const groqModels = writable({
 // Combined settings store
 export interface Settings {
     groqApiKey: string;
+    grokApiKey: string;
     theme: 'light' | 'dark';
     sidebarCollapsed: boolean;
     dummyDataEnabled: boolean;
@@ -33,6 +37,7 @@ export interface Settings {
 // Create a writable settings store that combines all individual stores
 export const settings = writable<Settings>({
     groqApiKey: '',
+    grokApiKey: '',
     theme: 'dark',
     sidebarCollapsed: false,
     dummyDataEnabled: false,
@@ -71,8 +76,9 @@ export async function initSettings() {
     }
 
     // Load all settings from IndexedDB (with localStorage fallback)
-    const [storedKey, storedTheme, storedSidebar, storedDummyData, storedProjectId] = await Promise.all([
+    const [storedGroqKey, storedGrokKey, storedTheme, storedSidebar, storedDummyData, storedProjectId] = await Promise.all([
         getSetting(GROQ_API_KEY_STORAGE),
+        getSetting(GROK_API_KEY_STORAGE),
         getSetting(THEME_STORAGE),
         getSetting(SIDEBAR_COLLAPSED_STORAGE),
         getSetting(DUMMY_DATA_ENABLED_KEY),
@@ -81,7 +87,8 @@ export async function initSettings() {
 
     // Phase 5: No localStorage fallback - migration should be complete
     // Use IndexedDB values only, with defaults if undefined
-    const finalKey = storedKey !== undefined ? storedKey : DEFAULT_GROQ_API_KEY || '';
+    const finalGroqKey = storedGroqKey !== undefined ? storedGroqKey : DEFAULT_GROQ_API_KEY || '';
+    const finalGrokKey = storedGrokKey !== undefined ? storedGrokKey : DEFAULT_GROK_API_KEY || '';
     const finalTheme = storedTheme !== undefined ? storedTheme : 'dark';
     const finalSidebar = storedSidebar !== undefined ? storedSidebar : false;
     const finalDummyData = storedDummyData !== undefined ? storedDummyData : false;
@@ -89,7 +96,8 @@ export async function initSettings() {
 
     // Build initial settings object
     const initialSettings: Settings = {
-        groqApiKey: typeof finalKey === 'string' ? finalKey : '',
+        groqApiKey: typeof finalGroqKey === 'string' ? finalGroqKey : '',
+        grokApiKey: typeof finalGrokKey === 'string' ? finalGrokKey : '',
         theme: finalTheme === 'light' || finalTheme === 'dark' ? finalTheme : 'dark',
         sidebarCollapsed: finalSidebar === 'true' || finalSidebar === true,
         dummyDataEnabled: finalDummyData === 'true' || finalDummyData === true,
@@ -101,6 +109,7 @@ export async function initSettings() {
 
     // Also set individual stores for backward compatibility
     groqApiKey.set(initialSettings.groqApiKey);
+    grokApiKey.set(initialSettings.grokApiKey);
     theme.set(initialSettings.theme);
     sidebarCollapsed.set(initialSettings.sidebarCollapsed);
     dummyDataEnabled.set(initialSettings.dummyDataEnabled);
@@ -113,6 +122,15 @@ export async function initSettings() {
             await saveSettingToIndexedDB(GROQ_API_KEY_STORAGE, value);
         } else {
             await deleteSettingFromIndexedDB(GROQ_API_KEY_STORAGE);
+        }
+    });
+
+    grokApiKey.subscribe(async value => {
+        settings.update(s => ({ ...s, grokApiKey: value }));
+        if (value) {
+            await saveSettingToIndexedDB(GROK_API_KEY_STORAGE, value);
+        } else {
+            await deleteSettingFromIndexedDB(GROK_API_KEY_STORAGE);
         }
     });
 
@@ -144,6 +162,7 @@ export async function initSettings() {
     // Also subscribe to changes in combined store to keep individual stores in sync
     settings.subscribe(value => {
         groqApiKey.set(value.groqApiKey);
+        grokApiKey.set(value.grokApiKey);
         theme.set(value.theme);
         sidebarCollapsed.set(value.sidebarCollapsed);
         dummyDataEnabled.set(value.dummyDataEnabled);
@@ -164,12 +183,14 @@ export async function clearAllData() {
     
     // Reset all stores to default values
     groqApiKey.set('');
+    grokApiKey.set('');
     theme.set('dark');
     sidebarCollapsed.set(false);
     dummyDataEnabled.set(false);
     currentProjectId.set('');
     settings.set({
         groqApiKey: '',
+        grokApiKey: '',
         theme: 'dark',
         sidebarCollapsed: false,
         dummyDataEnabled: false,

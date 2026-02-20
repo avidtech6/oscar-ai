@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { db } from '$lib/db';
-	import { groqApiKey } from '$lib/stores/settings';
+	import { groqApiKey, settings } from '$lib/stores/settings';
 	import type { Project, Tree, Note } from '$lib/db';
 	import MarkdownRenderer from '$lib/components/MarkdownRenderer.svelte';
 	import MicButton from '$lib/components/MicButton.svelte';

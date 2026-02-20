@@ -4,35 +4,29 @@ Status
 (Phase definition approved; awaiting kickoff)
 
 Phase Summary
-Phase 18 introduces the Unified Multi‑Device Editor and the Supabase Cloud Integration Layer, transforming Oscar AI from a local‑only app into a local‑first, cloud‑connected platform.
+Phase 18 introduces the Unified Multi‑Device Editor and the Supabase Cloud Integration Layer, transforming Oscar AI from a local‑only prototype into a local‑first, cloud‑connected platform.
 
-This phase ensures:
+This phase replaces all remaining placeholders (including the outdated PocketBase references) and establishes the real platform architecture:
 
-A single editor for reports, blog posts, tasks, emails, notes, and future content types
+Local‑first storage (IndexedDB)
 
-A unified Copilot interaction layer across all content
+Supabase cloud sync
 
-A unified preview engine
+Unified editor
 
-A unified metadata panel
+Unified Copilot
 
-A unified gallery panel
+Unified metadata
 
-Multi‑device UI layouts (mobile/tablet/desktop)
+Unified gallery
 
-Supabase‑powered user accounts
+Multi‑device layouts
 
-Supabase‑powered cloud sync
+Real‑time updates
 
-Supabase‑powered storage
+Admin‑controlled backend keys
 
-Local‑first architecture with offline mode
-
-Real‑time updates across devices
-
-Admin‑controlled backend keys (Grok + Supabase)
-
-This phase is the architectural “glue” that keeps Oscar AI elegant, scalable, and future‑proof.
+This is the architectural “spine” of Oscar AI.
 
 Objectives
 1. Unified Multi‑Device Editor
@@ -52,7 +46,7 @@ Email drafts
 
 Templates
 
-Future Academy content
+Academy content
 
 Features:
 
@@ -77,6 +71,8 @@ Clean HTML output
 WordPress‑compatible formatting
 
 Structured block model (TipTap/ProseMirror)
+
+Mobile/tablet/desktop responsive UI
 
 2. Unified Copilot Interaction Layer
 A single Copilot interface that works across all content types:
@@ -219,6 +215,8 @@ Logout
 Password reset
 
 B. Cloud Sync
+Sync the following between devices:
+
 Reports
 
 Blog posts
@@ -238,6 +236,8 @@ Settings
 AI preferences
 
 C. Storage
+Supabase storage for:
+
 Thumbnails
 
 PDFs
@@ -264,15 +264,17 @@ Live updates in gallery
 Live updates in tasks/calendar
 
 E. Admin Control
-You control all backend keys
+You control:
 
-You control storage rules
+All backend keys
 
-You control sync logic
+Storage rules
 
-You control quotas
+Sync logic
 
-You control backend updates
+Quotas
+
+Backend updates
 
 7. Local‑First Architecture (Offline Mode)
 Local Storage (Primary)

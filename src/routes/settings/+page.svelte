@@ -7,6 +7,7 @@
 	import { getVersionInfo } from '../../version';
 
 	let apiKey = '';
+	let grokApiKey = '';
 	let pbUrl = '';
 	let saving = false;
 	let saved = false;
@@ -23,6 +24,7 @@
 		// Load current settings using store subscription
 		const unsubscribe = settings.subscribe((currentSettings) => {
 			apiKey = currentSettings.groqApiKey || '';
+			grokApiKey = currentSettings.grokApiKey || '';
 			dummyDataToggle = currentSettings.dummyDataEnabled || false;
 		});
 		
@@ -104,11 +106,13 @@
 			// Save Groq API key using the settings store
 			settings.update(currentSettings => ({
 				...currentSettings,
-				groqApiKey: apiKey.trim()
+				groqApiKey: apiKey.trim(),
+				grokApiKey: grokApiKey.trim()
 			}));
 			
 			// Also update localStorage for backward compatibility
 			localStorage.setItem('oscar_groq_api_key', apiKey.trim());
+			localStorage.setItem('oscar_grok_api_key', grokApiKey.trim());
 			
 			// Configure PocketBase if URL provided
 			if (pbUrl.trim()) {
@@ -119,8 +123,8 @@
 				try {
 					const result = await initializeBackend();
 					backendType = result.backend;
-					connectionStatus = result.backend === 'pocketbase' 
-						? 'Connected to PocketBase!' 
+					connectionStatus = result.backend === 'pocketbase'
+						? 'Connected to PocketBase!'
 						: 'Connection failed. Using local storage.';
 				} catch (e) {
 					connectionStatus = 'Failed to connect. Using local storage.';
@@ -142,6 +146,11 @@
 
 	function clearApiKey() {
 		apiKey = '';
+		saveSettings();
+	}
+
+	function clearGrokApiKey() {
+		grokApiKey = '';
 		saveSettings();
 	}
 
@@ -312,43 +321,88 @@
 	<div class="card p-6 mb-6">
 		<h2 class="text-lg font-semibold mb-4">AI Configuration</h2>
 		<p class="text-sm text-gray-600 mb-4">
-			Configure the Groq API for AI-powered features including chat assistant and voice transcription.
+			Configure AI APIs for AI-powered features including chat assistant and voice transcription.
 		</p>
 		
-		<div class="space-y-4">
+		<div class="space-y-6">
 			<div>
-				<label for="apiKey" class="block text-sm font-medium text-gray-700 mb-1">
-					Groq API Key
-				</label>
-				<input
-					id="apiKey"
-					type="password"
-					bind:value={apiKey}
-					placeholder="gsk_..."
-					class="input w-full"
-				/>
-				<p class="text-xs text-gray-500 mt-1">
-					Get your free API key from <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" class="text-forest-600 hover:underline">console.groq.com</a>
-				</p>
+				<h3 class="text-md font-medium mb-3">Groq API</h3>
+				<div class="space-y-4">
+					<div>
+						<label for="apiKey" class="block text-sm font-medium text-gray-700 mb-1">
+							Groq API Key
+						</label>
+						<input
+							id="apiKey"
+							type="password"
+							bind:value={apiKey}
+							placeholder="gsk_..."
+							class="input w-full"
+						/>
+						<p class="text-xs text-gray-500 mt-1">
+							Get your free API key from <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" class="text-forest-600 hover:underline">console.groq.com</a>
+						</p>
+					</div>
+					
+					<div class="flex items-center gap-3">
+						<button
+							on:click={saveSettings}
+							disabled={saving}
+							class="btn btn-primary"
+						>
+							{saving ? 'Saving...' : saved ? 'Saved!' : 'Save API Key'}
+						</button>
+						
+						{#if apiKey}
+							<button
+								on:click={clearApiKey}
+								class="btn btn-secondary"
+							>
+								Clear
+							</button>
+						{/if}
+					</div>
+				</div>
 			</div>
-			
-			<div class="flex items-center gap-3">
-				<button
-					on:click={saveSettings}
-					disabled={saving}
-					class="btn btn-primary"
-				>
-					{saving ? 'Saving...' : saved ? 'Saved!' : 'Save API Key'}
-				</button>
-				
-				{#if apiKey}
-					<button
-						on:click={clearApiKey}
-						class="btn btn-secondary"
-					>
-						Clear
-					</button>
-				{/if}
+
+			<div class="border-t pt-6">
+				<h3 class="text-md font-medium mb-3">xAI Grok API</h3>
+				<div class="space-y-4">
+					<div>
+						<label for="grokApiKey" class="block text-sm font-medium text-gray-700 mb-1">
+							Grok API Key
+						</label>
+						<input
+							id="grokApiKey"
+							type="password"
+							bind:value={grokApiKey}
+							placeholder="grok_..."
+							class="input w-full"
+						/>
+						<p class="text-xs text-gray-500 mt-1">
+							Get your API key from <a href="https://console.x.ai" target="_blank" rel="noopener noreferrer" class="text-forest-600 hover:underline">console.x.ai</a> (xAI's Grok API)
+						</p>
+					</div>
+					
+					<div class="flex items-center gap-3">
+						<button
+							on:click={saveSettings}
+							disabled={saving}
+							class="btn btn-primary"
+						>
+							{saving ? 'Saving...' : saved ? 'Saved!' : 'Save API Key'}
+						</button>
+						
+						{#if grokApiKey}
+							<button
+								on:click={clearGrokApiKey}
+								class="btn btn-secondary"
+							>
+								Clear
+							</button>
+						{/if}
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -466,6 +520,13 @@
 					<span>Groq Whisper (Transcription)</span>
 				</div>
 				<span class="text-sm text-gray-600">{apiKey ? 'Configured' : 'Not configured'}</span>
+			</div>
+			<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+				<div class="flex items-center gap-3">
+					<span class="text-xl">🧠</span>
+					<span>xAI Grok (Chat)</span>
+				</div>
+				<span class="text-sm text-gray-600">{grokApiKey ? 'Configured' : 'Not configured'}</span>
 			</div>
 		</div>
 	</div>
