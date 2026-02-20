@@ -5,7 +5,7 @@
  * Note: These are conceptual tests that demonstrate the testing approach.
  */
 
-import { VisualRenderingEngine } from '../engines/VisualRenderingEngine';
+import { VisualRenderingEngine } from '../engines/VisualRenderingEngine.ts';
 
 /**
  * Test suite for VisualRenderingEngine
@@ -398,4 +398,33 @@ export async function runPhase14IntegrationTests(): Promise<{
   failed: number;
   tests: Array<{ name: string; passed: boolean; error?: string }>;
 }> {
-  const tests: Array<{ name: string; passed: boolean
+  const tests: Array<{ name: string; passed: boolean; error?: string }> = [];
+
+  async function test(name: string, fn: () => Promise<void> | void) {
+    try {
+      const result = fn();
+      if (result instanceof Promise) {
+        await result;
+      }
+      tests.push({ name, passed: true });
+    } catch (error) {
+      tests.push({
+        name,
+        passed: false,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  // Simple placeholder test for Phase 14 integration
+  await test('Phase 14 integration placeholder', () => {
+    // This is a placeholder test since Phase 14 integration would require
+    // the actual Phase 14 system to be available
+    console.log('Phase 14 integration test - placeholder');
+  });
+
+  const passed = tests.filter(t => t.passed).length;
+  const failed = tests.filter(t => !t.passed).length;
+
+  return { passed, failed, tests };
+}
