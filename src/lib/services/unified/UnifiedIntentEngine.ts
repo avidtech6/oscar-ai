@@ -74,40 +74,46 @@ export class UnifiedIntentEngine {
       context?: any;
     }
   ): Promise<IntentResult> {
+    // Ensure input is a string (defensive)
+    const safeInput = typeof input === 'string' ? input : String(input || '');
+    
     const isVoice = options?.isVoice || false;
     const voiceData = options?.voiceData;
     
     // Check voice patterns first if voice input
     if (isVoice) {
-      const voiceIntent = this.detectVoiceIntent(input, voiceData);
+      const voiceIntent = this.detectVoiceIntent(safeInput, voiceData);
       if (voiceIntent) return voiceIntent;
     }
 
     // Check text patterns
-    const textIntent = this.detectTextIntent(input);
+    const textIntent = this.detectTextIntent(safeInput);
     if (textIntent) return textIntent;
 
     // Default to chat
     return {
       intent: 'chat',
       confidence: 30,
-      data: { text: input },
+      data: { text: safeInput },
       requiresConfirmation: false,
     };
   }
 
   private detectVoiceIntent(input: string, voiceData?: VoiceIntentData): IntentResult | null {
+    // Ensure input is a string
+    const safeInput = typeof input === 'string' ? input : String(input || '');
+    
     for (const { pattern, intent } of VOICE_PATTERNS) {
-      if (pattern.test(input)) {
+      if (pattern.test(safeInput)) {
         return {
           intent,
-          confidence: this.calculateVoiceConfidence(input, intent),
+          confidence: this.calculateVoiceConfidence(safeInput, intent),
           data: {
-            text: input,
+            text: safeInput,
             ...voiceData,
             isVoice: true
           },
-          requiresConfirmation: this.requiresVoiceConfirmation(intent, input),
+          requiresConfirmation: this.requiresVoiceConfirmation(intent, safeInput),
         };
       }
     }
@@ -121,9 +127,12 @@ export class UnifiedIntentEngine {
   private calculateVoiceConfidence(input: string, intent: IntentType): number {
     const baseConfidence = 85; // Higher base confidence for voice
     
+    // Ensure input is a string
+    const safeInput = typeof input === 'string' ? input : String(input || '');
+    
     // Adjust based on input clarity
-    const wordCount = input.split(/\s+/).length;
-    const hasCompleteSentence = /[.!?]$/.test(input.trim());
+    const wordCount = safeInput.split(/\s+/).length;
+    const hasCompleteSentence = /[.!?]$/.test(safeInput.trim());
     
     let confidence = baseConfidence;
     
@@ -155,10 +164,13 @@ export class UnifiedIntentEngine {
       return false;
     }
     
+    // Ensure input is a string
+    const safeInput = typeof input === 'string' ? input : String(input || '');
+    
     // Check for confirmation keywords in voice input
     const confirmationKeywords = ['please', 'could you', 'would you', 'can you', 'I want', 'I need'];
     const hasPoliteRequest = confirmationKeywords.some(keyword =>
-      input.toLowerCase().includes(keyword)
+      safeInput.toLowerCase().includes(keyword)
     );
     
     // If polite request, may not need confirmation
@@ -231,12 +243,15 @@ export class UnifiedIntentEngine {
   }
 
   private detectTextIntent(input: string): IntentResult | null {
+    // Ensure input is a string
+    const safeInput = typeof input === 'string' ? input : String(input || '');
+    
     let bestMatch: { intent: IntentType; confidence: number } | null = null;
     
     for (const { pattern, intent } of TEXT_PATTERNS) {
-      const matches = input.match(pattern);
+      const matches = safeInput.match(pattern);
       if (matches) {
-        const confidence = this.calculateConfidence(input, matches[0], intent);
+        const confidence = this.calculateConfidence(safeInput, matches[0], intent);
         if (!bestMatch || confidence > bestMatch.confidence) {
           bestMatch = { intent, confidence };
         }
@@ -244,7 +259,7 @@ export class UnifiedIntentEngine {
     }
 
     if (bestMatch) {
-      const data = this.extractData(input, bestMatch.intent);
+      const data = this.extractData(safeInput, bestMatch.intent);
       return {
         intent: bestMatch.intent,
         confidence: bestMatch.confidence,

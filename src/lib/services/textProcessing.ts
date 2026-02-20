@@ -113,7 +113,9 @@ const TASK_CORRECTIONS: Record<string, string> = {
  * Correct spelling in a text string
  */
 export function correctSpelling(text: string): string {
-  let corrected = text;
+  // Ensure text is a string
+  const safeText = typeof text === 'string' ? text : String(text || '');
+  let corrected = safeText;
   
   // Apply common spelling corrections
   Object.entries(SPELLING_CORRECTIONS).forEach(([wrong, correct]) => {
@@ -134,7 +136,9 @@ export function correctSpelling(text: string): string {
  * Normalize grammar and punctuation
  */
 export function normalizeGrammar(text: string): string {
-  let normalized = text.trim();
+  // Ensure text is a string
+  const safeText = typeof text === 'string' ? text : String(text || '');
+  let normalized = safeText.trim();
   
   // Apply grammar patterns
   GRAMMAR_PATTERNS.forEach(([pattern, replacement]) => {
@@ -157,7 +161,9 @@ export function normalizeGrammar(text: string): string {
  * Extract and normalize multiple actions from text
  */
 export function extractMultipleActions(text: string): string[] {
-  const normalized = normalizeGrammar(correctSpelling(text));
+  // Ensure text is a string
+  const safeText = typeof text === 'string' ? text : String(text || '');
+  const normalized = normalizeGrammar(correctSpelling(safeText));
   
   // Split by common separators
   const separators = [',', ';', 'and', 'then', 'also', '&', '/', '|'];
@@ -210,7 +216,9 @@ export function extractMultipleActions(text: string): string[] {
  * Detect if text contains multiple actions
  */
 export function hasMultipleActions(text: string): boolean {
-  const normalized = text.toLowerCase();
+  // Ensure text is a string
+  const safeText = typeof text === 'string' ? text : String(text || '');
+  const normalized = safeText.toLowerCase();
   
   // Check for multiple action indicators
   const indicators = [
@@ -230,10 +238,12 @@ export function hasMultipleActions(text: string): boolean {
  * Get action type from text
  */
 export function getActionType(text: string): 'task' | 'note' | 'query' | 'update' | 'unknown' {
-  const normalized = text.toLowerCase();
+  // Ensure text is a string
+  const safeText = typeof text === 'string' ? text : String(text || '');
+  const normalized = safeText.toLowerCase();
   
-  if (normalized.includes('todo') || 
-      normalized.includes('task') || 
+  if (normalized.includes('todo') ||
+      normalized.includes('task') ||
       normalized.includes('remind') ||
       normalized.includes('remember') ||
       normalized.includes('check') ||
@@ -248,16 +258,16 @@ export function getActionType(text: string): 'task' | 'note' | 'query' | 'update
     return 'task';
   }
   
-  if (normalized.includes('note') || 
-      normalized.includes('write') || 
+  if (normalized.includes('note') ||
+      normalized.includes('write') ||
       normalized.includes('jot') ||
       normalized.includes('record') ||
       normalized.includes('save')) {
     return 'note';
   }
   
-  if (normalized.includes('show') || 
-      normalized.includes('list') || 
+  if (normalized.includes('show') ||
+      normalized.includes('list') ||
       normalized.includes('find') ||
       normalized.includes('search') ||
       normalized.includes('what') ||
@@ -267,8 +277,8 @@ export function getActionType(text: string): 'task' | 'note' | 'query' | 'update
     return 'query';
   }
   
-  if (normalized.includes('update') || 
-      normalized.includes('change') || 
+  if (normalized.includes('update') ||
+      normalized.includes('change') ||
       normalized.includes('edit') ||
       normalized.includes('modify') ||
       normalized.includes('rename') ||
@@ -291,14 +301,16 @@ export function processNaturalLanguageInput(input: string): {
   actions: string[];
   actionTypes: ('task' | 'note' | 'query' | 'update' | 'unknown')[];
 } {
-  const corrected = correctSpelling(input);
+  // Ensure input is a string
+  const safeInput = typeof input === 'string' ? input : String(input || '');
+  const corrected = correctSpelling(safeInput);
   const normalized = normalizeGrammar(corrected);
   const hasMultiple = hasMultipleActions(normalized);
   const actions = hasMultiple ? extractMultipleActions(normalized) : [normalized];
   const actionTypes = actions.map(action => getActionType(action));
   
   return {
-    original: input,
+    original: safeInput,
     corrected,
     normalized,
     hasMultiple,

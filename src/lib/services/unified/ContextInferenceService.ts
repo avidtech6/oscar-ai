@@ -262,8 +262,11 @@ export function extractEntities(message: string): {
     actions: [] as string[]
   };
   
+  // Ensure message is a string
+  const safeMessage = typeof message === 'string' ? message : String(message || '');
+  
   // Simple entity extraction (in production would use more sophisticated NLP)
-  const words = message.toLowerCase().split(/\s+/);
+  const words = safeMessage.toLowerCase().split(/\s+/);
   
   // Action words
   const actionWords = ['create', 'add', 'update', 'delete', 'edit', 'save', 'generate', 'write', 'record', 'transcribe'];
@@ -278,7 +281,7 @@ export function extractEntities(message: string): {
   ];
   
   datePatterns.forEach(pattern => {
-    const matches = message.match(pattern);
+    const matches = safeMessage.match(pattern);
     if (matches) {
       entities.dates.push(...matches);
     }
