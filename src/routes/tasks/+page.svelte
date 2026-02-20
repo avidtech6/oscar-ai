@@ -259,8 +259,8 @@
 								>
 									Edit
 								</button>
-								<button 
-									on:click={() => deleteTaskById(task.id!)}
+								<button
+									on:click={() => task.id && deleteTaskById(task.id)}
 									class="text-xs text-red-600 hover:underline"
 								>
 									Delete
@@ -313,8 +313,8 @@
 								>
 									Edit
 								</button>
-								<button 
-									on:click={() => deleteTaskById(task.id!)}
+								<button
+									on:click={() => task.id && deleteTaskById(task.id)}
 									class="text-xs text-red-600 hover:underline"
 								>
 									Delete
@@ -355,8 +355,8 @@
 								>
 									Reopen
 								</button>
-								<button 
-									on:click={() => deleteTaskById(task.id!)}
+								<button
+									on:click={() => task.id && deleteTaskById(task.id)}
 									class="text-xs text-red-600 hover:underline"
 								>
 									Delete
@@ -454,23 +454,21 @@
 						/>
 					</div>
 				</div>
+			<!-- Footer -->
+			<div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
+				<button
+					on:click={closeTaskModal}
+					class="btn btn-secondary"
+				>
+					Cancel
+				</button>
+				<button
+					on:click={saveTask}
+					class="btn btn-primary"
+				>
+					{editingTask ? 'Save Changes' : 'Create Task'}
+				</button>
 			</div>
-		</div>
-		
-		<!-- Footer -->
-		<div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
-			<button
-				on:click={closeTaskModal}
-				class="btn btn-secondary"
-			>
-				Cancel
-			</button>
-			<button
-				on:click={saveTask}
-				class="btn btn-primary"
-			>
-				{editingTask ? 'Save Changes' : 'Create Task'}
-			</button>
 		</div>
 	</div>
 </div>

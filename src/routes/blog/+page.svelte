@@ -418,216 +418,215 @@ Created: ${new Date(post.createdAt).toLocaleString()}
 				View Posts ({blogPosts.length})
 			</button>
 		</div>
+	
+		<!-- Create Mode -->
+		{#if viewMode === 'create'}
+			<div class="card p-6">
+				<h2 class="text-lg font-semibold mb-4">Generate New Blog Post</h2>
+				
+				<div class="space-y-4">
+					<div>
+						<label for="title" class="block text-sm font-medium text-gray-700 mb-1">
+							Blog Title *
+						</label>
+						<input
+							id="title"
+							type="text"
+							bind:value={newPost.title}
+							placeholder="e.g., 10 Essential Tree Care Tips for Property Owners"
+							class="input w-full"
+						/>
+					</div>
 
-			<!-- Create Mode -->
-			{#if viewMode === 'create'}
-				<div class="card p-6">
-					<h2 class="text-lg font-semibold mb-4">Generate New Blog Post</h2>
-					
-					<div class="space-y-4">
-						<div>
-							<label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-								Blog Title *
-							</label>
+					<div>
+						<label for="subtitle" class="block text-sm font-medium text-gray-700 mb-1">
+							Subtitle
+						</label>
+						<input
+							id="subtitle"
+							type="text"
+							bind:value={newPost.subtitle}
+							placeholder="e.g., A comprehensive guide to maintaining healthy trees"
+							class="input w-full"
+						/>
+					</div>
+
+					<div>
+						<label for="tags" class="block text-sm font-medium text-gray-700 mb-1">
+							Tags (comma-separated)
+						</label>
+						<input
+							id="tags"
+							type="text"
+							bind:value={newPost.tags}
+							placeholder="e.g., tree care, arboriculture, property maintenance"
+							class="input w-full"
+						/>
+					</div>
+
+					<div>
+						<label for="styleProfile" class="block text-sm font-medium text-gray-700 mb-1">
+							Style Profile (Optional)
+						</label>
+						<select
+							id="styleProfile"
+							bind:value={newPost.styleProfile}
+							class="input w-full"
+						>
+							<option value="">Default AI Style</option>
+							{#each styleProfiles as profile}
+								<option value={profile.id}>{profile.name}</option>
+							{/each}
+						</select>
+					</div>
+
+					<div class="flex items-center gap-2">
+						<input
+							id="attachProject"
+							type="checkbox"
+							bind:checked={newPost.attachProject}
+							class="rounded text-forest-600"
+						/>
+						<label for="attachProject" class="text-sm font-medium text-gray-700">
+							Use project context (if a project is selected above)
+						</label>
+					</div>
+
+					{#if newPost.attachProject}
+						<div class="flex items-center gap-2 pl-4">
 							<input
-								id="title"
-								type="text"
-								bind:value={newPost.title}
-								placeholder="e.g., 10 Essential Tree Care Tips for Property Owners"
-								class="input w-full"
-							/>
-						</div>
-
-						<div>
-							<label for="subtitle" class="block text-sm font-medium text-gray-700 mb-1">
-								Subtitle
-							</label>
-							<input
-								id="subtitle"
-								type="text"
-								bind:value={newPost.subtitle}
-								placeholder="e.g., A comprehensive guide to maintaining healthy trees"
-								class="input w-full"
-							/>
-						</div>
-
-						<div>
-							<label for="tags" class="block text-sm font-medium text-gray-700 mb-1">
-								Tags (comma-separated)
-							</label>
-							<input
-								id="tags"
-								type="text"
-								bind:value={newPost.tags}
-								placeholder="e.g., tree care, arboriculture, property maintenance"
-								class="input w-full"
-							/>
-						</div>
-
-						<div>
-							<label for="styleProfile" class="block text-sm font-medium text-gray-700 mb-1">
-								Style Profile (Optional)
-							</label>
-							<select
-								id="styleProfile"
-								bind:value={newPost.styleProfile}
-								class="input w-full"
-							>
-								<option value="">Default AI Style</option>
-								{#each styleProfiles as profile}
-									<option value={profile.id}>{profile.name}</option>
-								{/each}
-							</select>
-						</div>
-
-						<div class="flex items-center gap-2">
-							<input
-								id="attachProject"
+								id="includePhotos"
 								type="checkbox"
-								bind:checked={newPost.attachProject}
+								bind:checked={newPost.includePhotos}
 								class="rounded text-forest-600"
 							/>
-							<label for="attachProject" class="text-sm font-medium text-gray-700">
-								Use project context (if a project is selected above)
+							<label for="includePhotos" class="text-sm text-gray-700">
+								Include tree data in context
 							</label>
 						</div>
+					{/if}
 
-						{#if newPost.attachProject}
-							<div class="flex items-center gap-2 pl-4">
-								<input
-									id="includePhotos"
-									type="checkbox"
-									bind:checked={newPost.includePhotos}
-									class="rounded text-forest-600"
-								/>
-								<label for="includePhotos" class="text-sm text-gray-700">
-									Include tree data in context
-								</label>
-							</div>
-						{/if}
+					<div>
+						<label for="prompt" class="block text-sm font-medium text-gray-700 mb-1">
+							Additional Instructions
+						</label>
+						<textarea
+							id="prompt"
+							bind:value={newPost.prompt}
+							placeholder="Any specific topics or tone you want..."
+							rows="3"
+							class="input w-full"
+						></textarea>
+						<div class="mt-2">
+							<MicButton on:transcript={(e) => newPost.prompt += e.detail.text} />
+						</div>
+					</div>
 
-						<div>
-							<label for="prompt" class="block text-sm font-medium text-gray-700 mb-1">
-								Additional Instructions
-							</label>
-							<textarea
-								id="prompt"
-								bind:value={newPost.prompt}
-								placeholder="Any specific topics or tone you want..."
-								rows="3"
-								class="input w-full"
-							></textarea>
-							<div class="mt-2">
-								<MicButton on:transcript={(e) => newPost.prompt += e.detail.text} />
+					<button
+						on:click={generateBlogPost}
+						disabled={generating || !newPost.title.trim()}
+						class="btn btn-primary w-full"
+					>
+						{generating ? 'Generating Blog Post...' : 'Generate Blog Post with AI'}
+					</button>
+				</div>
+			</div>
+		{/if}
+
+		<!-- List Mode -->
+		{#if viewMode === 'list'}
+			{#if blogPosts.length === 0}
+				<div class="card p-6 text-center">
+					<p class="text-gray-500 mb-4">No blog posts yet. Create your first one!</p>
+					<button
+						on:click={() => viewMode = 'create'}
+						class="btn btn-primary"
+					>
+						Create Blog Post
+					</button>
+				</div>
+			{:else}
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					{#each blogPosts as post}
+						<div class="card p-4 hover:shadow-md transition-shadow">
+							<h3 class="font-semibold text-gray-900 mb-1">{post.title}</h3>
+							{#if post.subtitle}
+								<p class="text-sm text-gray-600 mb-2">{post.subtitle}</p>
+							{/if}
+							<p class="text-xs text-gray-400 mb-3">
+								{new Date(post.createdAt).toLocaleDateString()}
+								{#if post.tags.length > 0}
+									<span class="mx-2">•</span>
+									{post.tags.slice(0, 3).join(', ')}
+								{/if}
+							</p>
+							<div class="flex gap-2">
+								<button
+									on:click={() => editPost(post)}
+									class="text-sm text-forest-600 hover:underline"
+								>
+									View/Edit
+								</button>
+								<button
+									on:click={() => exportPost(post)}
+									class="text-sm text-gray-600 hover:underline"
+								>
+									Export
+								</button>
+								<button
+									on:click={() => deletePost(post)}
+									class="text-sm text-red-600 hover:underline"
+								>
+									Delete
+								</button>
 							</div>
 						</div>
+					{/each}
+				</div>
+			{/if}
+		{/if}
 
+		<!-- Edit/View Mode -->
+		{#if viewMode === 'edit' && selectedPost}
+			<div class="card p-6">
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-lg font-semibold">{selectedPost.title}</h2>
+					<div class="flex gap-2">
 						<button
-							on:click={generateBlogPost}
-							disabled={generating || !newPost.title.trim()}
-							class="btn btn-primary w-full"
+							on:click={() => exportPost(selectedPost)}
+							class="btn btn-secondary text-sm"
 						>
-							{generating ? 'Generating Blog Post...' : 'Generate Blog Post with AI'}
+							Export
+						</button>
+						<button
+							on:click={() => { viewMode = 'list'; selectedPost = null; }}
+							class="text-gray-500 hover:text-gray-700"
+						>
+							Close
 						</button>
 					</div>
 				</div>
-			{/if}
 
-			<!-- List Mode -->
-			{#if viewMode === 'list'}
-				{#if blogPosts.length === 0}
-					<div class="card p-6 text-center">
-						<p class="text-gray-500 mb-4">No blog posts yet. Create your first one!</p>
-						<button
-							on:click={() => viewMode = 'create'}
-							class="btn btn-primary"
-						>
-							Create Blog Post
-						</button>
-					</div>
-				{:else}
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-						{#each blogPosts as post}
-							<div class="card p-4 hover:shadow-md transition-shadow">
-								<h3 class="font-semibold text-gray-900 mb-1">{post.title}</h3>
-								{#if post.subtitle}
-									<p class="text-sm text-gray-600 mb-2">{post.subtitle}</p>
-								{/if}
-								<p class="text-xs text-gray-400 mb-3">
-									{new Date(post.createdAt).toLocaleDateString()}
-									{#if post.tags.length > 0}
-										<span class="mx-2">•</span>
-										{post.tags.slice(0, 3).join(', ')}
-									{/if}
-								</p>
-								<div class="flex gap-2">
-									<button
-										on:click={() => editPost(post)}
-										class="text-sm text-forest-600 hover:underline"
-									>
-										View/Edit
-									</button>
-									<button
-										on:click={() => exportPost(post)}
-										class="text-sm text-gray-600 hover:underline"
-									>
-										Export
-									</button>
-									<button
-										on:click={() => deletePost(post)}
-										class="text-sm text-red-600 hover:underline"
-									>
-										Delete
-									</button>
-								</div>
-							</div>
+				{#if selectedPost.subtitle}
+					<p class="text-lg text-gray-600 mb-4 italic">{selectedPost.subtitle}</p>
+				{/if}
+
+				{#if selectedPost.tags.length > 0}
+					<div class="flex gap-2 mb-4">
+						{#each selectedPost.tags as tag}
+							<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+								{tag}
+							</span>
 						{/each}
 					</div>
 				{/if}
-			{/if}
 
-			<!-- Edit/View Mode -->
-			{#if viewMode === 'edit' && selectedPost}
-				<div class="card p-6">
-					<div class="flex items-center justify-between mb-4">
-						<h2 class="text-lg font-semibold">{selectedPost.title}</h2>
-						<div class="flex gap-2">
-							<button
-								on:click={() => exportPost(selectedPost)}
-								class="btn btn-secondary text-sm"
-							>
-								Export
-							</button>
-							<button
-								on:click={() => { viewMode = 'list'; selectedPost = null; }}
-								class="text-gray-500 hover:text-gray-700"
-							>
-								Close
-							</button>
-						</div>
-					</div>
+				<hr class="my-4" />
 
-					{#if selectedPost.subtitle}
-						<p class="text-lg text-gray-600 mb-4 italic">{selectedPost.subtitle}</p>
-					{/if}
-
-					{#if selectedPost.tags.length > 0}
-						<div class="flex gap-2 mb-4">
-							{#each selectedPost.tags as tag}
-								<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-									{tag}
-								</span>
-							{/each}
-						</div>
-					{/if}
-
-					<hr class="my-4" />
-
-					<div class="prose prose-sm max-w-none">
-						<MarkdownRenderer content={selectedPost.bodyHTML} />
-					</div>
+				<div class="prose prose-sm max-w-none">
+					<MarkdownRenderer content={selectedPost.bodyHTML} />
 				</div>
-			{/if}
+			</div>
 		{/if}
 	{/if}
 </div>

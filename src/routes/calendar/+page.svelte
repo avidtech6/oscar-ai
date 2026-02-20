@@ -80,7 +80,7 @@
 							Today
 						</button>
 						<button class="px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
-							<
+							←
 						</button>
 						<span class="px-3 py-1.5 text-sm font-medium text-gray-800">Feb 17-23, 2026</span>
 						<button class="px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
