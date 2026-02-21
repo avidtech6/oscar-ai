@@ -682,13 +682,13 @@ public getWarnings(): string[] {
 public getErrors(): string[] {
   return [...this.errors];
 }
-
 /**
  * Clear warnings and errors
  */
 public clearMessages(): void {
   this.warnings = [];
   this.errors = [];
+}
 }
     
 

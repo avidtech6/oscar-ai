@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { groqApiKey } from '$lib/stores/settings';
+	import { decompileReport, analyzeReportStructure } from '$lib/services/reportDecompilerService';
 	
 	export let generatedReport = '';
 	export let selectedTemplate: any = null;
@@ -18,6 +19,10 @@
 	let aiProcessing = false;
 	let aiAction = '';
 	let aiPrompt = '';
+	
+	let decompilerProcessing = false;
+	let decompilerResult: any = null;
+	let showDecompilerResults = false;
 	
 	async function rewriteWithAI() {
 		if (!generatedReport.trim() || !apiKey) return;
@@ -212,6 +217,93 @@
 			aiAction = '';
 		}
 	}
+	
+	async function analyzeReportWithDecompiler() {
+		if (!generatedReport.trim()) {
+			alert('Please enter some report content first.');
+			return;
+		}
+		
+		decompilerProcessing = true;
+		decompilerResult = null;
+		showDecompilerResults = false;
+		
+		try {
+			// First get quick analysis
+			const analysis = await analyzeReportStructure(generatedReport);
+			
+			if (analysis) {
+				decompilerResult = {
+					analysis,
+					fullDecompilation: null
+				};
+				showDecompilerResults = true;
+				
+				// Ask if user wants full decompilation
+				const shouldDecompile = confirm(
+					`Report Analysis Complete:\n\n` +
+					`• ${analysis.sectionCount} sections detected\n` +
+					`• ${analysis.headingCount} headings\n` +
+					`• ${analysis.wordCount} words\n` +
+					`• Confidence: ${Math.round(analysis.confidenceScore * 100)}%\n\n` +
+					`Run full decompilation to see detailed section breakdown?`
+				);
+				
+				if (shouldDecompile) {
+					await runFullDecompilation();
+				}
+			} else {
+				alert('Could not analyze report structure. The report may be too short or malformed.');
+			}
+		} catch (error) {
+			console.error('Report analysis failed:', error);
+			alert('Failed to analyze report. Please try again.');
+		} finally {
+			decompilerProcessing = false;
+		}
+	}
+	
+	async function runFullDecompilation() {
+		if (!generatedReport.trim()) return;
+		
+		decompilerProcessing = true;
+		
+		try {
+			const result = await decompileReport(generatedReport, 'text');
+			
+			if (result.success) {
+				decompilerResult = {
+					analysis: {
+						sectionCount: result.data.sections.length,
+						headingCount: result.data.sections.filter((s: any) => s.type === 'heading' || s.type === 'subheading').length,
+						listCount: result.data.sections.filter((s: any) => s.type === 'list').length,
+						tableCount: result.data.sections.filter((s: any) => s.type === 'table').length,
+						appendixCount: result.data.sections.filter((s: any) => s.type === 'appendix').length,
+						wordCount: result.data.metadata.wordCount || 0,
+						detectedReportType: result.data.detectedReportType,
+						confidenceScore: result.data.confidenceScore,
+						hasMethodology: result.data.structureMap.hasMethodology,
+						hasAppendices: result.data.structureMap.hasAppendices,
+						hasLegalSections: result.data.structureMap.hasLegalSections
+					},
+					fullDecompilation: result.data
+				};
+				showDecompilerResults = true;
+			} else {
+				alert(`Decompilation failed: ${result.error}`);
+			}
+		} catch (error) {
+			console.error('Full decompilation failed:', error);
+			alert('Failed to decompile report. Please try again.');
+		} finally {
+			decompilerProcessing = false;
+		}
+	}
+	
+	function closeDecompilerResults() {
+		showDecompilerResults = false;
+		decompilerResult = null;
+	}
 </script>
 
 <div class="card">
@@ -295,6 +387,21 @@
 						Generate Section
 					{/if}
 				</button>
+				<button
+					on:click={analyzeReportWithDecompiler}
+					disabled={decompilerProcessing || !generatedReport.trim()}
+					class="btn btn-secondary text-sm"
+				>
+					{#if decompilerProcessing}
+						<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+						</svg>
+						Analyzing...
+					{:else}
+						Analyze Structure
+					{/if}
+				</button>
 			</div>
 			
 			<div class="flex gap-2">
@@ -328,6 +435,98 @@
 				</p>
 			{/if}
 		</div>
+		
+		<!-- Decompiler Results -->
+		{#if showDecompilerResults && decompilerResult}
+			<div class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+				<div class="flex items-center justify-between mb-3">
+					<h3 class="font-medium text-green-900">Report Structure Analysis</h3>
+					<button
+						on:click={closeDecompilerResults}
+						class="text-green-700 hover:text-green-900"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
+				</div>
+				
+				<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+					<div class="bg-white p-3 rounded border">
+						<div class="text-2xl font-bold text-green-700">{decompilerResult.analysis.sectionCount}</div>
+						<div class="text-sm text-gray-600">Sections</div>
+					</div>
+					<div class="bg-white p-3 rounded border">
+						<div class="text-2xl font-bold text-green-700">{decompilerResult.analysis.headingCount}</div>
+						<div class="text-sm text-gray-600">Headings</div>
+					</div>
+					<div class="bg-white p-3 rounded border">
+						<div class="text-2xl font-bold text-green-700">{decompilerResult.analysis.wordCount}</div>
+						<div class="text-sm text-gray-600">Words</div>
+					</div>
+					<div class="bg-white p-3 rounded border">
+						<div class="text-2xl font-bold text-green-700">{Math.round(decompilerResult.analysis.confidenceScore * 100)}%</div>
+						<div class="text-sm text-gray-600">Confidence</div>
+					</div>
+				</div>
+				
+				{#if decompilerResult.fullDecompilation}
+					<div class="mt-4">
+						<h4 class="font-medium text-green-800 mb-2">Detailed Sections</h4>
+						<div class="space-y-2 max-h-60 overflow-y-auto">
+							{#each decompilerResult.fullDecompilation.sections as section}
+								<div class="bg-white p-3 rounded border border-green-100">
+									<div class="flex justify-between items-start">
+										<div>
+											<div class="font-medium text-gray-900">{section.title || 'Untitled'}</div>
+											<div class="text-xs text-gray-500">
+												Type: {section.type} • Level: {section.level} • Words: {section.metadata?.wordCount || 0}
+											</div>
+										</div>
+										<span class="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
+											{section.type}
+										</span>
+									</div>
+									{#if section.content && section.content.length > 0}
+										<div class="mt-2 text-sm text-gray-700 truncate">
+											{section.content.substring(0, 100)}{section.content.length > 100 ? '...' : ''}
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				{:else}
+					<div class="mt-4">
+						<p class="text-sm text-green-700 mb-3">
+							Analysis complete. Run full decompilation for detailed section breakdown.
+						</p>
+						<button
+							on:click={runFullDecompilation}
+							disabled={decompilerProcessing}
+							class="btn btn-secondary text-sm"
+						>
+							{#if decompilerProcessing}
+								<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+								</svg>
+								Decompiling...
+							{:else}
+								Run Full Decompilation
+							{/if}
+						</button>
+					</div>
+				{/if}
+				
+				{#if decompilerResult.analysis.detectedReportType}
+					<div class="mt-4 p-3 bg-green-100 rounded">
+						<div class="text-sm font-medium text-green-800">Detected Report Type:</div>
+						<div class="text-green-900">{decompilerResult.analysis.detectedReportType}</div>
+					</div>
+				{/if}
+			</div>
+		{/if}
 		
 		<div class="mb-4">
 			<textarea

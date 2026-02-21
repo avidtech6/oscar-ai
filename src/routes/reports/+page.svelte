@@ -16,6 +16,8 @@
 		type ReportSection
 	} from '$lib/services/templateService';
 	import { suggestClientName, suggestSiteAddress, parseUserAnswer, generateFollowUpQuestions, generateAIGapFillQuestions } from '$lib/services/aiActions';
+	import { quickWorkflowCheck, getPersonalizedWorkflowSuggestions, recordWorkflowAction } from '$lib/services/userWorkflowLearningService';
+	import { quickSystemHealthCheck, runReportIntelligencePipeline, getSystemCapabilities } from '$lib/services/reportIntelligenceService';
 	import MicButton from '$lib/components/MicButton.svelte';
 	import ReportWizard from '$lib/components/reports/ReportWizard.svelte';
 	import ReportPreview from '$lib/components/reports/ReportPreview.svelte';
@@ -65,6 +67,21 @@
 	
 	// AI Assistant state
 	let showAIAssistant = false;
+	
+	// Workflow learning state
+	let workflowInsightsLoading = false;
+	let workflowInsights: any = null;
+	let showWorkflowInsights = false;
+	let personalizedSuggestions: any[] = [];
+
+	// Report Intelligence System state
+	let systemHealthLoading = false;
+	let systemHealth: any = null;
+	let showSystemHealth = false;
+	let systemCapabilities: any[] = [];
+	let runningPipeline = false;
+	let pipelineResults: any = null;
+	let pipelineError: string | null = null;
 
 	onMount(async () => {
 		// Load all projects for selection
@@ -831,6 +848,157 @@
 	// Computed property for safe iframe content
 	$: safeGeneratedReport = escapeForSvelte(generatedReport);
 	$: safeSectionContent = sections[currentSectionIndex] ? escapeForSvelte(sections[currentSectionIndex].content) : '';
+	
+	// Workflow learning functions
+	async function loadWorkflowInsights() {
+		workflowInsightsLoading = true;
+		
+		try {
+			// Record that user is viewing reports page
+			await recordWorkflowAction('view_reports_page', {
+				currentStep,
+				selectedTemplate: selectedTemplate?.id,
+				hasProject: !!selectedProject,
+			});
+			
+			// Get quick workflow check
+			const check = await quickWorkflowCheck();
+			workflowInsights = check;
+			
+			// Get personalized suggestions
+			const suggestions = await getPersonalizedWorkflowSuggestions();
+			if (suggestions.success) {
+				personalizedSuggestions = suggestions.suggestions || [];
+			}
+			
+			showWorkflowInsights = true;
+		} catch (error) {
+			console.error('Failed to load workflow insights:', error);
+		} finally {
+			workflowInsightsLoading = false;
+		}
+	}
+	
+	function closeWorkflowInsights() {
+		showWorkflowInsights = false;
+		workflowInsights = null;
+		personalizedSuggestions = [];
+	}
+	
+	// Record workflow actions at key points
+	$: if (currentStep) {
+		// Record step changes
+		setTimeout(async () => {
+			try {
+				await recordWorkflowAction(`step_${currentStep}`, {
+					previousStep: undefined, // Could track previous step if needed
+					template: selectedTemplate?.id,
+					hasGeneratedReport: !!generatedReport,
+				});
+			} catch (error) {
+				// Silent fail - don't disrupt user experience
+			}
+		}, 100);
+	}
+	
+	$: if (selectedTemplate) {
+		// Record template selection
+		setTimeout(async () => {
+			try {
+				await recordWorkflowAction('select_template', {
+					templateId: selectedTemplate.id,
+					templateName: selectedTemplate.name,
+				});
+			} catch (error) {
+				// Silent fail
+			}
+		}, 100);
+	}
+	
+	$: if (generatedReport) {
+		// Record report generation
+		setTimeout(async () => {
+			try {
+				await recordWorkflowAction('generate_report', {
+					templateId: selectedTemplate?.id,
+					reportLength: generatedReport.length,
+					hasProject: !!selectedProject,
+				});
+			} catch (error) {
+				// Silent fail
+			}
+		}, 100);
+	}
+
+	// Report Intelligence System functions
+	async function loadSystemHealth() {
+		systemHealthLoading = true;
+		
+		try {
+			const health = await quickSystemHealthCheck();
+			systemHealth = health;
+			
+			const capabilities = await getSystemCapabilities();
+			if (capabilities.success) {
+				systemCapabilities = capabilities.capabilities || [];
+			}
+			
+			showSystemHealth = true;
+		} catch (error) {
+			console.error('Failed to load system health:', error);
+		} finally {
+			systemHealthLoading = false;
+		}
+	}
+	
+	function closeSystemHealth() {
+		showSystemHealth = false;
+		systemHealth = null;
+		systemCapabilities = [];
+	}
+	
+	async function runIntelligencePipeline() {
+		if (!generatedReport) {
+			alert('Please generate a report first before running intelligence pipeline.');
+			return;
+		}
+		
+		runningPipeline = true;
+		pipelineResults = null;
+		pipelineError = null;
+		
+		try {
+			const result = await runReportIntelligencePipeline(generatedReport, {
+				enableReasoning: true,
+				enableWorkflowLearning: true,
+				enableSelfHealing: true,
+				enableComplianceValidation: true,
+				enableReproductionTesting: false,
+				verbose: true,
+			});
+			
+			if (result.success) {
+				pipelineResults = result;
+				
+				// Show a summary of the pipeline results
+				alert(`Report Intelligence Pipeline completed successfully!\n\nStages: ${result.stages?.length || 0}\nOverall Score: ${result.summary?.overallScore || 'N/A'}\nRecommendations: ${result.summary?.recommendations?.length || 0}`);
+			} else {
+				pipelineError = result.error || 'Unknown error';
+				alert(`Pipeline failed: ${pipelineError}`);
+			}
+		} catch (error) {
+			pipelineError = error instanceof Error ? error.message : 'Unknown error';
+			console.error('Pipeline execution failed:', error);
+			alert(`Pipeline execution failed: ${pipelineError}`);
+		} finally {
+			runningPipeline = false;
+		}
+	}
+	
+	function closePipelineResults() {
+		pipelineResults = null;
+		pipelineError = null;
+	}
 </script>
 
 <svelte:head>
@@ -852,20 +1020,400 @@
 
 	<div class="flex items-center justify-between mb-6">
 		<h1 class="text-2xl font-bold text-gray-900">HTML Report Builder</h1>
-		<button
-			on:click={() => showAIAssistant = true}
-			class="btn btn-primary flex items-center gap-2"
-		>
-			<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-			</svg>
-			AI Assistant
-		</button>
+		<div class="flex gap-2">
+			<button
+				on:click={loadSystemHealth}
+				disabled={systemHealthLoading}
+				class="btn btn-secondary flex items-center gap-2"
+			>
+				{#if systemHealthLoading}
+					<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+					</svg>
+					Checking...
+				{:else}
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+					</svg>
+					System Health
+				{/if}
+			</button>
+			<button
+				on:click={loadWorkflowInsights}
+				disabled={workflowInsightsLoading}
+				class="btn btn-secondary flex items-center gap-2"
+			>
+				{#if workflowInsightsLoading}
+					<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+					</svg>
+					Analyzing...
+				{:else}
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+					</svg>
+					Workflow Insights
+				{/if}
+			</button>
+			<button
+				on:click={() => showAIAssistant = true}
+				class="btn btn-primary flex items-center gap-2"
+			>
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+				</svg>
+				AI Assistant
+			</button>
+		</div>
 	</div>
 
 	{#if error && !generatedReport}
 		<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
 			{error}
+		</div>
+	{/if}
+	
+	<!-- System Health Panel -->
+	{#if showSystemHealth && systemHealth}
+		<div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+			<div class="flex items-center justify-between mb-3">
+				<h3 class="font-medium text-blue-900">Report Intelligence System Health</h3>
+				<button
+					on:click={closeSystemHealth}
+					class="text-blue-700 hover:text-blue-900"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+			
+			<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-blue-700">{systemHealth.healthScore}%</div>
+					<div class="text-xs text-gray-600">Health Score</div>
+				</div>
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-blue-700">
+						{#if systemHealth.status === 'operational'}
+							✓
+						{:else if systemHealth.status === 'degraded'}
+							⚠
+						{:else}
+							✗
+						{/if}
+					</div>
+					<div class="text-xs text-gray-600">Status</div>
+				</div>
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-blue-700">{systemHealth.activeEngines}</div>
+					<div class="text-xs text-gray-600">Active Engines</div>
+				</div>
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-blue-700">{systemHealth.capabilities}</div>
+					<div class="text-xs text-gray-600">Capabilities</div>
+				</div>
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-blue-700">
+						{#if systemHealth.integrationStatus === 'fully_integrated'}
+							✓
+						{:else if systemHealth.integrationStatus === 'partial'}
+							⚠
+						{:else}
+							✗
+						{/if}
+					</div>
+					<div class="text-xs text-gray-600">Integration</div>
+				</div>
+			</div>
+			
+			{#if systemCapabilities.length > 0}
+				<div class="mb-4">
+					<h4 class="font-medium text-blue-800 mb-2">System Capabilities</h4>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+						{#each systemCapabilities as capability}
+							<div class="bg-white p-3 rounded border border-blue-100">
+								<div class="flex items-start gap-3">
+									<div class="flex-shrink-0">
+										{#if capability.status === 'active'}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+												Active
+											</span>
+										{:else if capability.status === 'partial'}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+												Partial
+											</span>
+										{:else}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+												Inactive
+											</span>
+										{/if}
+									</div>
+									<div class="flex-1">
+										<div class="font-medium text-gray-900">{capability.name}</div>
+										<div class="text-sm text-gray-600 mt-1">{capability.description}</div>
+										<div class="flex items-center justify-between mt-2">
+											<div class="text-xs text-gray-500">
+												Phase {capability.phase}
+											</div>
+											<div class="text-xs text-blue-600">
+												{capability.status}
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+			
+			{#if generatedReport && !runningPipeline}
+				<div class="flex gap-2">
+					<button
+						on:click={runIntelligencePipeline}
+						class="btn btn-primary flex items-center gap-2"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+						</svg>
+						Run Intelligence Pipeline
+					</button>
+					<button
+						on:click={closeSystemHealth}
+						class="btn btn-secondary"
+					>
+						Close
+					</button>
+				</div>
+			{:else if runningPipeline}
+				<div class="p-3 bg-blue-100 rounded border border-blue-200">
+					<div class="flex items-center gap-3">
+						<svg class="w-5 h-5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+						</svg>
+						<div>
+							<div class="font-medium text-blue-800">Running Intelligence Pipeline...</div>
+							<div class="text-sm text-blue-700">Analyzing report with all 26-phase engines</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+			
+			<div class="text-xs text-blue-600 mt-3">
+				Powered by Report Intelligence System (Phase 14 Orchestrator)
+			</div>
+		</div>
+	{/if}
+	
+	<!-- Pipeline Results Panel -->
+	{#if pipelineResults}
+		<div class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+			<div class="flex items-center justify-between mb-3">
+				<h3 class="font-medium text-green-900">Intelligence Pipeline Results</h3>
+				<button
+					on:click={closePipelineResults}
+					class="text-green-700 hover:text-green-900"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+			
+			<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-green-700">{pipelineResults.summary?.overallScore || 'N/A'}</div>
+					<div class="text-xs text-gray-600">Overall Score</div>
+				</div>
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-green-700">{pipelineResults.stages?.length || 0}</div>
+					<div class="text-xs text-gray-600">Stages Completed</div>
+				</div>
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-green-700">{pipelineResults.summary?.recommendations?.length || 0}</div>
+					<div class="text-xs text-gray-600">Recommendations</div>
+				</div>
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-green-700">
+						{#if pipelineResults.success}
+							✓
+						{:else}
+							✗
+						{/if}
+					</div>
+					<div class="text-xs text-gray-600">Success</div>
+				</div>
+			</div>
+			
+			{#if pipelineResults.stages && pipelineResults.stages.length > 0}
+				<div class="mb-4">
+					<h4 class="font-medium text-green-800 mb-2">Pipeline Stages</h4>
+					<div class="space-y-3">
+						{#each pipelineResults.stages as stage}
+							<div class="bg-white p-3 rounded border border-green-100">
+								<div class="flex items-start justify-between">
+									<div>
+										<div class="font-medium text-gray-900 capitalize">{stage.stage.replace('_', ' ')}</div>
+										<div class="text-sm text-gray-600 mt-1">Status: {stage.status}</div>
+										<div class="text-xs text-gray-500 mt-1">Duration: {stage.duration}ms</div>
+									</div>
+									<div>
+										{#if stage.status === 'completed'}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+												✓
+											</span>
+										{:else if stage.status === 'error'}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+												✗
+											</span>
+										{:else}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+												⚠
+											</span>
+										{/if}
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+			
+			{#if pipelineResults.summary?.recommendations && pipelineResults.summary.recommendations.length > 0}
+				<div class="mb-4">
+					<h4 class="font-medium text-green-800 mb-2">Recommendations</h4>
+					<div class="space-y-2">
+						{#each pipelineResults.summary.recommendations as recommendation, i}
+							<div class="flex items-start gap-2">
+								<div class="flex-shrink-0 mt-1">
+									<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-800 text-xs font-medium">
+										{i + 1}
+									</span>
+								</div>
+								<div class="text-sm text-gray-700">{recommendation}</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+			
+			<div class="text-xs text-green-600">
+				Pipeline completed successfully. Apply recommendations to improve your report.
+			</div>
+		</div>
+	{/if}
+	
+	<!-- Workflow Insights Panel -->
+	{#if showWorkflowInsights && workflowInsights}
+		<div class="mb-6 bg-purple-50 border border-purple-200 rounded-lg p-4">
+			<div class="flex items-center justify-between mb-3">
+				<h3 class="font-medium text-purple-900">Workflow Insights</h3>
+				<button
+					on:click={closeWorkflowInsights}
+					class="text-purple-700 hover:text-purple-900"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+			
+			<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-purple-700">{workflowInsights.efficiencyScore}%</div>
+					<div class="text-xs text-gray-600">Efficiency Score</div>
+				</div>
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-purple-700">
+						{#if workflowInsights.hasPatterns}
+							✓
+						{:else}
+							✗
+						{/if}
+					</div>
+					<div class="text-xs text-gray-600">Patterns Found</div>
+				</div>
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-purple-700">{workflowInsights.suggestionCount}</div>
+					<div class="text-xs text-gray-600">Suggestions</div>
+				</div>
+				<div class="bg-white p-3 rounded border">
+					<div class="text-xl font-bold text-purple-700">
+						{#if workflowInsights.nextActionPrediction}
+							✓
+						{:else}
+							~
+						{/if}
+					</div>
+					<div class="text-xs text-gray-600">Next Action Predicted</div>
+				</div>
+			</div>
+			
+			{#if personalizedSuggestions.length > 0}
+				<div class="mb-4">
+					<h4 class="font-medium text-purple-800 mb-2">Personalized Suggestions</h4>
+					<div class="space-y-3">
+						{#each personalizedSuggestions as suggestion}
+							<div class="bg-white p-3 rounded border border-purple-100">
+								<div class="flex items-start gap-3">
+									<div class="flex-shrink-0">
+										{#if suggestion.type === 'workflow_optimization'}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+												Optimization
+											</span>
+										{:else if suggestion.type === 'template_suggestion'}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+												Template
+											</span>
+										{:else if suggestion.type === 'time_saving'}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+												Time Saving
+											</span>
+										{:else if suggestion.type === 'compliance'}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+												Compliance
+											</span>
+										{:else}
+											<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+												Suggestion
+											</span>
+										{/if}
+									</div>
+									<div class="flex-1">
+										<div class="font-medium text-gray-900">{suggestion.title}</div>
+										<div class="text-sm text-gray-600 mt-1">{suggestion.description}</div>
+										<div class="flex items-center justify-between mt-2">
+											<div class="text-xs text-gray-500">
+												Benefit: {suggestion.benefit}
+											</div>
+											<div class="text-xs text-purple-600">
+												Confidence: {Math.round(suggestion.confidence * 100)}%
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+			
+			{#if workflowInsights.nextActionPrediction}
+				<div class="mb-4 p-3 bg-purple-100 rounded border border-purple-200">
+					<h4 class="font-medium text-purple-800 mb-1">Predicted Next Action</h4>
+					<p class="text-sm text-purple-700">
+						Based on your workflow patterns, you'll likely want to: <strong>{workflowInsights.nextActionPrediction.replace('_', ' ')}</strong>
+					</p>
+				</div>
+			{/if}
+			
+			<div class="text-xs text-purple-600">
+				Insights powered by User Workflow Learning Engine (Phase 13)
+			</div>
 		</div>
 	{/if}
 

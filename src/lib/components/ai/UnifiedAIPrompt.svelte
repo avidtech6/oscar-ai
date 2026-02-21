@@ -3,7 +3,8 @@
 	import { db } from '$lib/db';
 	import { groqApiKey } from '$lib/stores/settings';
 	import { getProjectReviewStatus } from '$lib/services/projectReview';
-
+	import { generateReasonedAIResponse, quickQueryAnalysis } from '$lib/services/aiReasoningService';
+	
 	export let projectId: string = '';
 	export let isOpen: boolean = false;
 
@@ -267,7 +268,30 @@
 	}
 
 	async function generateAIResponse(userMessage: string): Promise<string> {
-		// Simple keyword-based responses for now
+		// Use AI reasoning engine for more sophisticated responses
+		try {
+			const context = {
+				projectId,
+				projectName: project?.name,
+				timestamp: new Date().toISOString(),
+			};
+			
+			const result = await generateReasonedAIResponse(userMessage, context);
+			
+			if (result.success && result.response) {
+				return result.response;
+			} else {
+				// Fallback to keyword-based responses
+				return await generateFallbackResponse(userMessage);
+			}
+		} catch (error) {
+			console.error('AI reasoning failed, using fallback:', error);
+			return await generateFallbackResponse(userMessage);
+		}
+	}
+	
+	async function generateFallbackResponse(userMessage: string): Promise<string> {
+		// Simple keyword-based responses for fallback
 		const lowerMessage = userMessage.toLowerCase();
 
 		if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {

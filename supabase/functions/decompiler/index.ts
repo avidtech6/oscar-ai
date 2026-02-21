@@ -1,5 +1,6 @@
 // Enable Supabase Edge Runtime types
 import "@supabase/functions-js/edge-runtime.d.ts"
+import { createClient } from "@supabase/supabase-js"
 
 // Create a simplified decompiler for Deno Edge Runtime
 // (Original ReportDecompiler uses Node.js fs/promises which won't work in Deno)

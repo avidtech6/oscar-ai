@@ -217,46 +217,39 @@ export class ReportIntelligenceSystem {
       this.status.subsystems.classification = true;
 
       // Initialize Phase 7: Self-Healing Engine
-      const { SelfHealingEngine } = await import('../self-healing/SelfHealingEngine');
-      this.selfHealing = new SelfHealingEngine();
+      const { ReportSelfHealingEngine } = await import('../self-healing/ReportSelfHealingEngine');
+      this.selfHealing = new ReportSelfHealingEngine();
       this.status.subsystems.selfHealing = true;
 
       // Note: Phase 8 (Template Generator) may not exist - we'll handle gracefully
-      try {
-        const { ReportTemplateGenerator } = await import('../template-generator/ReportTemplateGenerator');
-        this.templateGenerator = new ReportTemplateGenerator();
-        this.status.subsystems.templateGenerator = true;
-      } catch (error) {
-        this.status.warnings.push('Template Generator not available (Phase 8)');
-      }
+      // Skipping for now as module doesn't exist
+      this.status.warnings.push('Template Generator not available (Phase 8)');
 
       // Note: Phase 9 (Compliance Validator) may not exist - we'll handle gracefully
-      try {
-        const { ComplianceValidator } = await import('../compliance/ComplianceValidator');
-        this.complianceValidator = new ComplianceValidator();
-        this.status.subsystems.complianceValidator = true;
-      } catch (error) {
-        this.status.warnings.push('Compliance Validator not available (Phase 9)');
-      }
+      // Skipping for now as module doesn't exist
+      this.status.warnings.push('Compliance Validator not available (Phase 9)');
 
       // Initialize Phase 10: Reproduction Tester
-      const { ReportReproductionTester } = await import('../reproduction-tester/ReportReproductionTester');
-      this.reproductionTester = new ReportReproductionTester();
-      this.status.subsystems.reproductionTester = true;
-
-      // Note: Phase 11 (Type Expansion Framework) may not exist - we'll handle gracefully
       try {
-        const { ReportTypeExpansionFramework } = await import('../type-expansion/ReportTypeExpansionFramework');
-        this.typeExpansion = new ReportTypeExpansionFramework();
-        this.status.subsystems.typeExpansion = true;
+        const { ReportReproductionTester } = await import('../reproduction-tester/ReportReproductionTester');
+        this.reproductionTester = new ReportReproductionTester();
+        this.status.subsystems.reproductionTester = true;
       } catch (error) {
-        this.status.warnings.push('Type Expansion Framework not available (Phase 11)');
+        this.status.warnings.push('Reproduction Tester not available (Phase 10)');
       }
 
+      // Note: Phase 11 (Type Expansion Framework) may not exist - we'll handle gracefully
+      // Skipping for now as module doesn't exist
+      this.status.warnings.push('Type Expansion Framework not available (Phase 11)');
+
       // Initialize Phase 12: AI Reasoning Engine
-      const { AIReasoningEngine } = await import('../ai-reasoning/AIReasoningEngine');
-      this.aiReasoning = new AIReasoningEngine();
-      this.status.subsystems.aiReasoning = true;
+      try {
+        const { AIReasoningEngine } = await import('../ai-reasoning/index');
+        this.aiReasoning = new AIReasoningEngine();
+        this.status.subsystems.aiReasoning = true;
+      } catch (error) {
+        this.status.warnings.push('AI Reasoning Engine not available (Phase 12)');
+      }
 
       // Initialize Phase 13: Workflow Learning Engine
       const { UserWorkflowLearningEngine } = await import('../workflow-learning/UserWorkflowLearningEngine');

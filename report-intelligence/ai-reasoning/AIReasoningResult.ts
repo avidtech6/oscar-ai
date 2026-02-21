@@ -5,10 +5,10 @@
  * inferences, recommendations, and reasoning context.
  */
 
-import { DecompiledReport } from '../decompiler/DecompiledReport';
-import { SchemaMappingResult } from '../schema-mapper/SchemaMappingResult';
-import { ClassificationResult } from '../classification/ClassificationResult';
-import { ComplianceResult } from '../compliance/ComplianceResult';
+import type { DecompiledReport } from '../decompiler/DecompiledReport';
+import type { SchemaMappingResult } from '../schema-mapper/SchemaMappingResult';
+import type { ClassificationResult } from '../classification/ClassificationResult';
+import type { ComplianceResult } from '../compliance/ComplianceResult';
 
 /**
  * AI Reasoning Result - Main result interface

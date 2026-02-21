@@ -1,6 +1,7 @@
 <script lang="ts">
 	import MicButton from '$lib/components/MicButton.svelte';
 	import { suggestClientName, suggestSiteAddress, parseUserAnswer, generateFollowUpQuestions } from '$lib/services/aiActions';
+	import { analyzeReportStyle, getStyleGuide } from '$lib/services/styleLearnerService';
 	
 	export let selectedTemplate: any;
 	export let selectedProject: any;
@@ -35,6 +36,12 @@
 	$: localReportMode = reportMode;
 	$: localAdditionalNotes = additionalNotes;
 	
+	// Style analysis state
+	let styleAnalyzing = false;
+	let styleAnalysisResult: any = null;
+	let showStyleAnalysis = false;
+	let styleGuide: any = null;
+	
 	function handleGapAnswerChange(index: number, value: string) {
 		if (localGapFillQuestions[index]) {
 			localGapFillQuestions[index].answer = value;
@@ -44,6 +51,63 @@
 	
 	function handleGapIndexChange(index: number) {
 		currentGapIndex = index;
+	}
+	
+	async function analyzeReportStyleAction() {
+		styleAnalyzing = true;
+		styleAnalysisResult = null;
+		showStyleAnalysis = false;
+		
+		try {
+			// For demo, we'll analyze a sample report text
+			const sampleReport = `This is a sample report for style analysis. It demonstrates the typical structure and tone used in ${selectedTemplate?.name || 'arboricultural'} reports.`;
+			
+			const result = await analyzeReportStyle(sampleReport, selectedTemplate?.id);
+			
+			if (result.success) {
+				styleAnalysisResult = result.data;
+				showStyleAnalysis = true;
+			} else {
+				console.error('Style analysis failed:', result.error);
+				alert('Style analysis failed. Please try again.');
+			}
+		} catch (error) {
+			console.error('Style analysis error:', error);
+			alert('Error during style analysis.');
+		} finally {
+			styleAnalyzing = false;
+		}
+	}
+	
+	async function loadStyleGuide() {
+		try {
+			const result = await getStyleGuide(selectedTemplate?.id);
+			
+			if (result.success) {
+				styleGuide = result.data?.guide || result.data;
+			} else {
+				// Create a mock guide
+				styleGuide = {
+					tone: 'Professional and authoritative',
+					structure: 'Introduction → Methodology → Findings → Recommendations → Conclusion',
+					phrasing: 'Use formal language, avoid contractions',
+					formatting: 'Use headings, bullet points for lists, tables for data',
+					examples: [
+						'It is recommended that the tree be monitored annually.',
+						'The assessment indicates moderate risk of failure.',
+						'In accordance with BS5837:2012, a root protection area should be established.',
+					],
+				};
+			}
+		} catch (error) {
+			console.error('Failed to load style guide:', error);
+			styleGuide = null;
+		}
+	}
+	
+	// Load style guide when component mounts or template changes
+	$: if (selectedTemplate && !styleGuide) {
+		loadStyleGuide();
 	}
 </script>
 
@@ -307,6 +371,154 @@
 					<p class="text-yellow-700 text-sm mt-2">You can still generate the report, but these sections may be incomplete.</p>
 				</div>
 			{/if}
+
+			<!-- Style Analysis Section -->
+			<div class="mb-6">
+				<div class="flex items-center justify-between mb-3">
+					<h3 class="font-medium">Report Style Analysis</h3>
+					<button
+						on:click={analyzeReportStyleAction}
+						disabled={styleAnalyzing}
+						class="btn btn-secondary text-sm"
+					>
+						{#if styleAnalyzing}
+							<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+							</svg>
+							Analyzing...
+						{:else}
+							Analyze Report Style
+						{/if}
+					</button>
+				</div>
+				
+				{#if styleGuide}
+					<div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+						<h4 class="font-medium text-blue-800 mb-2">Style Guide for {selectedTemplate?.name || 'Report'}</h4>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+							<div>
+								<div class="font-medium text-gray-700">Tone:</div>
+								<div class="text-gray-600">{styleGuide.tone}</div>
+							</div>
+							<div>
+								<div class="font-medium text-gray-700">Structure:</div>
+								<div class="text-gray-600">{styleGuide.structure}</div>
+							</div>
+							<div>
+								<div class="font-medium text-gray-700">Phrasing:</div>
+								<div class="text-gray-600">{styleGuide.phrasing}</div>
+							</div>
+							<div>
+								<div class="font-medium text-gray-700">Formatting:</div>
+								<div class="text-gray-600">{styleGuide.formatting}</div>
+							</div>
+						</div>
+						{#if styleGuide.examples && styleGuide.examples.length > 0}
+							<div class="mt-3">
+								<div class="font-medium text-gray-700 mb-1">Example Phrases:</div>
+								<ul class="list-disc pl-5 text-gray-600 text-sm space-y-1">
+									{#each styleGuide.examples as example}
+										<li>{example}</li>
+									{/each}
+								</ul>
+							</div>
+						{/if}
+					</div>
+				{/if}
+				
+				{#if showStyleAnalysis && styleAnalysisResult}
+					<div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+						<div class="flex items-center justify-between mb-3">
+							<h4 class="font-medium text-green-800">Style Analysis Results</h4>
+							<button
+								on:click={() => showStyleAnalysis = false}
+								class="text-green-700 hover:text-green-900"
+							>
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+								</svg>
+							</button>
+						</div>
+						
+						<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+							<div class="bg-white p-3 rounded border">
+								<div class="text-xl font-bold text-green-700">{styleAnalysisResult.summary?.tone || 'Professional'}</div>
+								<div class="text-xs text-gray-600">Tone</div>
+							</div>
+							<div class="bg-white p-3 rounded border">
+								<div class="text-xl font-bold text-green-700">{styleAnalysisResult.summary?.formality || 'High'}</div>
+								<div class="text-xs text-gray-600">Formality</div>
+							</div>
+							<div class="bg-white p-3 rounded border">
+								<div class="text-xl font-bold text-green-700">{Math.round((styleAnalysisResult.summary?.confidence || 0) * 100)}%</div>
+								<div class="text-xs text-gray-600">Confidence</div>
+							</div>
+							<div class="bg-white p-3 rounded border">
+								<div class="text-xl font-bold text-green-700">{styleAnalysisResult.compatibilityScore || 0}%</div>
+								<div class="text-xs text-gray-600">Compatibility</div>
+							</div>
+						</div>
+						
+						{#if styleAnalysisResult.recommendations && styleAnalysisResult.recommendations.length > 0}
+							<div class="mt-3">
+								<h5 class="font-medium text-gray-800 mb-2">Style Recommendations</h5>
+								<div class="space-y-2">
+									{#each styleAnalysisResult.recommendations as rec}
+										<div class="flex items-start gap-2 p-2 bg-white rounded border">
+											<div class="flex-shrink-0 mt-0.5">
+												{#if rec.type === 'tone'}
+													<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+														Tone
+													</span>
+												{:else if rec.type === 'structure'}
+													<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+														Structure
+													</span>
+												{:else if rec.type === 'phrasing'}
+													<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+														Phrasing
+													</span>
+												{:else}
+													<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+														{rec.type}
+													</span>
+												{/if}
+											</div>
+											<div class="flex-1">
+												<div class="text-sm text-gray-800">{rec.suggestion}</div>
+												<div class="text-xs text-gray-500 mt-1">
+													Confidence: {Math.round((rec.confidence || 0) * 100)}%
+												</div>
+											</div>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
+						
+						{#if styleAnalysisResult.styleProfile?.preferredPhrasing && styleAnalysisResult.styleProfile.preferredPhrasing.length > 0}
+							<div class="mt-3">
+								<h5 class="font-medium text-gray-800 mb-2">Preferred Phrases</h5>
+								<div class="flex flex-wrap gap-2">
+									{#each styleAnalysisResult.styleProfile.preferredPhrasing.slice(0, 5) as phrase}
+										<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+											{phrase.phrase}
+											<span class="ml-1 text-blue-600 text-xs">
+												({Math.round(phrase.confidence * 100)}%)
+											</span>
+										</span>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					</div>
+				{/if}
+				
+				<p class="text-sm text-gray-600">
+					Style analysis helps ensure your report matches the expected tone, structure, and phrasing for {selectedTemplate?.name || 'this report type'}.
+				</p>
+			</div>
 
 			<div class="mb-6">
 				<h3 class="font-medium mb-3">Generation Method</h3>

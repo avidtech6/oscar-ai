@@ -892,3 +892,4 @@ export class SnapshotCaptureSystem {
   public getPreviewWindow(): VisualPreviewWindow | null {
     return this.previewWindow;
   }
+}

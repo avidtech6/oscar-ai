@@ -961,3 +961,4 @@ export class HTMLRenderer {
     this.warnings = [];
     this.errors = [];
   }
+}

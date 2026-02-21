@@ -6,7 +6,7 @@
  * and suggestions based on learned user behavior.
  */
 
-import { WorkflowProfile, UserInteractionEvent, WorkflowAnalysisResult, WorkflowPrediction } from './WorkflowProfile';
+import type { WorkflowProfile, UserInteractionEvent, WorkflowAnalysisResult, WorkflowPrediction } from './WorkflowProfile';
 
 export class UserWorkflowLearningEngine {
   private observedEvents: UserInteractionEvent[] = [];
@@ -526,4 +526,186 @@ export class UserWorkflowLearningEngine {
     
     // Create new profile
     const profileId = `profile_${Date.now()}_${userId}`;
-    const reportTypeId = this.infer
+    const reportTypeId = this.inferReportType(analysisResult);
+    
+    // Extract common section order from analysis
+    const commonSectionOrder = analysisResult.patterns.sectionOrder.length > 0
+      ? analysisResult.patterns.sectionOrder[0].pattern
+      : [];
+    
+    // Extract common omissions
+    const commonOmissions = analysisResult.patterns.omissions.map(o => o.section);
+    
+    // Extract common corrections
+    const commonCorrections = analysisResult.patterns.corrections.map(c => ({
+      from: c.from,
+      to: c.to,
+      frequency: c.frequency,
+      lastObserved: new Date()
+    }));
+    
+    // Extract preferred interaction patterns
+    const preferredInteractionPatterns = analysisResult.patterns.interactions.map(i => ({
+      pattern: i.pattern,
+      frequency: i.frequency,
+      confidence: i.averageDuration > 0 ? 0.8 : 0.5 // Simplified confidence
+    }));
+    
+    // Extract typical data sources
+    const typicalDataSources = analysisResult.patterns.dataSources.map(d => d.source);
+    
+    const profile: WorkflowProfile = {
+      id: profileId,
+      userId,
+      reportTypeId,
+      commonSectionOrder,
+      commonOmissions,
+      commonCorrections,
+      preferredInteractionPatterns,
+      typicalDataSources,
+      workflowHeuristics: {
+        averageSectionTime: {}, // Would need actual timing data
+        orderConsistency: analysisResult.confidenceScores.sectionOrder,
+        templateUsageFrequency: 0, // Would need template usage data
+        commonStartingPoints: commonSectionOrder.length > 0 ? [commonSectionOrder[0]] : [],
+        validationPatterns: [],
+        revisionPatterns: []
+      },
+      confidenceScore: analysisResult.confidenceScores.overall,
+      timestamps: {
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastUsedAt: new Date(),
+        observationCount: this.observedEvents.filter(e => e.userId === userId).length
+      },
+      metadata: {
+        version: 1,
+        isActive: true,
+        tags: [],
+        source: 'auto-learned'
+      }
+    };
+    
+    this.workflowProfiles.set(profileId, profile);
+    this.emitEvent('workflow:profileCreated', profile);
+    
+    return profile;
+  }
+  
+  /**
+   * Infer report type from analysis
+   */
+  private inferReportType(analysisResult: WorkflowAnalysisResult): string | null {
+    // Simplified implementation - infer from section patterns
+    const sectionPatterns = analysisResult.patterns.sectionOrder;
+    if (sectionPatterns.length > 0 && sectionPatterns[0].pattern.length > 0) {
+      const firstSection = sectionPatterns[0].pattern[0];
+      // Map section to report type (simplified)
+      if (firstSection.includes('methodology') || firstSection.includes('method')) {
+        return 'methodology_report';
+      } else if (firstSection.includes('risk') || firstSection.includes('assessment')) {
+        return 'risk_assessment';
+      } else if (firstSection.includes('tree') || firstSection.includes('survey')) {
+        return 'tree_survey';
+      }
+    }
+    return null;
+  }
+  
+  /**
+   * Compute workflow confidence
+   */
+  private computeWorkflowConfidence(profile: WorkflowProfile): number {
+    return profile.confidenceScore || 0;
+  }
+  
+  /**
+   * Update existing workflow profile
+   */
+  private updateWorkflowProfile(existingProfile: WorkflowProfile, analysisResult: WorkflowAnalysisResult): WorkflowProfile {
+    // Update common section order - merge with existing
+    const newSectionOrder = analysisResult.patterns.sectionOrder.length > 0
+      ? analysisResult.patterns.sectionOrder[0].pattern
+      : [];
+    
+    const mergedSectionOrder = [...existingProfile.commonSectionOrder];
+    newSectionOrder.forEach(section => {
+      if (!mergedSectionOrder.includes(section)) {
+        mergedSectionOrder.push(section);
+      }
+    });
+    
+    // Update common omissions
+    const newOmissions = analysisResult.patterns.omissions.map(o => o.section);
+    const mergedOmissions = [...existingProfile.commonOmissions, ...newOmissions];
+    
+    // Update common corrections
+    const newCorrections = analysisResult.patterns.corrections.map(c => ({
+      from: c.from,
+      to: c.to,
+      frequency: c.frequency,
+      lastObserved: new Date()
+    }));
+    const mergedCorrections = [...existingProfile.commonCorrections, ...newCorrections];
+    
+    // Update preferred interaction patterns
+    const newInteractionPatterns = analysisResult.patterns.interactions.map(i => ({
+      pattern: i.pattern,
+      frequency: i.frequency,
+      confidence: i.averageDuration > 0 ? 0.8 : 0.5
+    }));
+    const mergedInteractionPatterns = [...existingProfile.preferredInteractionPatterns, ...newInteractionPatterns];
+    
+    // Update typical data sources
+    const newDataSources = analysisResult.patterns.dataSources.map(d => d.source);
+    const mergedDataSources = [...existingProfile.typicalDataSources, ...newDataSources];
+    
+    // Update workflow heuristics
+    const updatedHeuristics = {
+      ...existingProfile.workflowHeuristics,
+      orderConsistency: (existingProfile.workflowHeuristics.orderConsistency + analysisResult.confidenceScores.sectionOrder) / 2,
+      commonStartingPoints: mergedSectionOrder.length > 0 ? [mergedSectionOrder[0]] : existingProfile.workflowHeuristics.commonStartingPoints
+    };
+    
+    // Update confidence score (weighted average)
+    const existingWeight = existingProfile.timestamps.observationCount;
+    const newWeight = analysisResult.patterns.sectionOrder.length;
+    const totalWeight = existingWeight + newWeight;
+    
+    const updatedConfidenceScore = totalWeight > 0
+      ? (existingProfile.confidenceScore * existingWeight + analysisResult.confidenceScores.overall * newWeight) / totalWeight
+      : analysisResult.confidenceScores.overall;
+    
+    // Update timestamps
+    const updatedTimestamps = {
+      ...existingProfile.timestamps,
+      updatedAt: new Date(),
+      observationCount: existingProfile.timestamps.observationCount + this.observedEvents.filter(e => e.userId === existingProfile.userId).length
+    };
+    
+    // Update metadata
+    const updatedMetadata = {
+      ...existingProfile.metadata,
+      version: existingProfile.metadata.version + 1
+    };
+    
+    // Create updated profile
+    const updatedProfile: WorkflowProfile = {
+      ...existingProfile,
+      commonSectionOrder: mergedSectionOrder,
+      commonOmissions: mergedOmissions,
+      commonCorrections: mergedCorrections,
+      preferredInteractionPatterns: mergedInteractionPatterns,
+      typicalDataSources: mergedDataSources,
+      workflowHeuristics: updatedHeuristics,
+      confidenceScore: updatedConfidenceScore,
+      timestamps: updatedTimestamps,
+      metadata: updatedMetadata
+    };
+    
+    this.workflowProfiles.set(updatedProfile.id, updatedProfile);
+    this.emitEvent('workflow:profileUpdated', updatedProfile);
+    
+    return updatedProfile;
+  }
+}
