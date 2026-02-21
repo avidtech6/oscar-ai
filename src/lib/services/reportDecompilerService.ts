@@ -170,6 +170,7 @@ export async function onDecompilerEvent(
 
 /**
  * Fallback to local decompiler if Edge Function fails (for development)
+ * Note: Local fallback disabled due to Node.js dependencies not available in browser
  */
 export async function decompileReportWithFallback(
   reportText: string,
@@ -189,50 +190,12 @@ export async function decompileReportWithFallback(
     };
   }
   
-  console.warn('Edge function failed, attempting local fallback:', edgeResult.error);
+  console.warn('Edge function failed, local fallback not available in browser:', edgeResult.error);
   
-  // Try local fallback (original implementation)
-  try {
-    // Dynamic import to avoid TypeScript compilation issues
-    // Note: These paths are relative to the built output, not source
-    const decompilerModule = await import('../../../report-intelligence/decompiler/ReportDecompiler');
-    const registryModule = await import('../../../report-intelligence/registry/ReportTypeRegistry');
-    
-    const ReportDecompiler = decompilerModule.ReportDecompiler || decompilerModule.default;
-    const ReportTypeRegistry = registryModule.ReportTypeRegistry || registryModule.default;
-    
-    const registryInstance = new ReportTypeRegistry();
-    const decompilerInstance = new ReportDecompiler(registryInstance);
-    
-    const result = await decompilerInstance.ingest(reportText, inputFormat);
-    
-    return {
-      success: true,
-      data: {
-        id: result.id,
-        sections: result.sections.map((section: any) => ({
-          id: section.id,
-          title: section.title,
-          type: section.type,
-          level: section.level,
-          content: section.content,
-          metadata: section.metadata
-        })),
-        metadata: result.metadata,
-        terminology: result.terminology,
-        complianceMarkers: result.complianceMarkers,
-        structureMap: result.structureMap,
-        confidenceScore: result.confidenceScore,
-        processingTimeMs: result.processingTimeMs
-      },
-      source: 'local-fallback'
-    };
-  } catch (error) {
-    console.error('Local fallback also failed:', error);
-    return {
-      success: false,
-      error: `Edge function failed: ${edgeResult.error}. Local fallback also failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      source: 'edge-function'
-    };
-  }
+  // Local fallback disabled - Node.js dependencies not available in browser
+  return {
+    success: false,
+    error: `Edge function failed: ${edgeResult.error}. Local fallback not available in browser environment.`,
+    source: 'edge-function'
+  };
 }

@@ -1,34 +1,163 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import {
+		fetchUpcomingEvents,
+		fetchEventsByDateRange,
+		createCalendarEvent,
+		formatEventForDisplay,
+		type CalendarEvent
+	} from '$lib/services/calendarService';
 
-	// Calendar page placeholder
+	// Real calendar data
 	let loading = true;
-	let upcomingEvents = [
-		{ id: 1, title: 'Site Visit - Oak Park', date: 'Today, 10:00 AM', color: 'bg-green-100 text-green-800' },
-		{ id: 2, title: 'Client Meeting - Smith Residence', date: 'Tomorrow, 2:00 PM', color: 'bg-blue-100 text-blue-800' },
-		{ id: 3, title: 'Report Deadline - Willow Project', date: 'Feb 22, 5:00 PM', color: 'bg-red-100 text-red-800' },
-		{ id: 4, title: 'Team Sync', date: 'Feb 23, 9:00 AM', color: 'bg-purple-100 text-purple-800' },
+	let upcomingEvents: Array<{
+		id?: string;
+		title: string;
+		date: string;
+		color: string;
+		time: string;
+		rawEvent?: CalendarEvent;
+	}> = [];
+	let calendarEvents: Array<{
+		day: string;
+		events: Array<{
+			title: string;
+			time: string;
+			color: string;
+			rawEvent?: CalendarEvent;
+		}>;
+	}> = [];
+	let error: string | null = null;
+
+	// Form state
+	let newEventTitle = '';
+	let newEventDateTime = '';
+	let newEventColor = 'bg-blue-500';
+	let newEventType: 'site_visit' | 'client_meeting' | 'deadline' | 'team_sync' | 'other' = 'site_visit';
+
+	// Current week dates
+	const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+	const currentWeekDates = [
+		'2026-02-17', '2026-02-18', '2026-02-19', '2026-02-20',
+		'2026-02-21', '2026-02-22', '2026-02-23'
 	];
+
+	async function loadCalendarData() {
+		loading = true;
+		error = null;
+
+		try {
+			// Load upcoming events
+			const upcomingResult = await fetchUpcomingEvents(10);
+			if (upcomingResult.success && upcomingResult.data) {
+				upcomingEvents = upcomingResult.data.map(event => {
+					const formatted = formatEventForDisplay(event);
+					return {
+						id: event.id,
+						title: formatted.title,
+						date: formatted.date,
+						color: formatted.color,
+						time: formatted.time,
+						rawEvent: event
+					};
+				});
+			} else {
+				error = upcomingResult.error || 'Failed to load upcoming events';
+			}
+
+			// Load events for current week
+			const weekStart = '2026-02-17';
+			const weekEnd = '2026-02-23';
+			const weekResult = await fetchEventsByDateRange(weekStart, weekEnd);
+			
+			if (weekResult.success && weekResult.data) {
+				// Group events by day
+				const eventsByDay: Record<string, Array<{
+					title: string;
+					time: string;
+					color: string;
+					rawEvent?: CalendarEvent;
+				}>> = {};
+				
+				// Initialize empty arrays for each day
+				currentWeekDates.forEach(date => {
+					eventsByDay[date] = [];
+				});
+
+				// Populate events
+				weekResult.data.forEach(event => {
+					const eventDate = new Date(event.start_time).toISOString().split('T')[0];
+					const formatted = formatEventForDisplay(event);
+					
+					if (eventsByDay[eventDate]) {
+						eventsByDay[eventDate].push({
+							title: formatted.title,
+							time: formatted.time,
+							color: event.color || formatted.color.split(' ')[0],
+							rawEvent: event
+						});
+					}
+				});
+
+				// Create calendarEvents array matching days
+				calendarEvents = days.map((day, index) => ({
+					day,
+					events: eventsByDay[currentWeekDates[index]] || []
+				}));
+			} else {
+				if (!error) error = weekResult.error || 'Failed to load week events';
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Unknown error loading calendar data';
+			console.error('Error loading calendar:', err);
+		} finally {
+			loading = false;
+		}
+	}
+
+	async function handleAddEvent() {
+		if (!newEventTitle.trim() || !newEventDateTime) {
+			error = 'Please provide a title and date/time';
+			return;
+		}
+
+		try {
+			const startTime = new Date(newEventDateTime);
+			const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour later
+
+			const event: Omit<CalendarEvent, 'id' | 'created_at' | 'updated_at'> = {
+				title: newEventTitle,
+				description: '',
+				start_time: startTime.toISOString(),
+				end_time: endTime.toISOString(),
+				event_type: newEventType,
+				color: newEventColor,
+				user_id: 'current-user' // TODO: Get actual user ID
+			};
+
+			const result = await createCalendarEvent(event);
+			if (result.success) {
+				// Reset form
+				newEventTitle = '';
+				newEventDateTime = '';
+				newEventColor = 'bg-blue-500';
+				newEventType = 'site_visit';
+				
+				// Reload data
+				await loadCalendarData();
+			} else {
+				error = result.error || 'Failed to create event';
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Unknown error creating event';
+			console.error('Error creating event:', err);
+		}
+	}
 
 	onMount(() => {
-		// Simulate loading
-		setTimeout(() => {
-			loading = false;
-		}, 500);
+		loadCalendarData();
 	});
-
-	// Mock calendar days for current week
-	const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-	const calendarEvents = [
-		{ day: 'Mon', events: [{ title: 'Site Visit', time: '10:00', color: 'bg-green-500' }] },
-		{ day: 'Tue', events: [] },
-		{ day: 'Wed', events: [{ title: 'Client Call', time: '14:00', color: 'bg-blue-500' }, { title: 'Team Meeting', time: '16:00', color: 'bg-purple-500' }] },
-		{ day: 'Thu', events: [{ title: 'Report Due', time: '17:00', color: 'bg-red-500' }] },
-		{ day: 'Fri', events: [{ title: 'Planning', time: '9:00', color: 'bg-yellow-500' }] },
-		{ day: 'Sat', events: [] },
-		{ day: 'Sun', events: [] },
-	];
 </script>
 
 <svelte:head>
@@ -44,29 +173,65 @@
 		</p>
 	</div>
 
-	<!-- Coming Soon Banner -->
-	<div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
-		<div class="flex items-start gap-4">
-			<div class="flex-shrink-0">
-				<svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-				</svg>
-			</div>
-			<div>
-				<h3 class="text-lg font-semibold text-green-800 mb-1">Calendar Integration Coming Soon</h3>
-				<p class="text-green-700 mb-3">
-					This feature is currently under development. Planned capabilities include:
-				</p>
-				<ul class="list-disc pl-5 text-green-700 space-y-1">
-					<li>Sync with Google Calendar, Outlook, and Apple Calendar</li>
-					<li>Automatically schedule site visits and client meetings</li>
-					<li>Deadline tracking for reports and projects</li>
-					<li>Team availability and scheduling</li>
-					<li>Calendar-based reminders and notifications</li>
-				</ul>
+	<!-- Loading State -->
+	{#if loading}
+		<div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+			<div class="flex items-center gap-4">
+				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+				<div>
+					<h3 class="text-lg font-semibold text-blue-800 mb-1">Loading Calendar Data</h3>
+					<p class="text-blue-700">
+						Fetching events from Supabase database...
+					</p>
+				</div>
 			</div>
 		</div>
-	</div>
+	{:else if error}
+		<div class="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+			<div class="flex items-start gap-4">
+				<div class="flex-shrink-0">
+					<svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+					</svg>
+				</div>
+				<div>
+					<h3 class="text-lg font-semibold text-red-800 mb-1">Error Loading Calendar</h3>
+					<p class="text-red-700 mb-3">
+						{error}
+					</p>
+					<button
+						on:click={loadCalendarData}
+						class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+					>
+						Retry
+					</button>
+				</div>
+			</div>
+		</div>
+	{:else if upcomingEvents.length === 0 && calendarEvents.every(day => day.events.length === 0)}
+		<!-- Empty State -->
+		<div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
+			<div class="flex items-start gap-4">
+				<div class="flex-shrink-0">
+					<svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+					</svg>
+				</div>
+				<div>
+					<h3 class="text-lg font-semibold text-green-800 mb-1">Calendar Ready</h3>
+					<p class="text-green-700 mb-3">
+						Your calendar is connected to Supabase. Add your first event to get started.
+					</p>
+					<ul class="list-disc pl-5 text-green-700 space-y-1">
+						<li>Schedule site visits and client meetings</li>
+						<li>Track report deadlines and project milestones</li>
+						<li>Coordinate team syncs and planning sessions</li>
+						<li>All data stored securely in Supabase</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Main Calendar Grid -->
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -154,21 +319,58 @@
 				<div class="space-y-4">
 					<div>
 						<label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-						<input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Site Visit, Meeting, Deadline">
+						<input
+							type="text"
+							bind:value={newEventTitle}
+							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+							placeholder="Site Visit, Meeting, Deadline"
+						>
 					</div>
 					<div>
 						<label class="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
-						<input type="datetime-local" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+						<input
+							type="datetime-local"
+							bind:value={newEventDateTime}
+							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						>
+					</div>
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+						<select
+							bind:value={newEventType}
+							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						>
+							<option value="site_visit">Site Visit</option>
+							<option value="client_meeting">Client Meeting</option>
+							<option value="deadline">Deadline</option>
+							<option value="team_sync">Team Sync</option>
+							<option value="other">Other</option>
+						</select>
 					</div>
 					<div>
 						<label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
 						<div class="flex gap-2">
-							{#each ['bg-blue-500', 'bg-green-500', 'bg-red-500', 'bg-yellow-500', 'bg-purple-500'] as color}
-								<button class="w-8 h-8 rounded-full {color} border-2 border-transparent hover:border-gray-300"></button>
+							{#each [
+								{ value: 'bg-blue-500', label: 'Blue' },
+								{ value: 'bg-green-500', label: 'Green' },
+								{ value: 'bg-red-500', label: 'Red' },
+								{ value: 'bg-yellow-500', label: 'Yellow' },
+								{ value: 'bg-purple-500', label: 'Purple' }
+							] as colorOption}
+								<button
+									type="button"
+									class="w-8 h-8 rounded-full {colorOption.value} border-2 {newEventColor === colorOption.value ? 'border-gray-800' : 'border-transparent'} hover:border-gray-300"
+									on:click={() => newEventColor = colorOption.value}
+									title={colorOption.label}
+								></button>
 							{/each}
 						</div>
 					</div>
-					<button class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
+					<button
+						on:click={handleAddEvent}
+						class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+						disabled={!newEventTitle.trim() || !newEventDateTime}
+					>
 						Add to Calendar
 					</button>
 				</div>
