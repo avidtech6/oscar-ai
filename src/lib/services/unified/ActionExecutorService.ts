@@ -105,10 +105,12 @@ export class ActionExecutorService {
 
     // Rule 5: Destructive actions always require explicit confirmation
     const destructiveIntents = ['delete', 'remove', 'archive', 'trash'];
-    const isDestructive = destructiveIntents.some(destructive =>
-      data?.text?.toLowerCase().includes(destructive) ||
-      (intentResult.intent && intentResult.intent.includes(destructive))
-    );
+    const isDestructive = destructiveIntents.some(destructive => {
+      const text = data?.text;
+      const hasTextMatch = text && typeof text === 'string' && text.toLowerCase().includes(destructive);
+      const hasIntentMatch = intentResult.intent && intentResult.intent.includes(destructive);
+      return hasTextMatch || hasIntentMatch;
+    });
     
     if (isDestructive) {
       return true;
