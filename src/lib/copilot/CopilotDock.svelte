@@ -21,14 +21,38 @@
 	
 	function handleMicrophoneClick() {
 		console.log('Microphone clicked - should trigger voice dictation');
-		// In a real implementation, this would start voice recording
-		// For now, we'll just log and show a notification
-		alert('Voice dictation would start here. This would trigger the existing VoiceRecordingService.');
+		
+		// Check if speech recognition is available
+		if (typeof window === 'undefined' || !('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+			alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+			return;
+		}
+		
+		// Try to use the existing voice recording service if available
+		try {
+			// Check if there's a global voice recording service
+			if (window.voiceRecordingService) {
+				window.voiceRecordingService.startRecording();
+			} else {
+				// Fallback to showing a message
+				alert('Voice dictation would start here. This would trigger the existing VoiceRecordingService.');
+			}
+		} catch (error) {
+			console.error('Failed to start voice recording:', error);
+			alert('Failed to start voice recording. Please check your microphone permissions.');
+		}
 	}
 	
 	// Page-aware hints based on current route
 	function getPageHint() {
+		// Check if window is available (client-side only)
+		if (typeof window === 'undefined' || !window.location) {
+			return 'Ask Oscar AI anything about your work';
+		}
+		
 		const path = window.location.pathname;
+		if (!path) return 'Ask Oscar AI anything about your work';
+		
 		if (path.includes('/notes')) return 'Try: Summarise this note';
 		if (path.includes('/trees') || path.includes('/project/')) return 'Try: Describe this tree\'s condition';
 		if (path.includes('/tasks')) return 'Try: Generate next actions';
