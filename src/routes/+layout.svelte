@@ -6,10 +6,14 @@
 	import { onMount } from 'svelte';
 	import { db } from '$lib/db';
 	import { initSettings } from '$lib/stores/settings';
+	import CopilotDock from '$lib/copilot/CopilotDock.svelte';
+	import { copilotState } from '$lib/copilot/copilotStore';
 	import type { Project } from '$lib/db';
+	import { onDestroy } from 'svelte';
 
 	let projects: Project[] = [];
 	let loading = true;
+
 
 	// Simplified navigation items - no auth required
 	const navItems = [
@@ -237,5 +241,8 @@
 		<div class="flex-1 overflow-auto">
 			<slot />
 		</div>
+		
+		<!-- Global Copilot System - Now inside main content -->
+		<CopilotDock />
 	</main>
 </div>
