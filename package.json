@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "version": "node scripts/generate-version.cjs"
+    "version": "node scripts/generate-version.cjs",
+    "deploy": "node scripts/auto-deploy.cjs",
+    "deploy:message": "node scripts/auto-deploy.cjs \"Auto-deploy: $(date)\""
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "3.0.6",
@@ -27,6 +29,7 @@
     "vite": "5.1.0"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
     "@sveltejs/adapter-cloudflare": "^7.2.7",
     "dexie": "^4.0.10",
     "dompurify": "^3.3.1",

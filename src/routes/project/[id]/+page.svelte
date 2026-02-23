@@ -3,6 +3,9 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { db } from '$lib/db';
+	import { supabase } from '$lib/supabase/client';
+	import { getNotes, createNote, updateNote, deleteNote as deleteNoteService } from '$lib/services/notesService';
+	import { getTrees, createTree, updateTree, deleteTree as deleteTreeService } from '$lib/services/treesService';
 	import type { Project, Tree, Note, Photo } from '$lib/db';
 	import VoiceRecorder from '$lib/components/VoiceRecorder.svelte';
 	import AIReviewChat from '$lib/components/ai/AIReviewChat.svelte';
@@ -12,13 +15,26 @@
 	import TabSystem from '$lib/components/project/TabSystem.svelte';
 	import TreeModal from '$lib/components/project/TreeModal.svelte';
 	import UnifiedAIPrompt from '$lib/components/ai/UnifiedAIPrompt.svelte';
+	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
+	import PhotoUploader from '$lib/components/PhotoUploader.svelte';
+	
+	// Project Overview Widgets
+	import RecentNotes from '$lib/components/projectOverview/RecentNotes.svelte';
+	import RecentTrees from '$lib/components/projectOverview/RecentTrees.svelte';
+	import RecentPhotos from '$lib/components/projectOverview/RecentPhotos.svelte';
+	import RecentReports from '$lib/components/projectOverview/RecentReports.svelte';
+	import TaskSummary from '$lib/components/projectOverview/TaskSummary.svelte';
+	import QuickActions from '$lib/components/projectOverview/QuickActions.svelte';
+	import AiInsights from '$lib/components/projectOverview/AiInsights.svelte';
 
 	let projectId = '';
 	let project: Project | undefined;
 	let trees: Tree[] = [];
 	let notes: Note[] = [];
 	let photos: Photo[] = [];
-	let activeTab = 'trees';
+	let reports: any[] = []; // TODO: Add proper type for reports
+	let tasks: any[] = []; // TODO: Add proper type for tasks
+	let activeTab = 'overview';
 	let loading = true;
 	let saving = false;
 	let error = '';
@@ -43,6 +59,12 @@
 		type: 'general' as 'general' | 'voice' | 'field'
 	};
 
+	// Editing states
+	let editingNoteId: string | null = null;
+	let editingNoteContent = '';
+	let editingTreeId: string | null = null;
+	let editingTreeNotes = '';
+
 	onMount(async () => {
 		projectId = $page.params.id;
 		await loadProject();
@@ -52,20 +74,45 @@
 		loading = true;
 		error = '';
 		try {
-			// Load project
+			// Load project from IndexedDB (existing)
 			project = await db.projects.get(projectId);
 			if (!project) {
 				error = 'Project not found';
 				return;
 			}
 
-			// Load trees
-			trees = await db.trees.where('projectId').equals(projectId).toArray();
+			// Load trees from Supabase
+			const supabaseTrees = await getTrees(projectId);
+			trees = supabaseTrees.map(tree => ({
+				id: tree.id,
+				projectId: tree.project_id,
+				number: tree.label || '',
+				species: tree.species || '',
+				scientificName: '',
+				DBH: 0,
+				height: 0,
+				age: '',
+				category: '' as 'A' | 'B' | 'C' | 'U' | '',
+				condition: tree.condition || '',
+				notes: tree.notes || '',
+				RPA: 0,
+				createdAt: tree.created_at,
+				updatedAt: tree.updated_at
+			}));
 
-			// Load notes
-			notes = await db.notes.where('projectId').equals(projectId).toArray();
+			// Load notes from Supabase
+			const supabaseNotes = await getNotes(projectId);
+			notes = supabaseNotes.map(note => ({
+				id: note.id,
+				projectId: note.project_id,
+				title: note.title || '',
+				content: note.content || '',
+				type: 'general' as 'general' | 'voice' | 'field',
+				createdAt: note.created_at,
+				updatedAt: note.updated_at
+			}));
 
-			// Load photos
+			// Load photos from IndexedDB (existing - will be migrated to Supabase later)
 			photos = await db.photos.where('projectId').equals(projectId).toArray();
 
 			// Load review status
@@ -82,7 +129,7 @@
 		saving = true;
 		error = '';
 		try {
-			// Update project timestamp
+			// Update project timestamp in IndexedDB
 			await db.projects.update(projectId, {
 				updatedAt: new Date().toISOString()
 			});
@@ -108,7 +155,17 @@
 		if (!treeData.number || !treeData.species) return;
 
 		try {
-			const treeId = await db.trees.add({
+			// Create tree in Supabase
+			const treeId = await createTree({
+				project_id: projectId,
+				label: treeData.number,
+				species: treeData.species,
+				condition: treeData.condition,
+				notes: treeData.notes
+			});
+
+			// Also add to IndexedDB for compatibility
+			await db.trees.add({
 				projectId,
 				number: treeData.number,
 				species: treeData.species,
@@ -125,9 +182,7 @@
 			});
 
 			// Refresh trees list
-			trees = await db.trees.where('projectId').equals(projectId).toArray();
-
-			// Save project timestamp
+			await loadProject();
 			await saveProject();
 		} catch (e) {
 			error = 'Failed to add tree';
@@ -135,12 +190,17 @@
 		}
 	}
 
-	async function deleteTree(treeId: number) {
+	async function deleteTreeItem(treeId: number) {
 		if (!confirm('Are you sure you want to delete this tree?')) return;
 
 		try {
+			// Delete from Supabase
+			await deleteTreeService(treeId.toString());
+			
+			// Delete from IndexedDB
 			await db.trees.delete(treeId);
-			trees = await db.trees.where('projectId').equals(projectId).toArray();
+			
+			await loadProject();
 			await saveProject();
 		} catch (e) {
 			error = 'Failed to delete tree';
@@ -152,6 +212,14 @@
 		if (!newNote.title || !newNote.content) return;
 
 		try {
+			// Create note in Supabase
+			const noteId = await createNote({
+				project_id: projectId,
+				title: newNote.title,
+				content: newNote.content
+			});
+
+			// Also add to IndexedDB for compatibility
 			await db.notes.add({
 				projectId,
 				title: newNote.title,
@@ -162,7 +230,7 @@
 			});
 
 			// Refresh notes list
-			notes = await db.notes.where('projectId').equals(projectId).toArray();
+			await loadProject();
 
 			// Reset form
 			newNote = {
@@ -178,6 +246,28 @@
 		}
 	}
 
+	async function updateNoteContent(noteId: string, content: string) {
+		try {
+			await updateNote(noteId, { content });
+			await loadProject();
+			await saveProject();
+		} catch (e) {
+			error = 'Failed to update note';
+			console.error(e);
+		}
+	}
+
+	async function updateTreeNotes(treeId: string, notes: string) {
+		try {
+			await updateTree(treeId, { notes });
+			await loadProject();
+			await saveProject();
+		} catch (e) {
+			error = 'Failed to update tree notes';
+			console.error(e);
+		}
+	}
+
 	// Handle voice transcription from VoiceRecorder
 	async function handleVoiceTranscript(event: CustomEvent<{ text: string; projectId: string }>) {
 		const { text } = event.detail;
@@ -187,6 +277,14 @@
 			const timestamp = new Date();
 			const noteTitle = `Voice Note - ${timestamp.toLocaleDateString('en-GB')} ${timestamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
 			
+			// Create in Supabase
+			await createNote({
+				project_id: projectId,
+				title: noteTitle,
+				content: text
+			});
+
+			// Also add to IndexedDB for compatibility
 			await db.notes.add({
 				projectId,
 				title: noteTitle,
@@ -197,7 +295,7 @@
 			});
 
 			// Refresh notes list
-			notes = await db.notes.where('projectId').equals(projectId).toArray();
+			await loadProject();
 			await saveProject();
 		} catch (e) {
 			error = 'Failed to save voice note';
@@ -205,12 +303,17 @@
 		}
 	}
 
-	async function deleteNote(noteId: number) {
+	async function deleteNoteItem(noteId: number) {
 		if (!confirm('Are you sure you want to delete this note?')) return;
 
 		try {
+			// Delete from Supabase
+			await deleteNoteService(noteId.toString());
+			
+			// Delete from IndexedDB
 			await db.notes.delete(noteId);
-			notes = await db.notes.where('projectId').equals(projectId).toArray();
+			
+			await loadProject();
 			await saveProject();
 		} catch (e) {
 			error = 'Failed to delete note';
@@ -315,6 +418,59 @@
 			return dateB - dateA;
 		});
 	}
+
+	// Handle image upload from PhotoUploader
+	function handleImageUpload(event: CustomEvent<{ urls: string[] }>) {
+		const { urls } = event.detail;
+		if (urls.length > 0) {
+			// For now, just show an alert. In a real implementation, we would:
+			// 1. Insert the image into the currently active editor
+			// 2. Or create a new note with the image
+			alert(`Image uploaded! URL: ${urls[0]}\n\nCopy this URL and paste it into the rich text editor to insert the image.`);
+		}
+	}
+
+	// Start editing a note
+	function startEditNote(note: Note) {
+		editingNoteId = note.id;
+		editingNoteContent = note.content;
+	}
+
+	// Cancel editing a note
+	function cancelEditNote() {
+		editingNoteId = null;
+		editingNoteContent = '';
+	}
+
+	// Save edited note
+	async function saveEditNote() {
+		if (editingNoteId) {
+			await updateNoteContent(editingNoteId, editingNoteContent);
+			editingNoteId = null;
+			editingNoteContent = '';
+		}
+	}
+
+	// Start editing tree notes
+	function startEditTreeNotes(tree: Tree) {
+		editingTreeId = tree.id;
+		editingTreeNotes = tree.notes || '';
+	}
+
+	// Cancel editing tree notes
+	function cancelEditTreeNotes() {
+		editingTreeId = null;
+		editingTreeNotes = '';
+	}
+
+	// Save edited tree notes
+	async function saveEditTreeNotes() {
+		if (editingTreeId) {
+			await updateTreeNotes(editingTreeId, editingTreeNotes);
+			editingTreeId = null;
+			editingTreeNotes = '';
+		}
+	}
 </script>
 
 <svelte:head>
@@ -359,6 +515,7 @@
 		<TabSystem
 			{activeTab}
 			tabs={[
+				{ id: 'overview', label: 'Overview', count: 0 },
 				{ id: 'trees', label: 'Trees', count: trees.length },
 				{ id: 'notes', label: 'Notes', count: notes.length },
 				{ id: 'photos', label: 'Photos', count: photos.length },
@@ -368,72 +525,143 @@
 			onTabChange={(tabId) => activeTab = tabId}
 		/>
 
+		<!-- Overview Tab -->
+		{#if activeTab === 'overview'}
+			<div class="bg-white rounded-lg shadow p-6">
+				<h2 class="text-xl font-semibold text-gray-800 mb-6">Project Overview</h2>
+				
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					<!-- Recent Notes Widget -->
+					<div>
+						<RecentNotes {notes} {projectId} limit={5} />
+					</div>
+					
+					<!-- Recent Trees Widget -->
+					<div>
+						<RecentTrees {trees} {projectId} limit={5} />
+					</div>
+					
+					<!-- Recent Photos Widget -->
+					<div>
+						<RecentPhotos {photos} {projectId} limit={6} />
+					</div>
+					
+					<!-- Recent Reports Widget -->
+					<div>
+						<RecentReports {reports} {projectId} limit={3} />
+					</div>
+					
+					<!-- Tasks Summary Widget -->
+					<div>
+						<TaskSummary {tasks} {projectId} />
+					</div>
+					
+					<!-- Quick Actions Panel -->
+					<div>
+						<QuickActions {projectId} />
+					</div>
+					
+					<!-- AI Insights Widget -->
+					<div class="md:col-span-2 lg:col-span-3">
+						<AiInsights
+							{trees}
+							{notes}
+							{reports}
+							{tasks}
+							{photos}
+							{projectId}
+						/>
+					</div>
+				</div>
+			</div>
+		{/if}
+
 		<!-- Trees Tab -->
 		{#if activeTab === 'trees'}
-			<!-- Trees List -->
-			<div class="card">
-				<div class="p-4 border-b border-gray-200 flex items-center justify-between">
-					<h2 class="text-lg font-semibold">Tree Survey ({trees.length})</h2>
+			<div class="bg-white rounded-lg shadow p-6">
+				<div class="flex justify-between items-center mb-6">
+					<h2 class="text-xl font-semibold text-gray-800">Trees</h2>
 					<button
 						on:click={() => showTreeModal = true}
 						class="btn btn-primary"
 					>
-						<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-						</svg>
 						Add Tree
 					</button>
 				</div>
+
 				{#if trees.length === 0}
-					<div class="p-8 text-center text-gray-500">
-						<p>No trees added yet. Click "Add Tree" to add your first tree.</p>
+					<div class="text-center py-8 text-gray-500">
+						<p>No trees added yet.</p>
+						<button
+							on:click={() => showTreeModal = true}
+							class="btn btn-primary mt-4"
+						>
+							Add Your First Tree
+						</button>
 					</div>
 				{:else}
-					<div class="overflow-x-auto">
-						<table class="min-w-full divide-y divide-gray-200">
-							<thead class="bg-gray-50">
-								<tr>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Species</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DBH</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Height</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cat.</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RPA</th>
-									<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-								</tr>
-							</thead>
-							<tbody class="bg-white divide-y divide-gray-200">
-								{#each trees as tree}
-									<tr class="hover:bg-gray-50">
-										<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tree.number}</td>
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-											{tree.species}
-											{#if tree.scientificName}
-												<span class="text-gray-400 italic"> ({tree.scientificName})</span>
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						{#each trees as tree (tree.id)}
+							<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+								<div class="flex justify-between items-start mb-2">
+									<h3 class="font-medium text-gray-800">{tree.number} - {tree.species}</h3>
+									<button
+										on:click={() => deleteTreeItem(Number(tree.id))}
+										class="text-red-500 hover:text-red-700 text-sm"
+									>
+										Delete
+									</button>
+								</div>
+								
+								<div class="space-y-2 text-sm text-gray-600">
+									<p><span class="font-medium">Condition:</span> {tree.condition}</p>
+									<p><span class="font-medium">Category:</span> <span class="px-2 py-1 rounded text-xs {getCategoryColor(tree.category)}">{tree.category || 'Not set'}</span></p>
+									
+									{#if editingTreeId === tree.id}
+										<div class="mt-4">
+											<RichTextEditor
+												value={editingTreeNotes}
+												onChange={(content) => editingTreeNotes = content}
+												placeholder="Add notes about this tree..."
+											/>
+											<div class="flex gap-2 mt-2">
+												<button
+													on:click={saveEditTreeNotes}
+													class="btn btn-primary text-sm"
+												>
+													Save
+												</button>
+												<button
+													on:click={cancelEditTreeNotes}
+													class="btn btn-secondary text-sm"
+												>
+													Cancel
+												</button>
+											</div>
+										</div>
+									{:else}
+										<div class="mt-3">
+											<div class="flex justify-between items-center mb-1">
+												<span class="font-medium">Notes:</span>
+												<button
+													on:click={() => startEditTreeNotes(tree)}
+													class="text-blue-500 hover:text-blue-700 text-sm"
+												>
+													Edit
+												</button>
+											</div>
+											{#if tree.notes}
+												<div class="prose prose-sm max-w-none border border-gray-100 rounded p-3 bg-gray-50">
+													{@html tree.notes}
+												</div>
+											{:else}
+												<p class="text-gray-400 italic">No notes added</p>
 											{/if}
-										</td>
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tree.DBH}mm</td>
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tree.height}m</td>
-										<td class="px-6 py-4 whitespace-nowrap">
-											<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {getCategoryColor(tree.category)}">
-												{tree.category || '-'}
-											</span>
-										</td>
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tree.condition || '-'}</td>
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tree.RPA}mm</td>
-										<td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-											<button
-												on:click={() => tree.id && deleteTree(tree.id)}
-												class="text-red-600 hover:text-red-900"
-											>
-												Delete
-											</button>
-										</td>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
+										</div>
+									{/if}
+								</div>
+							</div>
+						{/each}
 					</div>
 				{/if}
 			</div>
@@ -441,87 +669,168 @@
 
 		<!-- Notes Tab -->
 		{#if activeTab === 'notes'}
-			<!-- Voice Recorder -->
-			<div class="card p-6 mb-6">
-				<h2 class="text-lg font-semibold mb-4">Voice Note</h2>
-				<p class="text-sm text-gray-600 mb-4">Record a voice note and it will be automatically transcribed using AI.</p>
-				<VoiceRecorder
-					{projectId}
-					on:transcript={handleVoiceTranscript}
-				/>
-			</div>
-
-			<!-- Add Note Form -->
-			<div class="card p-6 mb-6">
-				<h2 class="text-lg font-semibold mb-4">Add New Note</h2>
-				<form on:submit|preventDefault={addNote} class="space-y-4">
-					<div>
-						<label for="noteTitle" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-						<input
-							id="noteTitle"
-							type="text"
-							bind:value={newNote.title}
-							placeholder="Note title"
-							class="input w-full"
-							required
-						/>
-					</div>
-					<div>
-						<label for="noteType" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-						<select id="noteType" bind:value={newNote.type} class="input w-full">
-							<option value="general">General</option>
-							<option value="field">Field Note</option>
-							<option value="voice">Voice Note</option>
-						</select>
-					</div>
-					<div>
-						<label for="noteContent" class="block text-sm font-medium text-gray-700 mb-1">Content</label>
-						<textarea
-							id="noteContent"
-							bind:value={newNote.content}
-							placeholder="Note content..."
-							rows="4"
-							class="input w-full"
-							required
-						></textarea>
-					</div>
-					<button type="submit" class="btn btn-primary">Add Note</button>
-				</form>
-			</div>
-
-			<!-- Notes List -->
-			<div class="card">
-				<div class="p-4 border-b border-gray-200">
-					<h2 class="text-lg font-semibold">Project Notes</h2>
+			<div class="bg-white rounded-lg shadow p-6">
+				<div class="flex justify-between items-center mb-6">
+					<h2 class="text-xl font-semibold text-gray-800">Notes</h2>
+					<button
+						on:click={() => activeTab = 'voice'}
+						class="btn btn-secondary"
+					>
+						Add Voice Note
+					</button>
 				</div>
+
+				<!-- New Note Form -->
+				<div class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
+					<h3 class="font-medium text-gray-700 mb-3">Create New Note</h3>
+					<div class="space-y-4">
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+							<input
+								type="text"
+								bind:value={newNote.title}
+								class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+								placeholder="Note title"
+							/>
+						</div>
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-1">Content</label>
+							<RichTextEditor
+								value={newNote.content}
+								onChange={(content) => newNote.content = content}
+								placeholder="Write your note here..."
+							/>
+						</div>
+						<div class="flex justify-end">
+							<button
+								on:click={addNote}
+								class="btn btn-primary"
+								disabled={!newNote.title || !newNote.content}
+							>
+								Save Note
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- Notes List -->
 				{#if notes.length === 0}
-					<div class="p-8 text-center text-gray-500">
-						<p>No notes added yet. Add your first note above!</p>
+					<div class="text-center py-8 text-gray-500">
+						<p>No notes added yet.</p>
 					</div>
 				{:else}
-					<div class="divide-y divide-gray-200">
-						{#each notes as note}
-							<div class="p-4 hover:bg-gray-50">
-								<div class="flex items-start justify-between">
-									<div class="flex-1 min-w-0">
-										<div class="flex items-center gap-2 mb-1">
-											<h3 class="text-lg font-medium text-gray-900">{note.title}</h3>
-											<span class="px-2 py-0.5 text-xs rounded-full
-												{note.type === 'field' ? 'bg-green-100 text-green-800' :
-												 note.type === 'voice' ? 'bg-purple-100 text-purple-800' :
-												 'bg-gray-100 text-gray-800'}">
-												{note.type}
-											</span>
-										</div>
-										<p class="text-gray-600 whitespace-pre-wrap">{note.content}</p>
-										<p class="text-xs text-gray-400 mt-2">
-											{new Date(note.createdAt).toLocaleString()}
+					<div class="space-y-4">
+						{#each notes as note (note.id)}
+							<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+								<div class="flex justify-between items-start mb-3">
+									<div>
+										<h3 class="font-medium text-gray-800">{note.title}</h3>
+										<p class="text-xs text-gray-500 mt-1">
+											Created: {new Date(note.createdAt).toLocaleDateString()}
 										</p>
-										
 									</div>
+									<div class="flex gap-2">
+										<button
+											on:click={() => startEditNote(note)}
+											class="text-blue-500 hover:text-blue-700 text-sm"
+										>
+											Edit
+										</button>
+										<button
+											on:click={() => deleteNoteItem(Number(note.id))}
+											class="text-red-500 hover:text-red-700 text-sm"
+										>
+											Delete
+										</button>
+									</div>
+								</div>
+								
+								{#if editingNoteId === note.id}
+									<div class="mt-3">
+										<RichTextEditor
+											value={editingNoteContent}
+											onChange={(content) => editingNoteContent = content}
+											placeholder="Edit note content..."
+										/>
+										<div class="flex gap-2 mt-2">
+											<button
+												on:click={saveEditNote}
+												class="btn btn-primary text-sm"
+											>
+												Save
+											</button>
+											<button
+												on:click={cancelEditNote}
+												class="btn btn-secondary text-sm"
+											>
+												Cancel
+											</button>
+										</div>
+									</div>
+								{:else}
+									<div class="prose prose-sm max-w-none">
+										{@html note.content}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		{/if}
+
+		<!-- Photos Tab -->
+		{#if activeTab === 'photos'}
+			<div class="bg-white rounded-lg shadow p-6">
+				<div class="flex justify-between items-center mb-6">
+					<h2 class="text-xl font-semibold text-gray-800">Photos</h2>
+					<div class="flex gap-2">
+						<PhotoUploader onUpload={handleImageUpload} />
+						<button
+							on:click={() => showPhotoCapture = true}
+							class="btn btn-primary"
+						>
+							Take Photo
+						</button>
+					</div>
+				</div>
+
+				{#if photos.length === 0}
+					<div class="text-center py-8 text-gray-500">
+						<p>No photos added yet.</p>
+						<div class="mt-4 flex justify-center gap-2">
+							<PhotoUploader onUpload={handleImageUpload} />
+							<button
+								on:click={() => showPhotoCapture = true}
+								class="btn btn-primary"
+							>
+								Take Photo
+							</button>
+						</div>
+					</div>
+				{:else}
+					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+						{#each photos as photo (photo.id)}
+							<div class="border border-gray-200 rounded-lg overflow-hidden">
+								<div class="aspect-square bg-gray-100 flex items-center justify-center">
+									{#if photo.blob}
+										<img
+											src={URL.createObjectURL(photo.blob)}
+											alt={photo.filename}
+											class="w-full h-full object-cover"
+										/>
+									{:else}
+										<span class="text-gray-400">No image</span>
+									{/if}
+								</div>
+								<div class="p-3">
+									<p class="text-sm font-medium text-gray-700 truncate">{photo.filename}</p>
+									<p class="text-xs text-gray-500 mt-1">
+										{new Date(photo.createdAt).toLocaleDateString()}
+									</p>
 									<button
-										on:click={() => note.id && deleteNote(note.id)}
-										class="ml-4 text-red-600 hover:text-red-900"
+										on:click={() => deletePhoto(photo.id)}
+										class="mt-2 text-red-500 hover:text-red-700 text-sm"
 									>
 										Delete
 									</button>
@@ -533,145 +842,157 @@
 			</div>
 		{/if}
 
-		<!-- Photos Tab -->
-		{#if activeTab === 'photos'}
-			<!-- Photo Capture Button -->
-			<div class="card p-6 mb-6">
-				<h2 class="text-lg font-semibold mb-4">Add Photos</h2>
-				<p class="text-sm text-gray-600 mb-4">Capture photos using your device camera or upload existing images.</p>
-				<button
-					on:click={() => showPhotoCapture = true}
-					class="btn btn-primary"
-				>
-					<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-					</svg>
-					Take Photo
-				</button>
-			</div>
-
-			<!-- Photos List -->
-			<div class="card">
-				<div class="p-4 border-b border-gray-200">
-					<h2 class="text-lg font-semibold">Project Photos ({photos.length})</h2>
+		<!-- Voice Notes Tab -->
+		{#if activeTab === 'voice'}
+			<div class="bg-white rounded-lg shadow p-6">
+				<div class="flex justify-between items-center mb-6">
+					<h2 class="text-xl font-semibold text-gray-800">Voice Notes</h2>
+					<VoiceRecorder
+						onTranscript={handleVoiceTranscript}
+						projectId={projectId}
+					/>
 				</div>
-				{#if photos.length === 0}
-					<div class="p-8 text-center text-gray-500">
-						<p>No photos added yet. Take your first photo above!</p>
+
+				{#if getVoiceNotes().length === 0}
+					<div class="text-center py-8 text-gray-500">
+						<p>No voice notes recorded yet.</p>
+						<p class="text-sm mt-2">Click the record button above to create your first voice note.</p>
 					</div>
 				{:else}
-					<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-						{#each photos as photo}
-							<div class="relative group">
-								<div class="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-									{#if photo.blob instanceof Blob}
-										<img
-											src={URL.createObjectURL(photo.blob)}
-											alt={photo.filename || 'Photo'}
-											class="w-full h-full object-cover"
-										/>
-									{:else}
-										<div class="w-full h-full flex items-center justify-center text-gray-400">
-											<svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-											</svg>
-										</div>
-									{/if}
+					<div class="space-y-4">
+						{#each getVoiceNotes() as note (note.id)}
+							<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+								<div class="flex justify-between items-start mb-3">
+									<div>
+										<h3 class="font-medium text-gray-800">{note.title}</h3>
+										<p class="text-xs text-gray-500 mt-1">
+											Created: {new Date(note.createdAt).toLocaleDateString()}
+										</p>
+									</div>
+									<button
+										on:click={() => deleteNoteItem(Number(note.id))}
+										class="text-red-500 hover:text-red-700 text-sm"
+									>
+										Delete
+									</button>
 								</div>
-								<div class="mt-2">
-									<p class="text-sm font-medium text-gray-900 truncate">{photo.filename}</p>
-									<p class="text-xs text-gray-500">
-										{#if photo.createdAt}
-											{new Date(photo.createdAt).toLocaleDateString()}
-										{/if}
-									</p>
+								<div class="prose prose-sm max-w-none bg-blue-50 p-3 rounded">
+									{@html note.content}
 								</div>
-								<button
-									on:click={() => photo.id && deletePhoto(photo.id)}
-									class="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-									title="Delete photo"
-								>
-									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-									</svg>
-								</button>
 							</div>
 						{/each}
 					</div>
 				{/if}
 			</div>
 		{/if}
-	{/if}
 
-	<!-- Photo Capture Modal -->
-	{#if showPhotoCapture}
-		<PhotoCapture
-			isOpen={showPhotoCapture}
-			projectId={projectId}
-			photosFolderId=""
-			on:upload={handlePhotoUpload}
-			on:close={() => showPhotoCapture = false}
-		/>
-	{/if}
-
-	<!-- Tree Modal -->
-	<TreeModal
-		isOpen={showTreeModal}
-		{projectId}
-		onClose={() => showTreeModal = false}
-		onSave={addTree}
-	/>
-
-	<!-- Photo Capture Modal -->
-	{#if showPhotoCapture}
-		<PhotoCapture
-			isOpen={showPhotoCapture}
-			projectId={projectId}
-			photosFolderId=""
-			on:upload={handlePhotoUpload}
-			on:close={() => showPhotoCapture = false}
-		/>
-	{/if}
-
-	<!-- Unified AI Prompt -->
-	<UnifiedAIPrompt
-		{projectId}
-		isOpen={showUnifiedAIPrompt}
-	/>
-
-	<!-- AI Review Chat Modal -->
-	{#if showAIReview && project}
-		<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-			<div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-				<div class="p-4 border-b border-gray-200 flex items-center justify-between">
-					<h2 class="text-xl font-semibold text-gray-900">AI Project Review</h2>
-					<button
-						on:click={toggleAIReview}
-						class="text-gray-400 hover:text-gray-600"
-					>
-						<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-						</svg>
-					</button>
-				</div>
-				<div class="p-4 overflow-y-auto max-h-[calc(90vh-80px)]">
-					<AIReviewChat projectId={projectId} projectName={project.name} />
-				</div>
+		<!-- All Items Tab -->
+		{#if activeTab === 'all'}
+			<div class="bg-white rounded-lg shadow p-6">
+				<h2 class="text-xl font-semibold text-gray-800 mb-6">All Project Items</h2>
+				
+				{#if getAllItems().length === 0}
+					<div class="text-center py-8 text-gray-500">
+						<p>No items added to this project yet.</p>
+					</div>
+				{:else}
+					<div class="space-y-4">
+						{#each getAllItems() as item (item.id)}
+							<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+								<div class="flex items-start gap-3">
+									<div class="mt-1">
+										{#if item.type === 'tree'}
+											<span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-800">
+												🌳
+											</span>
+										{:else if item.type === 'note'}
+											<span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
+												📝
+											</span>
+										{:else if item.type === 'photo'}
+											<span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 text-yellow-800">
+												📷
+											</span>
+										{/if}
+									</div>
+									<div class="flex-1">
+										<div class="flex justify-between items-start">
+											<div>
+												<h3 class="font-medium text-gray-800">
+													{#if item.type === 'tree'}
+														{item.number} - {item.species}
+													{:else if item.type === 'note'}
+														{item.title}
+													{:else if item.type === 'photo'}
+														{item.filename}
+													{/if}
+												</h3>
+												<p class="text-xs text-gray-500 mt-1">
+													{item.type.charAt(0).toUpperCase() + item.type.slice(1)} •
+													Created: {new Date(item.createdAt).toLocaleDateString()}
+												</p>
+											</div>
+											<button
+												on:click={() => {
+													if (item.type === 'tree') {
+														activeTab = 'trees';
+													} else if (item.type === 'note') {
+														activeTab = 'notes';
+													} else if (item.type === 'photo') {
+														activeTab = 'photos';
+													}
+												}}
+												class="text-blue-500 hover:text-blue-700 text-sm"
+											>
+												View
+											</button>
+										</div>
+										
+										{#if item.type === 'tree' && item.notes}
+											<div class="mt-2 text-sm text-gray-600 line-clamp-2">
+												{@html item.notes}
+											</div>
+										{:else if item.type === 'note' && item.content}
+											<div class="mt-2 text-sm text-gray-600 line-clamp-2">
+												{@html item.content}
+											</div>
+										{/if}
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
 			</div>
-		</div>
-	{/if}
+		{/if}
 
-	<!-- Floating AI Assistant Button -->
-	<div class="fixed bottom-6 right-6 z-40">
-		<button
-			on:click={() => showUnifiedAIPrompt = true}
-			class="bg-forest-600 text-white p-4 rounded-full shadow-lg hover:bg-forest-700 transition-colors flex items-center justify-center"
-			title="AI Assistant"
-		>
-			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-			</svg>
-		</button>
-	</div>
+		<!-- Modals -->
+		{#if showTreeModal}
+			<TreeModal
+				onClose={() => showTreeModal = false}
+				onSave={addTree}
+			/>
+		{/if}
+
+		{#if showPhotoCapture}
+			<PhotoCapture
+				onClose={() => showPhotoCapture = false}
+				onSave={handlePhotoUpload}
+			/>
+		{/if}
+
+		{#if showAIReview}
+			<AIReviewChat
+				projectId={projectId}
+				onClose={() => showAIReview = false}
+			/>
+		{/if}
+
+		{#if showUnifiedAIPrompt}
+			<UnifiedAIPrompt
+				projectId={projectId}
+				onClose={() => showUnifiedAIPrompt = false}
+			/>
+		{/if}
+	{/if}
 </div>

@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { db, type Task, type Project, getAllTasks, createTask, updateTask, deleteTask } from '$lib/db';
 	import { projectContextStore } from '$lib/services/unified/ProjectContextStore';
+	// Copilot store for confirmation messages
+	import { addConfirmation } from '$lib/copilot/copilotStore';
 	
 	let tasks: Task[] = [];
 	let projects: Project[] = [];
@@ -18,6 +20,13 @@
 		projectId: '',
 		tags: ''
 	};
+
+	// Multi-select state
+	let selectedTasks = new Set<string>();
+	let showMultiSelectActions = false;
+	let bulkAIPrompt = '';
+	let bulkAIProcessing = false;
+	let bulkAIResult = '';
 	
 	onMount(async () => {
 		await loadTasks();
@@ -61,6 +70,7 @@
 					tags,
 					status: editingTask.status // Keep existing status
 				});
+				addConfirmation('Task updated successfully');
 			} else {
 				// Create new task
 				await createTask({
@@ -73,6 +83,7 @@
 					tags,
 					linkedNoteId: undefined
 				});
+				addConfirmation('Task created successfully');
 			}
 			
 			await loadTasks();
@@ -88,6 +99,7 @@
 			if (task.id) {
 				await updateTask(task.id, { status });
 				await loadTasks();
+				addConfirmation(`Task marked as ${status === 'done' ? 'completed' : status}`);
 			}
 		} catch (e) {
 			console.error('Failed to update task status:', e);
@@ -100,6 +112,7 @@
 		try {
 			await deleteTask(id);
 			await loadTasks();
+			addConfirmation('Task deleted successfully');
 		} catch (e) {
 			console.error('Failed to delete task:', e);
 			alert('Failed to delete task. Please try again.');
@@ -189,9 +202,105 @@
 		});
 	}
 	
+	// Multi-select functions
+	function toggleTaskSelection(taskId: string) {
+		if (selectedTasks.has(taskId)) {
+			selectedTasks.delete(taskId);
+		} else {
+			selectedTasks.add(taskId);
+		}
+		showMultiSelectActions = selectedTasks.size > 0;
+	}
+
+	function selectAllTasks() {
+		selectedTasks.clear();
+		tasks.forEach(task => {
+			if (task.id) selectedTasks.add(task.id);
+		});
+		showMultiSelectActions = true;
+	}
+
+	function clearSelection() {
+		selectedTasks.clear();
+		showMultiSelectActions = false;
+	}
+
+	function getSelectedTasks(): Task[] {
+		return tasks.filter(task => task.id && selectedTasks.has(task.id));
+	}
+
+	async function deleteSelectedTasks() {
+		const selected = getSelectedTasks();
+		if (selected.length === 0) return;
+		
+		if (!confirm(`Are you sure you want to delete ${selected.length} task${selected.length !== 1 ? 's' : ''}?`)) {
+			return;
+		}
+		
+		try {
+			for (const task of selected) {
+				if (task.id) {
+					await deleteTask(task.id);
+				}
+			}
+			await loadTasks();
+			addConfirmation(`${selected.length} task${selected.length !== 1 ? 's' : ''} deleted successfully`);
+			clearSelection();
+		} catch (e) {
+			console.error('Failed to delete tasks:', e);
+			alert('Failed to delete tasks. Please try again.');
+		}
+	}
+
+	async function updateSelectedTasksStatus(status: Task['status']) {
+		const selected = getSelectedTasks();
+		if (selected.length === 0) return;
+		
+		try {
+			for (const task of selected) {
+				if (task.id) {
+					await updateTask(task.id, { status });
+				}
+			}
+			await loadTasks();
+			addConfirmation(`${selected.length} task${selected.length !== 1 ? 's' : ''} marked as ${status === 'done' ? 'completed' : status}`);
+		} catch (e) {
+			console.error('Failed to update task status:', e);
+			alert('Failed to update task status. Please try again.');
+		}
+	}
+
+	async function tagSelectedTasks() {
+		const selected = getSelectedTasks();
+		if (selected.length === 0) return;
+		
+		const tag = prompt('Enter tag to add to selected tasks:');
+		if (!tag) return;
+		
+		try {
+			for (const task of selected) {
+				if (task.id) {
+					const currentTags = task.tags || [];
+					if (!currentTags.includes(tag)) {
+						await updateTask(task.id, {
+							tags: [...currentTags, tag],
+							updatedAt: new Date()
+						});
+					}
+				}
+			}
+			await loadTasks();
+			addConfirmation(`Tag "${tag}" added to ${selected.length} task${selected.length !== 1 ? 's' : ''}`);
+		} catch (e) {
+			console.error('Failed to tag tasks:', e);
+			alert('Failed to tag tasks. Please try again.');
+		}
+	}
+
 	$: todoTasks = tasks.filter(t => t.status === 'todo');
 	$: inProgressTasks = tasks.filter(t => t.status === 'in_progress');
 	$: doneTasks = tasks.filter(t => t.status === 'done');
+	$: showMultiSelectActions = selectedTasks.size > 0;
 </script>
 
 <svelte:head>
@@ -222,49 +331,133 @@
 			<button on:click={() => openTaskModal()} class="btn btn-primary">+ Add Task</button>
 		</div>
 	{:else}
+		<!-- Multi-select Actions Bar -->
+		{#if showMultiSelectActions}
+			<div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-4">
+						<span class="font-medium text-blue-800">
+							{selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''} selected
+						</span>
+						<div class="flex gap-2">
+							<button
+								on:click={() => updateSelectedTasksStatus('in_progress')}
+								class="btn btn-secondary text-sm"
+							>
+								<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+								</svg>
+								Start
+							</button>
+							<button
+								on:click={() => updateSelectedTasksStatus('done')}
+								class="btn btn-primary text-sm"
+							>
+								<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+								</svg>
+								Complete
+							</button>
+							<button
+								on:click={tagSelectedTasks}
+								class="btn btn-secondary text-sm"
+							>
+								<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+								</svg>
+								Add Tag
+							</button>
+							<button
+								on:click={deleteSelectedTasks}
+								class="btn btn-danger text-sm"
+							>
+								<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+								</svg>
+								Delete
+							</button>
+						</div>
+					</div>
+					<button
+						on:click={clearSelection}
+						class="text-blue-600 hover:text-blue-800 text-sm"
+					>
+						Clear Selection
+					</button>
+				</div>
+			</div>
+		{:else if tasks.length > 0}
+			<div class="mb-4 flex justify-between items-center">
+				<button
+					on:click={selectAllTasks}
+					class="text-sm text-gray-600 hover:text-gray-900"
+				>
+					<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+					</svg>
+					Select All
+				</button>
+			</div>
+		{/if}
+
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 			<!-- To Do -->
 			<div class="card p-4">
 				<h2 class="font-semibold text-gray-900 mb-4">To Do ({todoTasks.length})</h2>
 				<div class="space-y-3">
 					{#each todoTasks as task (task.id)}
-						<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-							<div class="flex items-start justify-between mb-2">
-								<h3 class="font-medium text-gray-900">{task.title}</h3>
-								<span class="text-xs px-2 py-1 rounded {getPriorityColor(task.priority)}">
-									{task.priority}
-								</span>
-							</div>
-							{#if task.content}
-								<p class="text-sm text-gray-600 mb-3 line-clamp-2">{task.content}</p>
-							{/if}
-							<div class="flex items-center justify-between text-xs text-gray-500 mb-3">
-								{#if task.dueDate}
-									<span class="text-red-600 font-medium">Due: {formatDate(task.dueDate)}</span>
-								{/if}
-								{#if getProjectName(task.projectId)}
-									<span class="text-forest-600">{getProjectName(task.projectId)}</span>
-								{/if}
-							</div>
-							<div class="flex gap-2">
-								<button 
-									on:click={() => updateTaskStatus(task, 'in_progress')}
-									class="text-xs text-blue-600 hover:underline"
-								>
-									Start
-								</button>
-								<button 
-									on:click={() => openTaskModal(task)}
-									class="text-xs text-gray-600 hover:underline"
-								>
-									Edit
-								</button>
-								<button
-									on:click={() => task.id && deleteTaskById(task.id)}
-									class="text-xs text-red-600 hover:underline"
-								>
-									Delete
-								</button>
+						<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow {task.id && selectedTasks.has(task.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}">
+							<div class="flex items-start gap-3 mb-2">
+								<!-- Checkbox for selection -->
+								<input
+									type="checkbox"
+									checked={task.id && selectedTasks.has(task.id)}
+									on:change={() => task.id && toggleTaskSelection(task.id)}
+									class="mt-1 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+								/>
+								
+								<div class="flex-1">
+									<div class="flex items-start justify-between">
+										<h3 class="font-medium text-gray-900">{task.title}</h3>
+										<span class="text-xs px-2 py-1 rounded {getPriorityColor(task.priority)}">
+											{task.priority}
+										</span>
+									</div>
+									
+									{#if task.content}
+										<p class="text-sm text-gray-600 mb-3 line-clamp-2">{task.content}</p>
+									{/if}
+									
+									<div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+										{#if task.dueDate}
+											<span class="text-red-600 font-medium">Due: {formatDate(task.dueDate)}</span>
+										{/if}
+										{#if getProjectName(task.projectId)}
+											<span class="text-forest-600">{getProjectName(task.projectId)}</span>
+										{/if}
+									</div>
+									
+									<div class="flex gap-2">
+										<button
+											on:click={() => updateTaskStatus(task, 'in_progress')}
+											class="text-xs text-blue-600 hover:underline"
+										>
+											Start
+										</button>
+										<button
+											on:click={() => openTaskModal(task)}
+											class="text-xs text-gray-600 hover:underline"
+										>
+											Edit
+										</button>
+										<button
+											on:click={() => task.id && deleteTaskById(task.id)}
+											class="text-xs text-red-600 hover:underline"
+										>
+											Delete
+										</button>
+									</div>
+								</div>
 							</div>
 						</div>
 					{/each}
@@ -276,49 +469,64 @@
 				<h2 class="font-semibold text-gray-900 mb-4">In Progress ({inProgressTasks.length})</h2>
 				<div class="space-y-3">
 					{#each inProgressTasks as task (task.id)}
-						<div class="border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-blue-50">
-							<div class="flex items-start justify-between mb-2">
-								<h3 class="font-medium text-gray-900">{task.title}</h3>
-								<span class="text-xs px-2 py-1 rounded {getPriorityColor(task.priority)}">
-									{task.priority}
-								</span>
-							</div>
-							{#if task.content}
-								<p class="text-sm text-gray-600 mb-3 line-clamp-2">{task.content}</p>
-							{/if}
-							<div class="flex items-center justify-between text-xs text-gray-500 mb-3">
-								{#if task.dueDate}
-									<span class="text-red-600 font-medium">Due: {formatDate(task.dueDate)}</span>
-								{/if}
-								{#if getProjectName(task.projectId)}
-									<span class="text-forest-600">{getProjectName(task.projectId)}</span>
-								{/if}
-							</div>
-							<div class="flex gap-2">
-								<button 
-									on:click={() => updateTaskStatus(task, 'done')}
-									class="text-xs text-green-600 hover:underline"
-								>
-									Complete
-								</button>
-								<button 
-									on:click={() => updateTaskStatus(task, 'todo')}
-									class="text-xs text-gray-600 hover:underline"
-								>
-									Back
-								</button>
-								<button 
-									on:click={() => openTaskModal(task)}
-									class="text-xs text-gray-600 hover:underline"
-								>
-									Edit
-								</button>
-								<button
-									on:click={() => task.id && deleteTaskById(task.id)}
-									class="text-xs text-red-600 hover:underline"
-								>
-									Delete
-								</button>
+						<div class="border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-blue-50 {task.id && selectedTasks.has(task.id) ? 'ring-2 ring-blue-500' : ''}">
+							<div class="flex items-start gap-3 mb-2">
+								<!-- Checkbox for selection -->
+								<input
+									type="checkbox"
+									checked={task.id && selectedTasks.has(task.id)}
+									on:change={() => task.id && toggleTaskSelection(task.id)}
+									class="mt-1 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+								/>
+								
+								<div class="flex-1">
+									<div class="flex items-start justify-between">
+										<h3 class="font-medium text-gray-900">{task.title}</h3>
+										<span class="text-xs px-2 py-1 rounded {getPriorityColor(task.priority)}">
+											{task.priority}
+										</span>
+									</div>
+									
+									{#if task.content}
+										<p class="text-sm text-gray-600 mb-3 line-clamp-2">{task.content}</p>
+									{/if}
+									
+									<div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+										{#if task.dueDate}
+											<span class="text-red-600 font-medium">Due: {formatDate(task.dueDate)}</span>
+										{/if}
+										{#if getProjectName(task.projectId)}
+											<span class="text-forest-600">{getProjectName(task.projectId)}</span>
+										{/if}
+									</div>
+									
+									<div class="flex gap-2">
+										<button
+											on:click={() => updateTaskStatus(task, 'done')}
+											class="text-xs text-green-600 hover:underline"
+										>
+											Complete
+										</button>
+										<button
+											on:click={() => updateTaskStatus(task, 'todo')}
+											class="text-xs text-gray-600 hover:underline"
+										>
+											Back
+										</button>
+										<button
+											on:click={() => openTaskModal(task)}
+											class="text-xs text-gray-600 hover:underline"
+										>
+											Edit
+										</button>
+										<button
+											on:click={() => task.id && deleteTaskById(task.id)}
+											class="text-xs text-red-600 hover:underline"
+										>
+											Delete
+										</button>
+									</div>
+								</div>
 							</div>
 						</div>
 					{/each}
@@ -330,37 +538,52 @@
 				<h2 class="font-semibold text-gray-900 mb-4">Done ({doneTasks.length})</h2>
 				<div class="space-y-3">
 					{#each doneTasks as task (task.id)}
-						<div class="border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-green-50 opacity-75">
-							<div class="flex items-start justify-between mb-2">
-								<h3 class="font-medium text-gray-900 line-through">{task.title}</h3>
-								<span class="text-xs px-2 py-1 rounded {getStatusColor(task.status)}">
-									{getStatusDisplayName(task.status)}
-								</span>
-							</div>
-							{#if task.content}
-								<p class="text-sm text-gray-600 mb-3 line-clamp-2">{task.content}</p>
-							{/if}
-							<div class="flex items-center justify-between text-xs text-gray-500 mb-3">
-								{#if task.dueDate}
-									<span class="text-gray-500">Due: {formatDate(task.dueDate)}</span>
-								{/if}
-								{#if getProjectName(task.projectId)}
-									<span class="text-forest-600">{getProjectName(task.projectId)}</span>
-								{/if}
-							</div>
-							<div class="flex gap-2">
-								<button 
-									on:click={() => updateTaskStatus(task, 'in_progress')}
-									class="text-xs text-blue-600 hover:underline"
-								>
-									Reopen
-								</button>
-								<button
-									on:click={() => task.id && deleteTaskById(task.id)}
-									class="text-xs text-red-600 hover:underline"
-								>
-									Delete
-								</button>
+						<div class="border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-green-50 opacity-75 {task.id && selectedTasks.has(task.id) ? 'ring-2 ring-blue-500' : ''}">
+							<div class="flex items-start gap-3 mb-2">
+								<!-- Checkbox for selection -->
+								<input
+									type="checkbox"
+									checked={task.id && selectedTasks.has(task.id)}
+									on:change={() => task.id && toggleTaskSelection(task.id)}
+									class="mt-1 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+								/>
+								
+								<div class="flex-1">
+									<div class="flex items-start justify-between">
+										<h3 class="font-medium text-gray-900 line-through">{task.title}</h3>
+										<span class="text-xs px-2 py-1 rounded {getStatusColor(task.status)}">
+											{getStatusDisplayName(task.status)}
+										</span>
+									</div>
+									
+									{#if task.content}
+										<p class="text-sm text-gray-600 mb-3 line-clamp-2">{task.content}</p>
+									{/if}
+									
+									<div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+										{#if task.dueDate}
+											<span class="text-gray-500">Due: {formatDate(task.dueDate)}</span>
+										{/if}
+										{#if getProjectName(task.projectId)}
+											<span class="text-forest-600">{getProjectName(task.projectId)}</span>
+										{/if}
+									</div>
+									
+									<div class="flex gap-2">
+										<button
+											on:click={() => updateTaskStatus(task, 'in_progress')}
+											class="text-xs text-blue-600 hover:underline"
+										>
+											Reopen
+										</button>
+										<button
+											on:click={() => task.id && deleteTaskById(task.id)}
+											class="text-xs text-red-600 hover:underline"
+										>
+											Delete
+										</button>
+									</div>
+								</div>
 							</div>
 						</div>
 					{/each}

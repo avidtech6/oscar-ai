@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { db, type Project, type Tree, type Note, type Task, saveReport, getReports } from '$lib/db';
+	import { saveReport as saveReportToSupabase, saveReportToStorage } from '$lib/services/reportsService';
 	import { groqApiKey } from '$lib/stores/settings';
 	import {
 		availableTemplates,
@@ -563,6 +564,116 @@
 		}
 	}
 
+	async function downloadAsPrintTemplate() {
+		if (!generatedReport || !selectedTemplate) return;
+		
+		try {
+			// Prepare template data
+			let templateData: any = { project: { name: 'Generic Report', client: 'Not specified', siteAddress: 'Not specified' } };
+			if (selectedProjectId) {
+				templateData = await prepareTemplateData(selectedProjectId);
+				// Apply gap fill answers
+				const updatedData = applyGapFillAnswers(templateData);
+				templateData = updatedData;
+			}
+			
+			// Parse the generated report to extract sections
+			const sections = parseHtmlIntoSections(generatedReport);
+			const sectionsMap: Record<string, any> = {};
+			sections.forEach(section => {
+				if (section.id) {
+					sectionsMap[section.id] = {
+						id: section.id,
+						title: section.title,
+						content: section.content,
+						html: section.html,
+						order: section.order
+					};
+				}
+			});
+			
+			// Convert to ReportData
+			const reportId = crypto.randomUUID();
+			const reportData = {
+				id: reportId,
+				title: `${selectedTemplate?.name} - ${selectedProject?.name || 'Report'}`,
+				subtitle: 'Professional Arboricultural Assessment',
+				date: new Date().toLocaleDateString('en-GB'),
+				project: {
+					id: selectedProjectId || '',
+					name: selectedProject?.name || 'Generic Report',
+					client: templateData.project?.client || 'Not specified',
+					location: templateData.project?.siteAddress || 'Not specified',
+					reference: templateData.project?.reference || ''
+				},
+				sections: sectionsMap,
+				trees: templateData.trees?.map((tree: any) => ({
+					id: tree.id,
+					label: tree.number || `Tree ${tree.id?.substring(0, 4) || '0000'}`,
+					species: tree.species || '',
+					condition: tree.condition || '',
+					notes: tree.notes || '',
+					created_at: tree.createdAt?.toString() || new Date().toISOString()
+				})) || [],
+				notes: templateData.notes?.map((note: any) => ({
+					id: note.id,
+					title: note.title || 'Untitled Note',
+					content: note.content || '',
+					created_at: note.createdAt?.toString() || new Date().toISOString()
+				})) || [],
+				survey: {
+					date: templateData.survey?.date || new Date().toLocaleDateString('en-GB'),
+					surveyor: templateData.survey?.surveyor || 'Surveyor Name'
+				},
+				company: templateData.company || {
+					name: 'Oscar AI Arboricultural Services',
+					tagline: 'Professional Arboricultural Management',
+					address: '123 Tree Street, Forest City, FC1 2TR',
+					phone: '+44 1234 567890',
+					email: 'reports@oscar-ai.app',
+					website: 'https://oscar-ai.app'
+				},
+				recommendations: templateData.recommendations?.retainedTrees?.map((tree: any) => ({
+					id: `retain-${tree.treeRef}`,
+					title: `Retain ${tree.species} (${tree.treeRef})`,
+					description: `Category ${tree.category} tree recommended for retention`,
+					priority: (tree.category === 'A' ? 'high' : tree.category === 'B' ? 'medium' : 'low') as 'high' | 'medium' | 'low',
+					timeline: 'During construction'
+				}))?.concat(
+					templateData.recommendations?.removedTrees?.map((tree: any) => ({
+						id: `remove-${tree.treeRef}`,
+						title: `Remove ${tree.treeRef}`,
+						description: tree.reason,
+						priority: 'high' as 'high',
+						timeline: 'Prior to construction'
+					})) || []
+				) || [],
+				generatedDate: new Date().toLocaleDateString('en-GB')
+			};
+			
+			// Import the renderReport function
+			const { renderReport } = await import('$lib/reportTemplate/renderReport');
+			
+			// Render the print template
+			const printHtml = await renderReport(reportData);
+			
+			// Download the file
+			const blob = new Blob([printHtml], { type: 'text/html' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = (selectedTemplate?.id || 'report') + '_print_' + (selectedProject?.name || 'report') + '_' + new Date().toISOString().split('T')[0] + '.html';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			
+		} catch (error) {
+			console.error('Failed to generate print template:', error);
+			alert('Failed to generate print template. Please try again or use the regular HTML download.');
+		}
+	}
+	
 	function downloadAsHtml() {
 		if (!generatedReport) return;
 		
@@ -577,43 +688,260 @@
 		URL.revokeObjectURL(url);
 	}
 	
-	function downloadAsPdf() {
-		if (!generatedReport) return;
+	async function downloadAsPdf() {
+		if (!generatedReport || !selectedTemplate) return;
 		
-		// Simple PDF generation - use a safer approach
-		const w = window.open('', '_blank');
-		if (!w) {
-			alert('Please allow popups to generate PDF');
-			return;
+		try {
+			// First, generate the print template HTML
+			let templateData: any = { project: { name: 'Generic Report', client: 'Not specified', siteAddress: 'Not specified' } };
+			if (selectedProjectId) {
+				templateData = await prepareTemplateData(selectedProjectId);
+				// Apply gap fill answers
+				const updatedData = applyGapFillAnswers(templateData);
+				templateData = updatedData;
+			}
+			
+			// Parse the generated report to extract sections
+			const sections = parseHtmlIntoSections(generatedReport);
+			const sectionsMap: Record<string, any> = {};
+			sections.forEach(section => {
+				if (section.id) {
+					sectionsMap[section.id] = {
+						id: section.id,
+						title: section.title,
+						content: section.content,
+						html: section.html,
+						order: section.order
+					};
+				}
+			});
+			
+			// Convert to ReportData
+			const reportId = crypto.randomUUID();
+			const reportData = {
+				id: reportId,
+				title: `${selectedTemplate?.name} - ${selectedProject?.name || 'Report'}`,
+				subtitle: 'Professional Arboricultural Assessment',
+				date: new Date().toLocaleDateString('en-GB'),
+				project: {
+					id: selectedProjectId || '',
+					name: selectedProject?.name || 'Generic Report',
+					client: templateData.project?.client || 'Not specified',
+					location: templateData.project?.siteAddress || 'Not specified',
+					reference: templateData.project?.reference || ''
+				},
+				sections: sectionsMap,
+				trees: templateData.trees?.map((tree: any) => ({
+					id: tree.id,
+					label: tree.number || `Tree ${tree.id?.substring(0, 4) || '0000'}`,
+					species: tree.species || '',
+					condition: tree.condition || '',
+					notes: tree.notes || '',
+					created_at: tree.createdAt?.toString() || new Date().toISOString()
+				})) || [],
+				notes: templateData.notes?.map((note: any) => ({
+					id: note.id,
+					title: note.title || 'Untitled Note',
+					content: note.content || '',
+					created_at: note.createdAt?.toString() || new Date().toISOString()
+				})) || [],
+				survey: {
+					date: templateData.survey?.date || new Date().toLocaleDateString('en-GB'),
+					surveyor: templateData.survey?.surveyor || 'Surveyor Name'
+				},
+				company: templateData.company || {
+					name: 'Oscar AI Arboricultural Services',
+					tagline: 'Professional Arboricultural Management',
+					address: '123 Tree Street, Forest City, FC1 2TR',
+					phone: '+44 1234 567890',
+					email: 'reports@oscar-ai.app',
+					website: 'https://oscar-ai.app'
+				},
+				recommendations: templateData.recommendations?.retainedTrees?.map((tree: any) => ({
+					id: `retain-${tree.treeRef}`,
+					title: `Retain ${tree.species} (${tree.treeRef})`,
+					description: `Category ${tree.category} tree recommended for retention`,
+					priority: (tree.category === 'A' ? 'high' : tree.category === 'B' ? 'medium' : 'low') as 'high' | 'medium' | 'low',
+					timeline: 'During construction'
+				}))?.concat(
+					templateData.recommendations?.removedTrees?.map((tree: any) => ({
+						id: `remove-${tree.treeRef}`,
+						title: `Remove ${tree.treeRef}`,
+						description: tree.reason,
+						priority: 'high' as 'high',
+						timeline: 'Prior to construction'
+					})) || []
+				) || [],
+				generatedDate: new Date().toLocaleDateString('en-GB')
+			};
+			
+			// Import the renderReport function
+			const { renderReport } = await import('$lib/reportTemplate/renderReport');
+			
+			// Render the print template
+			const printHtml = await renderReport(reportData);
+			
+			// Create a simple PDF using the browser's print functionality
+			// This is a fallback until the Supabase Edge Function is fully deployed
+			const printWindow = window.open('', '_blank');
+			if (!printWindow) {
+				alert('Please allow popups to generate PDF');
+				return;
+			}
+			
+			printWindow.document.write(`
+				<!DOCTYPE html>
+				<html>
+				<head>
+					<title>${reportData.title}</title>
+					<style>
+						@media print {
+							@page {
+								size: A4 portrait;
+								margin: 20mm;
+							}
+							body {
+								font-family: 'Times New Roman', serif;
+								font-size: 12pt;
+								line-height: 1.5;
+							}
+							h1, h2, h3 {
+								page-break-after: avoid;
+							}
+							table {
+								page-break-inside: avoid;
+							}
+						}
+					</style>
+				</head>
+				<body>
+					${printHtml}
+				</body>
+				</html>
+			`);
+			
+			printWindow.document.close();
+			
+			// Wait for content to load, then trigger print
+			setTimeout(() => {
+				printWindow.print();
+				setTimeout(() => {
+					printWindow.close();
+				}, 1000);
+			}, 500);
+			
+		} catch (error) {
+			console.error('Failed to generate PDF:', error);
+			alert('Failed to generate PDF. Please try the "Print Template" download instead.');
 		}
-		// Use a safer approach to avoid parsing issues
-		const safeReport = generatedReport.replace(/[{}]/g, '');
-		w.document.write('<html><head><title>Report</title></head><body>' + safeReport + '</body></html>');
-		w.document.close();
-		setTimeout(function() {
-			w.print();
-			setTimeout(function() { w.close(); }, 1000);
-		}, 500);
 	}
 	
-	function downloadAsWord() {
-		if (!generatedReport) return;
+	async function downloadAsWord() {
+		if (!generatedReport || !selectedTemplate) return;
 		
-		const title = (selectedTemplate?.name || 'Report') + ' - ' + (selectedProject?.name || '');
-		
-		// Simple Word document generation - use safer approach
-		const safeReport = generatedReport.replace(/[{}]/g, '');
-		const htmlContent = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title><style>body{font-family:Arial,sans-serif;margin:20px;}h1,h2,h3{color:#2e7d32;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #ddd;padding:8px;}th{background-color:#f5f5f5;}</style></head><body>' + safeReport + '</body></html>';
-		
-		const blob = new Blob([htmlContent], { type: 'application/msword' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = (selectedTemplate?.id || 'report') + '_' + (selectedProject?.name || 'report') + '_' + new Date().toISOString().split('T')[0] + '.doc';
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
+		try {
+			// Import the DOCX export function
+			const { exportToDocx } = await import('$lib/reportTemplate/exportDocx');
+			
+			// First, generate the print template HTML (same as PDF)
+			let templateData: any = { project: { name: 'Generic Report', client: 'Not specified', siteAddress: 'Not specified' } };
+			if (selectedProjectId) {
+				templateData = await prepareTemplateData(selectedProjectId);
+				// Apply gap fill answers
+				const updatedData = applyGapFillAnswers(templateData);
+				templateData = updatedData;
+			}
+			
+			// Parse the generated report to extract sections
+			const sections = parseHtmlIntoSections(generatedReport);
+			const sectionsMap: Record<string, any> = {};
+			sections.forEach(section => {
+				if (section.id) {
+					sectionsMap[section.id] = {
+						id: section.id,
+						title: section.title,
+						content: section.content,
+						html: section.html,
+						order: section.order
+					};
+				}
+			});
+			
+			// Convert to ReportData
+			const reportId = crypto.randomUUID();
+			const reportData = {
+				id: reportId,
+				title: `${selectedTemplate?.name} - ${selectedProject?.name || 'Report'}`,
+				subtitle: 'Professional Arboricultural Assessment',
+				date: new Date().toLocaleDateString('en-GB'),
+				project: {
+					id: selectedProjectId || '',
+					name: selectedProject?.name || 'Generic Report',
+					client: templateData.project?.client || 'Not specified',
+					location: templateData.project?.siteAddress || 'Not specified',
+					reference: templateData.project?.reference || ''
+				},
+				sections: sectionsMap,
+				trees: templateData.trees?.map((tree: any) => ({
+					id: tree.id,
+					label: tree.number || `Tree ${tree.id?.substring(0, 4) || '0000'}`,
+					species: tree.species || '',
+					condition: tree.condition || '',
+					notes: tree.notes || '',
+					created_at: tree.createdAt?.toString() || new Date().toISOString()
+				})) || [],
+				notes: templateData.notes?.map((note: any) => ({
+					id: note.id,
+					title: note.title || 'Untitled Note',
+					content: note.content || '',
+					created_at: note.createdAt?.toString() || new Date().toISOString()
+				})) || [],
+				survey: {
+					date: templateData.survey?.date || new Date().toLocaleDateString('en-GB'),
+					surveyor: templateData.survey?.surveyor || 'Surveyor Name'
+				},
+				company: templateData.company || {
+					name: 'Oscar AI Arboricultural Services',
+					tagline: 'Professional Arboricultural Management',
+					address: '123 Tree Street, Forest City, FC1 2TR',
+					phone: '+44 1234 567890',
+					email: 'reports@oscar-ai.app',
+					website: 'https://oscar-ai.app'
+				},
+				recommendations: templateData.recommendations?.retainedTrees?.map((tree: any) => ({
+					id: `retain-${tree.treeRef}`,
+					title: `Retain ${tree.species} (${tree.treeRef})`,
+					description: `Category ${tree.category} tree recommended for retention`,
+					priority: (tree.category === 'A' ? 'high' : tree.category === 'B' ? 'medium' : 'low') as 'high' | 'medium' | 'low',
+					timeline: 'During construction'
+				}))?.concat(
+					templateData.recommendations?.removedTrees?.map((tree: any) => ({
+						id: `remove-${tree.treeRef}`,
+						title: `Remove ${tree.treeRef}`,
+						description: tree.reason,
+						priority: 'high' as 'high',
+						timeline: 'Prior to construction'
+					})) || []
+				) || [],
+				generatedDate: new Date().toLocaleDateString('en-GB')
+			};
+			
+			// Import the renderReport function
+			const { renderReport } = await import('$lib/reportTemplate/renderReport');
+			
+			// Render the print template
+			const printHtml = await renderReport(reportData);
+			
+			// Generate file name
+			const fileName = `${selectedTemplate?.id || 'report'}_${selectedProject?.name || 'report'}_${new Date().toISOString().split('T')[0]}.docx`;
+			
+			// Export as DOCX
+			await exportToDocx(printHtml, fileName);
+			
+		} catch (error) {
+			console.error('Failed to generate Word document:', error);
+			alert('Failed to generate Word document. Please try the "Print Template" download instead.');
+		}
 	}
 	
 	function downloadAsPlainText() {
@@ -633,6 +961,61 @@
 		a.click();
 		document.body.removeChild(a);
 		URL.revokeObjectURL(url);
+	}
+
+	async function saveToSupabase() {
+		if (!generatedReport || !selectedTemplate) {
+			alert('Please generate a report first');
+			return;
+		}
+
+		try {
+			// Determine report type
+			let reportType: 'bs5837' | 'impact' | 'method' = 'bs5837';
+			if (selectedTemplate?.id === 'impact') reportType = 'impact';
+			if (selectedTemplate?.id === 'method') reportType = 'method';
+			if (selectedTemplate?.id === 'condition') reportType = 'bs5837';
+
+			// Create report title
+			const reportTitle = selectedProject
+				? `${selectedTemplate?.name} - ${selectedProject?.name}`
+				: `${selectedTemplate?.name} - Generic Report`;
+
+			// Use empty string for projectId if no project selected
+			const projectIdForSave = selectedProjectId || '';
+
+			// Save to Supabase
+			const reportId = await saveReportToSupabase({
+				projectId: projectIdForSave,
+				title: reportTitle,
+				type: reportType,
+				htmlContent: generatedReport,
+				isDummy: false
+			});
+
+			// Also save to Supabase storage for backup
+			const storageUrl = await saveReportToStorage(
+				projectIdForSave,
+				reportId,
+				generatedReport,
+				`${selectedTemplate?.id}_${reportId}.html`
+			);
+
+			alert(`Report saved to Supabase!\n\nReport ID: ${reportId}\nStorage URL: ${storageUrl}`);
+			
+			// Also save to local IndexedDB for consistency
+			const pdfBlob = new Blob([generatedReport], { type: 'text/html' });
+			await saveReport({
+				projectId: projectIdForSave,
+				title: reportTitle,
+				type: reportType,
+				pdfBlob
+			});
+
+		} catch (error) {
+			console.error('Failed to save report to Supabase:', error);
+			alert(`Failed to save report to Supabase: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		}
 	}
 
 	function goBack() {
@@ -906,8 +1289,8 @@
 		setTimeout(async () => {
 			try {
 				await recordWorkflowAction('select_template', {
-					templateId: selectedTemplate.id,
-					templateName: selectedTemplate.name,
+					templateId: selectedTemplate?.id || '',
+					templateName: selectedTemplate?.name || '',
 				});
 			} catch (error) {
 				// Silent fail
@@ -1568,6 +1951,7 @@
 				safeGeneratedReport={safeGeneratedReport}
 				copyToClipboard={copyToClipboard}
 				downloadAsHtml={downloadAsHtml}
+				downloadAsPrintTemplate={downloadAsPrintTemplate}
 				downloadAsPdf={downloadAsPdf}
 				downloadAsWord={downloadAsWord}
 				downloadAsPlainText={downloadAsPlainText}
@@ -1585,6 +1969,7 @@
 				copyToClipboard={copyToClipboard}
 				downloadAsHtml={downloadAsHtml}
 				startOver={startOver}
+				saveToSupabase={saveToSupabase}
 			/>
 		{/if}
 		

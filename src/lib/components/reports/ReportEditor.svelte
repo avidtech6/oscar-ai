@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { groqApiKey } from '$lib/stores/settings';
 	import { decompileReport, analyzeReportStructure } from '$lib/services/reportDecompilerService';
+	import { parseHtmlIntoSections, updateSectionInHtml, type ReportSection } from '$lib/services/templateService';
+	import { getSpeechRecognition, type SpeechRecognitionResult } from '$lib/services/voiceDictation';
+	import PhotoUploader from '$lib/components/PhotoUploader.svelte';
 	
 	export let generatedReport = '';
 	export let selectedTemplate: any = null;
@@ -10,19 +13,177 @@
 	export let copyToClipboard: () => void;
 	export let downloadAsHtml: () => void;
 	export let startOver: () => void;
+	export let saveToSupabase: () => void;
 	
 	let apiKey = '';
 	groqApiKey.subscribe(value => {
 		apiKey = value;
 	});
 	
+	// Section editing state
+	let sections: ReportSection[] = [];
+	let activeSectionId: string | null = null;
+	let activeSectionContent = '';
+	
+	// AI editing state
 	let aiProcessing = false;
 	let aiAction = '';
 	let aiPrompt = '';
+	let aiSectionPrompt = '';
+	
+	// Voice dictation state
+	let isRecording = false;
+	let speechRecognition: any = null;
+	let dictationText = '';
+	
+	// Photo upload state
+	let showPhotoUploader = false;
+	let photoUploadSectionId: string | null = null;
 	
 	let decompilerProcessing = false;
 	let decompilerResult: any = null;
 	let showDecompilerResults = false;
+	
+	// Parse sections when report changes
+	$: if (generatedReport) {
+		sections = parseHtmlIntoSections(generatedReport);
+		if (sections.length > 0 && !activeSectionId) {
+			activeSectionId = sections[0].id;
+			activeSectionContent = sections.find(s => s.id === activeSectionId)?.content || '';
+		}
+	}
+	
+	// Update active section content when section changes
+	$: if (activeSectionId) {
+		const section = sections.find(s => s.id === activeSectionId);
+		if (section) {
+			activeSectionContent = section.content;
+		}
+	}
+	
+	// Save section changes
+	function saveSection() {
+		if (!activeSectionId || !generatedReport) return;
+		
+		generatedReport = updateSectionInHtml(generatedReport, activeSectionId, activeSectionContent);
+		
+		// Update sections array
+		sections = parseHtmlIntoSections(generatedReport);
+		
+		// Update active section content
+		const section = sections.find(s => s.id === activeSectionId);
+		if (section) {
+			activeSectionContent = section.content;
+		}
+	}
+	
+	// Select a section
+	function selectSection(sectionId: string) {
+		activeSectionId = sectionId;
+		const section = sections.find(s => s.id === sectionId);
+		if (section) {
+			activeSectionContent = section.content;
+		}
+	}
+	
+	// Add a new section
+	function addSection() {
+		const newSectionId = `section-${sections.length + 1}`;
+		const newSectionHtml = `<div class="section">
+			<div class="section-title">New Section</div>
+			<p>Add your content here...</p>
+		</div>`;
+		
+		// Append to report
+		generatedReport += newSectionHtml;
+		
+		// Update sections
+		sections = parseHtmlIntoSections(generatedReport);
+		selectSection(newSectionId);
+	}
+	
+	// Delete a section
+	function deleteSection(sectionId: string) {
+		if (sections.length <= 1) {
+			alert('Cannot delete the only section');
+			return;
+		}
+		
+		if (!confirm('Delete this section?')) return;
+		
+		// Remove section from HTML
+		const parser = new DOMParser();
+		const doc = parser.parseFromString(generatedReport, 'text/html');
+		const sectionElements = doc.querySelectorAll('.section');
+		
+		let sectionIndex = -1;
+		sectionElements.forEach((section, index) => {
+			const titleEl = section.querySelector('.section-title');
+			const title = titleEl?.textContent?.trim() || `Section ${index + 1}`;
+			const id = `section-${index + 1}`;
+			if (id === sectionId) {
+				sectionIndex = index;
+			}
+		});
+		
+		if (sectionIndex !== -1) {
+			const section = sectionElements[sectionIndex];
+			section.remove();
+			generatedReport = doc.documentElement.outerHTML;
+			
+			// Update sections and select first section
+			sections = parseHtmlIntoSections(generatedReport);
+			if (sections.length > 0) {
+				selectSection(sections[0].id);
+			}
+		}
+	}
+	
+	// Move section up
+	function moveSectionUp(sectionId: string) {
+		const index = sections.findIndex(s => s.id === sectionId);
+		if (index <= 0) return;
+		
+		// Reorder sections in HTML (simplified - just swap with previous)
+		const parser = new DOMParser();
+		const doc = parser.parseFromString(generatedReport, 'text/html');
+		const sectionElements = doc.querySelectorAll('.section');
+		
+		if (index < sectionElements.length) {
+			const currentSection = sectionElements[index];
+			const previousSection = sectionElements[index - 1];
+			
+			// Swap positions
+			previousSection.parentNode?.insertBefore(currentSection, previousSection);
+			generatedReport = doc.documentElement.outerHTML;
+			
+			// Update sections
+			sections = parseHtmlIntoSections(generatedReport);
+		}
+	}
+	
+	// Move section down
+	function moveSectionDown(sectionId: string) {
+		const index = sections.findIndex(s => s.id === sectionId);
+		if (index === -1 || index >= sections.length - 1) return;
+		
+		// Reorder sections in HTML (simplified - just swap with next)
+		const parser = new DOMParser();
+		const doc = parser.parseFromString(generatedReport, 'text/html');
+		const sectionElements = doc.querySelectorAll('.section');
+		
+		if (index < sectionElements.length - 1) {
+			const currentSection = sectionElements[index];
+			const nextSection = sectionElements[index + 1];
+			
+			// Swap positions
+			currentSection.parentNode?.insertBefore(nextSection, currentSection);
+			generatedReport = doc.documentElement.outerHTML;
+			
+			// Update sections
+			sections = parseHtmlIntoSections(generatedReport);
+		}
+	}
 	
 	async function rewriteWithAI() {
 		if (!generatedReport.trim() || !apiKey) return;
@@ -300,6 +461,327 @@
 		}
 	}
 	
+	// Voice dictation functions
+	async function startDictation() {
+		if (!activeSectionId) {
+			alert('Please select a section first');
+			return;
+		}
+		
+		try {
+			speechRecognition = getSpeechRecognition();
+			
+			if (!speechRecognition) {
+				alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+				return;
+			}
+			
+			speechRecognition.continuous = true;
+			speechRecognition.interimResults = true;
+			
+			speechRecognition.onstart = () => {
+				isRecording = true;
+				dictationText = '';
+			};
+			
+			speechRecognition.onresult = (event: any) => {
+				let interimTranscript = '';
+				let finalTranscript = '';
+				
+				for (let i = event.resultIndex; i < event.results.length; i++) {
+					const transcript = event.results[i][0].transcript;
+					if (event.results[i].isFinal) {
+						finalTranscript += transcript;
+					} else {
+						interimTranscript += transcript;
+					}
+				}
+				
+				dictationText = finalTranscript + interimTranscript;
+			};
+			
+			speechRecognition.onerror = (event: any) => {
+				console.error('Speech recognition error:', event.error);
+				isRecording = false;
+				speechRecognition = null;
+				
+				if (event.error === 'not-allowed') {
+					alert('Microphone access denied. Please allow microphone access to use voice dictation.');
+				}
+			};
+			
+			speechRecognition.onend = () => {
+				isRecording = false;
+				speechRecognition = null;
+			};
+			
+			speechRecognition.start();
+		} catch (error) {
+			console.error('Failed to start dictation:', error);
+			alert('Failed to start voice dictation. Please check your microphone permissions.');
+			isRecording = false;
+			speechRecognition = null;
+		}
+	}
+	
+	function stopDictation() {
+		if (speechRecognition) {
+			speechRecognition.stop();
+			isRecording = false;
+			speechRecognition = null;
+			
+			// Insert dictation text into active section
+			if (dictationText.trim() && activeSectionContent !== undefined) {
+				activeSectionContent += dictationText + ' ';
+				dictationText = '';
+				saveSection();
+			}
+		}
+	}
+	
+	function insertDictationText() {
+		if (dictationText.trim() && activeSectionContent !== undefined) {
+			activeSectionContent += dictationText + ' ';
+			dictationText = '';
+			saveSection();
+		}
+	}
+	
+	// Photo upload functions
+	function openPhotoUploader(sectionId: string) {
+		photoUploadSectionId = sectionId;
+		showPhotoUploader = true;
+	}
+	
+	function closePhotoUploader() {
+		showPhotoUploader = false;
+		photoUploadSectionId = null;
+	}
+	
+	function handlePhotoUpload(url: string) {
+		if (!photoUploadSectionId || !url) return;
+		
+		// Insert image HTML into the active section content
+		const imgHtml = `<img src="${url}" alt="Uploaded photo" style="max-width: 100%; height: auto; margin: 10px 0;">`;
+		
+		if (activeSectionId === photoUploadSectionId) {
+			activeSectionContent += imgHtml;
+			saveSection();
+		}
+		
+		closePhotoUploader();
+	}
+	
+	// AI section-specific functions
+	async function improveActiveSectionWithAI() {
+		if (!activeSectionId || !apiKey) return;
+		
+		const section = sections.find(s => s.id === activeSectionId);
+		if (!section) return;
+		
+		aiProcessing = true;
+		aiAction = `Improving "${section.title}" section...`;
+		
+		try {
+			const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${apiKey}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					model: 'llama-3.1-8b-instant',
+					messages: [
+						{
+							role: 'system',
+							content: 'You are an expert arboricultural report writer. Improve the provided section to be more detailed, professional, and comprehensive while maintaining its core content.'
+						},
+						{
+							role: 'user',
+							content: `Improve this section titled "${section.title}":\n\n${section.content}`
+						}
+					],
+					temperature: 0.7,
+					max_tokens: 2048
+				})
+			});
+			
+			if (!response.ok) {
+				throw new Error('Failed to improve section with AI');
+			}
+			
+			const data = await response.json();
+			const improvedContent = data.choices[0].message.content;
+			
+			// Update the section content
+			activeSectionContent = improvedContent;
+			saveSection();
+		} catch (e) {
+			console.error('AI section improvement failed:', e);
+			alert('Failed to improve section with AI. Please check your API key in Settings.');
+		} finally {
+			aiProcessing = false;
+			aiAction = '';
+		}
+	}
+	
+	async function rewriteActiveSectionWithAI() {
+		if (!activeSectionId || !apiKey) return;
+		
+		const section = sections.find(s => s.id === activeSectionId);
+		if (!section) return;
+		
+		aiProcessing = true;
+		aiAction = `Rewriting "${section.title}" section...`;
+		
+		try {
+			const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${apiKey}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					model: 'llama-3.1-8b-instant',
+					messages: [
+						{
+							role: 'system',
+							content: 'You are an expert arboricultural report writer. Rewrite the provided section to be more concise, clear, and professional while preserving all key information.'
+						},
+						{
+							role: 'user',
+							content: `Rewrite this section titled "${section.title}" to be more concise and professional:\n\n${section.content}`
+						}
+					],
+					temperature: 0.7,
+					max_tokens: 2048
+				})
+			});
+			
+			if (!response.ok) {
+				throw new Error('Failed to rewrite section with AI');
+			}
+			
+			const data = await response.json();
+			const rewrittenContent = data.choices[0].message.content;
+			
+			// Update the section content
+			activeSectionContent = rewrittenContent;
+			saveSection();
+		} catch (e) {
+			console.error('AI section rewrite failed:', e);
+			alert('Failed to rewrite section with AI. Please check your API key in Settings.');
+		} finally {
+			aiProcessing = false;
+			aiAction = '';
+		}
+	}
+	
+	async function expandActiveSectionWithAI() {
+		if (!activeSectionId || !apiKey) return;
+		
+		const section = sections.find(s => s.id === activeSectionId);
+		if (!section) return;
+		
+		aiProcessing = true;
+		aiAction = `Expanding "${section.title}" section...`;
+		
+		try {
+			const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${apiKey}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					model: 'llama-3.1-8b-instant',
+					messages: [
+						{
+							role: 'system',
+							content: 'You are an expert arboricultural report writer. Expand the provided section by adding more detail, examples, and supporting information while staying on topic.'
+						},
+						{
+							role: 'user',
+							content: `Expand this section titled "${section.title}" by adding more detail and supporting information:\n\n${section.content}`
+						}
+					],
+					temperature: 0.7,
+					max_tokens: 2048
+				})
+			});
+			
+			if (!response.ok) {
+				throw new Error('Failed to expand section with AI');
+			}
+			
+			const data = await response.json();
+			const expandedContent = data.choices[0].message.content;
+			
+			// Update the section content
+			activeSectionContent = expandedContent;
+			saveSection();
+		} catch (e) {
+			console.error('AI section expansion failed:', e);
+			alert('Failed to expand section with AI. Please check your API key in Settings.');
+		} finally {
+			aiProcessing = false;
+			aiAction = '';
+		}
+	}
+	
+	async function processSectionAIPrompt() {
+		if (!activeSectionId || !aiSectionPrompt.trim() || !apiKey) return;
+		
+		const section = sections.find(s => s.id === activeSectionId);
+		if (!section) return;
+		
+		aiProcessing = true;
+		aiAction = 'Processing section AI request...';
+		
+		try {
+			const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${apiKey}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					model: 'llama-3.1-8b-instant',
+					messages: [
+						{
+							role: 'system',
+							content: 'You are an expert arboricultural report writer. Help the user modify their report section based on their specific request.'
+						},
+						{
+							role: 'user',
+							content: `Current section titled "${section.title}":\n\n${section.content}\n\nUser request for this section: ${aiSectionPrompt}`
+						}
+					],
+					temperature: 0.7,
+					max_tokens: 2048
+				})
+			});
+			
+			if (!response.ok) {
+				throw new Error('Failed to process section AI request');
+			}
+			
+			const data = await response.json();
+			const modifiedContent = data.choices[0].message.content;
+			
+			// Update the section content
+			activeSectionContent = modifiedContent;
+			saveSection();
+			aiSectionPrompt = '';
+		} catch (e) {
+			console.error('AI section prompt processing failed:', e);
+			alert('Failed to process section AI request. Please check your API key in Settings.');
+		} finally {
+			aiProcessing = false;
+			aiAction = '';
+		}
+	}
+	
 	function closeDecompilerResults() {
 		showDecompilerResults = false;
 		decompilerResult = null;
@@ -528,6 +1010,228 @@
 			</div>
 		{/if}
 		
+		<!-- Section Controls -->
+		{#if sections.length > 0}
+			<div class="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+				<h3 class="font-medium text-gray-900 mb-3">Section Controls</h3>
+				
+				<!-- Section Selection -->
+				<div class="mb-4">
+					<label class="block text-sm font-medium text-gray-700 mb-2">Active Section</label>
+					<div class="flex flex-wrap gap-2">
+						{#each sections as section}
+							<button
+								on:click={() => selectSection(section.id)}
+								class="px-3 py-2 text-sm border rounded hover:bg-gray-100 transition-colors {activeSectionId === section.id ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700'}"
+							>
+								{section.title || `Section ${section.order}`}
+							</button>
+						{/each}
+					</div>
+				</div>
+				
+				<!-- Section Actions -->
+				<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+					<button
+						on:click={() => activeSectionId && moveSectionUp(activeSectionId)}
+						disabled={!activeSectionId || sections.findIndex(s => s.id === activeSectionId) <= 0}
+						class="btn btn-secondary text-sm flex items-center gap-2"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+						</svg>
+						Move Up
+					</button>
+					<button
+						on:click={() => activeSectionId && moveSectionDown(activeSectionId)}
+						disabled={!activeSectionId || sections.findIndex(s => s.id === activeSectionId) >= sections.length - 1}
+						class="btn btn-secondary text-sm flex items-center gap-2"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+						</svg>
+						Move Down
+					</button>
+					<button
+						on:click={() => activeSectionId && deleteSection(activeSectionId)}
+						disabled={!activeSectionId || sections.length <= 1}
+						class="btn btn-secondary text-sm flex items-center gap-2"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+						</svg>
+						Delete
+					</button>
+					<button
+						on:click={addSection}
+						class="btn btn-primary text-sm flex items-center gap-2"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+						</svg>
+						Add Section
+					</button>
+				</div>
+				
+				<!-- Section-Specific AI Tools -->
+				{#if activeSectionId}
+					<div class="mb-4">
+						<h4 class="font-medium text-gray-800 mb-2">AI Tools for Active Section</h4>
+						<div class="flex flex-wrap gap-2">
+							<button
+								on:click={improveActiveSectionWithAI}
+								disabled={aiProcessing || !apiKey}
+								class="btn btn-primary text-sm"
+							>
+								{#if aiProcessing && aiAction.includes('Improving')}
+									<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+										<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+									</svg>
+									Improving...
+								{:else}
+									Improve
+								{/if}
+							</button>
+							<button
+								on:click={rewriteActiveSectionWithAI}
+								disabled={aiProcessing || !apiKey}
+								class="btn btn-primary text-sm"
+							>
+								{#if aiProcessing && aiAction.includes('Rewriting')}
+									<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+										<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+									</svg>
+									Rewriting...
+								{:else}
+									Rewrite
+								{/if}
+							</button>
+							<button
+								on:click={expandActiveSectionWithAI}
+								disabled={aiProcessing || !apiKey}
+								class="btn btn-primary text-sm"
+							>
+								{#if aiProcessing && aiAction.includes('Expanding')}
+									<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+										<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+									</svg>
+									Expanding...
+								{:else}
+									Expand
+								{/if}
+							</button>
+							<button
+								on:click={() => activeSectionId && openPhotoUploader(activeSectionId)}
+								class="btn btn-secondary text-sm flex items-center gap-2"
+							>
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+								</svg>
+								Add Photo
+							</button>
+							<button
+								on:click={startDictation}
+								disabled={isRecording}
+								class="btn btn-secondary text-sm flex items-center gap-2"
+							>
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+								</svg>
+								{#if isRecording}
+									<svg class="w-4 h-4 animate-pulse text-red-600" fill="currentColor" viewBox="0 0 24 24">
+										<circle cx="12" cy="12" r="6" />
+									</svg>
+									Recording...
+								{:else}
+									Dictate
+								{/if}
+							</button>
+						</div>
+						
+						<!-- Section AI Prompt -->
+						<div class="mt-3">
+							<div class="flex gap-2">
+								<input
+									type="text"
+									bind:value={aiSectionPrompt}
+									placeholder="Ask AI to modify this section..."
+									class="input flex-1 text-sm"
+									on:keydown={(e) => e.key === 'Enter' && processSectionAIPrompt()}
+									disabled={aiProcessing || !apiKey}
+								/>
+								<button
+									on:click={processSectionAIPrompt}
+									disabled={aiProcessing || !aiSectionPrompt.trim() || !apiKey}
+									class="btn btn-primary text-sm"
+								>
+									{#if aiProcessing && aiAction === 'Processing section AI request...'}
+										<svg class="w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+											<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+										</svg>
+										Processing
+									{:else}
+										Ask AI
+									{/if}
+								</button>
+							</div>
+						</div>
+					</div>
+				{/if}
+				
+				<!-- Voice Dictation Status -->
+				{#if isRecording}
+					<div class="mb-4 p-3 bg-red-50 border border-red-200 rounded">
+						<div class="flex items-center gap-3">
+							<svg class="w-5 h-5 text-red-600 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+								<circle cx="12" cy="12" r="6" />
+							</svg>
+							<div class="flex-1">
+								<div class="font-medium text-red-800">Recording in progress...</div>
+								<div class="text-sm text-red-700">{dictationText || 'Speak now...'}</div>
+							</div>
+							<button
+								on:click={stopDictation}
+								class="btn btn-secondary text-sm"
+							>
+								Stop
+							</button>
+						</div>
+					</div>
+				{/if}
+			</div>
+		{/if}
+		
+		<!-- Photo Uploader Modal -->
+		{#if showPhotoUploader}
+			<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+				<div class="bg-white rounded-lg p-6 max-w-md w-full">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="text-lg font-semibold">Upload Photo</h3>
+						<button
+							on:click={closePhotoUploader}
+							class="text-gray-500 hover:text-gray-700"
+						>
+							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
+					<PhotoUploader
+						projectId={selectedProject?.id || ''}
+						onUpload={handlePhotoUpload}
+						buttonText="Upload Photo"
+						buttonVariant="primary"
+						showPreview={true}
+						multiple={false}
+					/>
+				</div>
+			</div>
+		{/if}
+		
 		<div class="mb-4">
 			<textarea
 				bind:value={generatedReport}
@@ -543,6 +1247,12 @@
 				class="btn btn-primary"
 			>
 				Save & Download
+			</button>
+			<button
+				on:click={saveToSupabase}
+				class="btn btn-primary"
+			>
+				Save to Supabase
 			</button>
 			<button
 				on:click={startOver}

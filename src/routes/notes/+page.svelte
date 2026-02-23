@@ -9,6 +9,8 @@
 	import { projectContextStore } from '$lib/services/unified/ProjectContextStore';
 	import { voiceRecordingService } from '$lib/services/unified/VoiceRecordingService';
 	import { inferProjectFromMessage, resolvePronounReference } from '$lib/services/unified/ContextInferenceService';
+	// Copilot store for confirmation messages
+	import { addConfirmation } from '$lib/copilot/copilotStore';
 	import { goto } from '$app/navigation';
 	import { fade, slide } from 'svelte/transition';
 	import MicButton from '$lib/components/MicButton.svelte';
@@ -389,6 +391,7 @@
 							// User confirmed - use the message as content
 							if (result.message) {
 								noteForm.content = result.message;
+								addConfirmation('Note summarized successfully');
 							}
 						},
 						() => {
@@ -398,6 +401,7 @@
 					);
 				} else if (result.message) {
 					noteForm.content = result.message;
+					addConfirmation('Note summarized successfully');
 				}
 			} else {
 				error = result.message || 'Failed to summarize';
@@ -457,6 +461,7 @@
 							// User confirmed - use the message as content
 							if (result.message) {
 								noteForm.content = result.message;
+								addConfirmation('Note expanded successfully');
 							}
 						},
 						() => {
@@ -466,6 +471,7 @@
 					);
 				} else if (result.message) {
 					noteForm.content = result.message;
+					addConfirmation('Note expanded successfully');
 				}
 			} else {
 				error = result.message || 'Failed to expand';
@@ -588,6 +594,7 @@
 			});
 			
 			await loadNotes();
+			addConfirmation('AI response added to note');
 			closeAIPrompt();
 		} catch (e) {
 			error = 'Failed to update note';
@@ -738,6 +745,7 @@
 			
 			// Show success message
 			bulkAIResult = aiOutput;
+			addConfirmation('AI note created successfully');
 		} catch (e) {
 			error = 'Failed to create note from AI output';
 			console.error(e);
@@ -918,6 +926,7 @@
 				}
 			}
 			await loadNotes();
+			addConfirmation(`AI response added to ${selected.length} notes`);
 			closeBulkAIPrompt();
 		} catch (e) {
 			error = 'Failed to update notes';

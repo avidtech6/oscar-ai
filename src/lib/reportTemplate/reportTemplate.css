@@ -1,0 +1,301 @@
+/* Report Template CSS - Print Optimized */
+@charset "UTF-8";
+
+/* CSS Variables */
+:root {
+    --primary-color: #2c5530;
+    --secondary-color: #4a7c59;
+    --accent-color: #8fbc8f;
+    --text-color: #333333;
+    --light-gray: #f5f5f5;
+    --border-color: #dddddd;
+    --page-width: 794px;
+    --page-height: 1123px;
+    --page-margin: 60px 70px;
+}
+
+/* Print-specific styles */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 0;
+    }
+    
+    body {
+        margin: 0;
+        padding: 0;
+        width: var(--page-width);
+        height: var(--page-height);
+        background: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .report-container {
+        width: 100% !important;
+        min-height: 100% !important;
+        margin: 0 !important;
+        padding: var(--page-margin) !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    /* Hide non-essential elements in print */
+    .no-print {
+        display: none !important;
+    }
+    
+    /* Ensure proper page breaks */
+    .page-break {
+        page-break-before: always;
+    }
+    
+    .avoid-break {
+        page-break-inside: avoid;
+    }
+    
+    /* Improve text rendering */
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    /* Prevent images from breaking across pages */
+    img {
+        max-width: 100% !important;
+        page-break-inside: avoid;
+    }
+    
+    /* Table styling for print */
+    table {
+        page-break-inside: avoid;
+    }
+    
+    /* Links in print */
+    a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+    
+    a[href]:after {
+        content: " (" attr(href) ")";
+        font-size: 90%;
+        color: #666;
+    }
+    
+    /* Hide URL for internal links */
+    a[href^="#"]:after {
+        content: "";
+    }
+}
+
+/* Screen styles (non-print) */
+@media screen {
+    body {
+        background-color: #f0f2f5;
+        padding: 20px;
+    }
+    
+    .report-container {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e0e0e0;
+        margin: 0 auto 40px;
+    }
+    
+    /* Preview mode specific */
+    .preview-mode .report-container {
+        transform: scale(0.85);
+        transform-origin: top center;
+        margin: 0 auto;
+    }
+}
+
+/* Base typography */
+body {
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.3;
+    margin-top: 0;
+}
+
+h1 {
+    font-size: 32px;
+}
+
+h2 {
+    font-size: 24px;
+}
+
+h3 {
+    font-size: 20px;
+}
+
+h4 {
+    font-size: 18px;
+}
+
+/* Utility classes */
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.mt-1 { margin-top: 0.5rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+/* Page numbering for print */
+@page {
+    @bottom-center {
+        content: "Page " counter(page) " of " counter(pages);
+        font-size: 10px;
+        color: #666;
+    }
+}
+
+/* Watermark for draft reports */
+.draft-watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 80px;
+    color: rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    pointer-events: none;
+    font-weight: bold;
+    opacity: 0.3;
+}
+
+/* Print optimization for complex elements */
+.trees-table {
+    font-size: 12px;
+}
+
+.trees-table th {
+    font-size: 11px;
+    padding: 8px 10px;
+}
+
+.trees-table td {
+    padding: 6px 10px;
+}
+
+/* Ensure images don't overflow */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Code blocks (if needed) */
+pre, code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background-color: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-size: 13px;
+}
+
+pre {
+    padding: 10px;
+    overflow-x: auto;
+    page-break-inside: avoid;
+}
+
+/* Lists */
+ul, ol {
+    margin-left: 1.5em;
+    padding-left: 0;
+}
+
+li {
+    margin-bottom: 0.5em;
+}
+
+/* Blockquotes */
+blockquote {
+    border-left: 4px solid var(--accent-color);
+    margin-left: 0;
+    padding-left: 1em;
+    font-style: italic;
+    color: #555;
+}
+
+/* Horizontal rule */
+hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 2em 0;
+}
+
+/* Responsive adjustments for very small screens */
+@media screen and (max-width: 900px) {
+    .report-container {
+        width: 100%;
+        padding: 20px;
+        margin: 0;
+    }
+    
+    .company-info {
+        flex-direction: column;
+    }
+    
+    .report-meta {
+        flex-direction: column;
+    }
+    
+    .meta-item {
+        margin-bottom: 10px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: #e0e0e0;
+        --light-gray: #2a2a2a;
+        --border-color: #444;
+    }
+    
+    body {
+        background-color: #1a1a1a;
+    }
+    
+    .report-container {
+        background-color: #222;
+        color: var(--text-color);
+    }
+    
+    .section-header {
+        background-color: #1e3a1e;
+    }
+    
+    .trees-table th {
+        background-color: #2a2a2a;
+    }
+    
+    .trees-table tr:nth-child(even) {
+        background-color: #2a2a2a;
+    }
+}

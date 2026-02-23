@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { quickComplianceCheck, validateReportCompliance } from '$lib/services/complianceValidatorService';
 	import { analyzeRenderingQuality, quickRenderPreview } from '$lib/services/visualRenderingService';
+	import { renderReport, convertTemplateDataToReportData, type ReportData } from '$lib/reportTemplate/renderReport';
+	import { prepareTemplateData } from '$lib/services/templateService';
 	
 	export let selectedTemplate = null;
 	export let selectedProject = undefined;
@@ -11,6 +13,7 @@
 	export let downloadAsPdf = () => {};
 	export let downloadAsWord = () => {};
 	export let downloadAsPlainText = () => {};
+	export let downloadAsPrintTemplate = () => {};
 	export let startOver = () => {};
 	
 	// Compliance validation state
@@ -24,6 +27,96 @@
 	let renderingAnalysisResult: any = null;
 	let showRenderingAnalysis = false;
 	let renderPreview: any = null;
+	
+	// Print template preview state
+	let previewTab: 'original' | 'print' = 'original';
+	let printPreviewHtml = '';
+	let printPreviewLoading = false;
+	let printPreviewError = '';
+	
+	// Function to generate print preview
+	async function generatePrintPreview() {
+		if (!selectedTemplate || !generatedReport) return;
+		
+		printPreviewLoading = true;
+		printPreviewError = '';
+		printPreviewHtml = '';
+		
+		try {
+			// First, try to get project data
+			let reportData: ReportData;
+			
+			if (selectedProject?.id) {
+				// We have a project, prepare template data
+				const templateData = await prepareTemplateData(selectedProject.id);
+				
+				// Convert to report data format
+				reportData = convertTemplateDataToReportData(
+					templateData,
+					`report-${Date.now()}`,
+					{} // No sections from decompiler for now
+				);
+			} else {
+				// No project, create generic report data
+				reportData = {
+					id: `report-${Date.now()}`,
+					title: selectedTemplate?.name || 'Arboricultural Report',
+					subtitle: 'Professional Assessment and Recommendations',
+					date: new Date().toLocaleDateString('en-GB'),
+					project: {
+						id: '',
+						name: 'Generic Report',
+						client: 'Not specified',
+						location: 'Not specified'
+					},
+					sections: {},
+					trees: [],
+					notes: [],
+					generatedDate: new Date().toLocaleDateString('en-GB')
+				};
+			}
+			
+			// Render the report using our new template
+			const rendered = await renderReport(reportData);
+			printPreviewHtml = rendered;
+			
+		} catch (error) {
+			console.error('Failed to generate print preview:', error);
+			printPreviewError = error instanceof Error ? error.message : 'Unknown error generating print preview';
+			
+			// Fallback: use the original report with print styling
+			printPreviewHtml = generatedReport.replace(
+				'<head>',
+				`<head>
+				<style>
+					@media print {
+						@page {
+							size: A4 portrait;
+							margin: 20mm;
+						}
+						body {
+							font-family: 'Times New Roman', serif;
+							font-size: 12pt;
+							line-height: 1.5;
+						}
+						h1, h2, h3 {
+							page-break-after: avoid;
+						}
+						table {
+							page-break-inside: avoid;
+						}
+					}
+				</style>`
+			);
+		} finally {
+			printPreviewLoading = false;
+		}
+	}
+	
+	// Generate print preview when tab is selected
+	$: if (previewTab === 'print' && !printPreviewHtml && !printPreviewLoading) {
+		generatePrintPreview();
+	}
 	
 	async function checkReportCompliance() {
 		if (!generatedReport.trim()) {
@@ -183,6 +276,12 @@
 					class="btn btn-primary text-sm"
 				>
 					Download HTML
+				</button>
+				<button
+					on:click={downloadAsPrintTemplate}
+					class="btn btn-primary text-sm"
+				>
+					Download Print Template
 				</button>
 				<button
 					on:click={downloadAsPdf}
@@ -428,19 +527,91 @@
 			</div>
 		{/if}
 		
-		<!-- Report Preview -->
+		<!-- Report Preview Tabs -->
 		<div class="mb-6">
-			<h3 class="font-medium text-gray-900 mb-3">Report Preview</h3>
-			<div class="border rounded-lg overflow-hidden">
-				<iframe
-					srcdoc={safeGeneratedReport}
-					class="w-full h-[500px] border-0"
-					title="Report Preview"
-				></iframe>
+			<div class="flex items-center justify-between mb-3">
+				<h3 class="font-medium text-gray-900">Report Preview</h3>
+				<div class="flex border rounded-lg overflow-hidden">
+					<button
+						class={`px-4 py-2 text-sm font-medium ${previewTab === 'original' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+						on:click={() => previewTab = 'original'}
+					>
+						Original
+					</button>
+					<button
+						class={`px-4 py-2 text-sm font-medium ${previewTab === 'print' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+						on:click={() => previewTab = 'print'}
+					>
+						Print Design
+					</button>
+				</div>
 			</div>
-			<p class="text-sm text-gray-500 mt-2">
-				Preview of the generated HTML report. Use the download buttons above to export.
-			</p>
+			
+			{#if previewTab === 'original'}
+				<div class="border rounded-lg overflow-hidden">
+					<iframe
+						srcdoc={safeGeneratedReport}
+						class="w-full h-[500px] border-0"
+						title="Original Report Preview"
+					></iframe>
+				</div>
+				<p class="text-sm text-gray-500 mt-2">
+					Preview of the generated HTML report. Use the download buttons above to export.
+				</p>
+			{:else if previewTab === 'print'}
+				<div class="border rounded-lg overflow-hidden">
+					{#if printPreviewLoading}
+						<div class="flex items-center justify-center h-[500px] bg-gray-50">
+							<div class="text-center">
+								<svg class="w-8 h-8 animate-spin text-green-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+								</svg>
+								<p class="text-gray-600">Generating print preview...</p>
+							</div>
+						</div>
+					{:else if printPreviewError}
+						<div class="p-6 bg-red-50 border border-red-200 rounded-lg">
+							<div class="flex items-center gap-3 mb-3">
+								<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.346 16.5c-.77.833.192 2.5 1.732 2.5z" />
+								</svg>
+								<h4 class="font-medium text-red-800">Failed to generate print preview</h4>
+							</div>
+							<p class="text-sm text-red-700 mb-3">{printPreviewError}</p>
+							<button
+								on:click={generatePrintPreview}
+								class="btn btn-secondary text-sm"
+							>
+								Try Again
+							</button>
+						</div>
+					{:else}
+						<iframe
+							srcdoc={printPreviewHtml}
+							class="w-full h-[500px] border-0"
+							title="Print Design Preview"
+						></iframe>
+					{/if}
+				</div>
+				<p class="text-sm text-gray-500 mt-2">
+					Print-optimized A4 layout with professional styling. This version is optimized for PDF export and printing.
+				</p>
+				
+				{#if printPreviewHtml && !printPreviewLoading && !printPreviewError}
+					<div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+						<h4 class="font-medium text-blue-800 mb-2">Print Design Features</h4>
+						<ul class="list-disc pl-5 text-blue-700 text-sm space-y-1">
+							<li>A4 page dimensions (794px × 1123px)</li>
+							<li>Print-specific CSS with @page rules</li>
+							<li>Professional header with company branding</li>
+							<li>Structured sections with numbered headings</li>
+							<li>Page break controls for multi-page reports</li>
+							<li>Optimized tables and lists for printing</li>
+						</ul>
+					</div>
+				{/if}
+			{/if}
 		</div>
 		
 		<div class="flex gap-4">

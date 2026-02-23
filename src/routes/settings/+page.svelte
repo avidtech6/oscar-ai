@@ -1,4 +1,4 @@
-<script lang="ts">
+oh, boy, hey boy, call me <script lang="ts">
 	import { onMount } from 'svelte';
 	import { settings, type Settings, dummyDataEnabled } from '$lib/stores/settings';
 	import { initializeBackend, configurePocketBase, getBackendType, getPocketBaseUrl } from '$lib/services/backend';

@@ -22,7 +22,9 @@ export interface Tree {
 	age: string;
 	category: string;
 	condition: string;
+	notes: string;
 	photos: string[];
+	RPA: number;
 	isDummy?: boolean;
 	createdAt: Date;
 	updatedAt: Date;
