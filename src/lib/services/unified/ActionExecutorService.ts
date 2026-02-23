@@ -89,12 +89,12 @@ export class ActionExecutorService {
       'voice_note', 'dictation', 'transcription',
     ];
     
-    if (context.mode === 'general' && dataModifyingIntents.includes(intent)) {
+    if (context.mode === 'general' && intent && dataModifyingIntents.includes(intent)) {
       return true;
     }
 
     // Rule 3: Voice notes without clear project context require confirmation
-    if ((intent === 'voice_note' || intent === 'dictation') && !context.projectId) {
+    if (intent && (intent === 'voice_note' || intent === 'dictation') && !context.projectId) {
       return true;
     }
 
@@ -107,7 +107,7 @@ export class ActionExecutorService {
     const destructiveIntents = ['delete', 'remove', 'archive', 'trash'];
     const isDestructive = destructiveIntents.some(destructive =>
       data?.text?.toLowerCase().includes(destructive) ||
-      intentResult.intent.includes(destructive)
+      (intentResult.intent && intentResult.intent.includes(destructive))
     );
     
     if (isDestructive) {
@@ -115,7 +115,7 @@ export class ActionExecutorService {
     }
 
     // Rule 6: Missing required fields for the intent type
-    if (this.hasMissingRequiredFields(intent, data)) {
+    if (intent && this.hasMissingRequiredFields(intent, data)) {
       return true;
     }
 
