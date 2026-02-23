@@ -561,7 +561,7 @@ export class ActionExecutorService {
         objects = objects.filter(obj => {
           const title = (obj.title || obj.name || '').toLowerCase();
           const content = (obj.content || obj.description || '').toLowerCase();
-          return title.includes(term) || content.includes(term);
+          return (title && title.includes(term)) || (content && content.includes(term));
         });
       }
       
