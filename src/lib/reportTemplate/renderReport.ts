@@ -351,6 +351,10 @@ function formatDates(html: string, data: ReportData): string {
     // Replace formatDate function calls
     html = html.replace(/{{formatDate [^}]+}}/g, (match) => {
         // Extract the date string from the pattern {{formatDate some.date}}
+        if (typeof match !== 'string') {
+            console.warn('Invalid input to .match() in formatDates:', match);
+            return match;
+        }
         const dateMatch = match.match(/{{formatDate ([^}]+)}}/);
         if (!dateMatch) return match;
         

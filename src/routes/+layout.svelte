@@ -8,6 +8,7 @@
 	import { initSettings } from '$lib/stores/settings';
 	import CopilotBar from '$lib/copilot/CopilotBar.svelte';
 	import { updateRoute } from '$lib/copilot/copilotContext';
+	import { onUserPrompt } from '$lib/copilot/eventModel';
 	import type { Project } from '$lib/db';
 	import { onDestroy } from 'svelte';
 	import { appInit } from '$lib/system/AppInit';
@@ -109,6 +110,17 @@
 	function closeSidebarOnMobile() {
 		if (window.innerWidth < 1024) {
 			sidebarOpen.set(false);
+		}
+	}
+
+	// Handle prompt submissions from CopilotBar
+	function handlePromptSubmit(event: CustomEvent<{ text: string }>) {
+		const promptText = event.detail.text;
+		if (promptText && promptText.trim()) {
+			console.log('Layout: Processing prompt:', promptText);
+			onUserPrompt(promptText.trim());
+		} else {
+			console.warn('Layout: Received empty prompt');
 		}
 	}
 </script>
@@ -287,6 +299,13 @@
 		</div>
 		
 		<!-- Global Copilot System - Now inside main content -->
-		<CopilotBar />
+		{#if appInitialized}
+			<CopilotBar on:promptSubmit={handlePromptSubmit} />
+		{:else}
+			<!-- Loading placeholder for CopilotBar -->
+			<div class="w-full h-16 bg-white border-t border-gray-200 flex items-center justify-center">
+				<div class="text-gray-500 text-sm">Initializing assistant...</div>
+			</div>
+		{/if}
 	</main>
 </div>

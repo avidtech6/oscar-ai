@@ -43,6 +43,10 @@ export async function extractStyleFromDocx(file: File): Promise<{ textContent: s
 
 function extractTextFromXml(xml: string): string {
 	// Simple XML text extraction
+	if (typeof xml !== 'string') {
+		console.warn('Invalid XML input to extractTextFromXml:', xml);
+		return '';
+	}
 	const textMatches = xml.match(/<w:t[^>]*>([^<]*)<\/w:t>/g);
 	if (!textMatches) return '';
 	
@@ -70,6 +74,10 @@ async function extractVisualStyles(zip: JSZip): Promise<VisualStyle | null> {
 
 function extractFonts(stylesXml: string): { header: string; body: string } {
 	// Extract header font
+	if (typeof stylesXml !== 'string') {
+		console.warn('Invalid stylesXml input to extractFonts:', stylesXml);
+		return { header: 'Calibri', body: 'Calibri' };
+	}
 	const headerFontMatch = stylesXml.match(/<w:rStyle[^>]*w:styleId="[^"]*"[^>]*>([^<]*)<\/w:rStyle>/);
 	const bodyFontMatch = stylesXml.match(/<w:rStyle[^>]*w:styleId="[^"]*"[^>]*>([^<]*)<\/w:rStyle>/);
 	

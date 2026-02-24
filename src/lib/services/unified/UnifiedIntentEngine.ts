@@ -256,11 +256,13 @@ export class UnifiedIntentEngine {
     let bestMatch: { intent: IntentType; confidence: number } | null = null;
     
     for (const { pattern, intent } of TEXT_PATTERNS) {
-      const matches = safeInput.match(pattern);
-      if (matches) {
-        const confidence = this.calculateConfidence(safeInput, matches[0], intent);
-        if (!bestMatch || confidence > bestMatch.confidence) {
-          bestMatch = { intent, confidence };
+      if (typeof safeInput === 'string') {
+        const matches = safeInput.match(pattern);
+        if (matches) {
+          const confidence = this.calculateConfidence(safeInput, matches[0], intent);
+          if (!bestMatch || confidence > bestMatch.confidence) {
+            bestMatch = { intent, confidence };
+          }
         }
       }
     }

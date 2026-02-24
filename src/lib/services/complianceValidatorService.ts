@@ -39,6 +39,10 @@ function createMockComplianceValidator() {
       const foundMarkers = [];
       
       for (const marker of complianceMarkers) {
+        if (typeof reportText !== 'string') {
+          console.warn('Invalid reportText in compliance validator:', reportText);
+          continue;
+        }
         const matches = reportText.match(marker.pattern);
         if (matches) {
           foundMarkers.push({
@@ -67,7 +71,7 @@ function createMockComplianceValidator() {
         });
       }
       
-      if (!reportText.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/)) {
+      if (typeof reportText === 'string' && !reportText.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/)) {
         issues.push({
           type: 'missing_date',
           severity: 'warning',

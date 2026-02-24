@@ -6,6 +6,7 @@
 	import { copilotContext, updateInputEmpty } from './copilotContext';
 	import { clearFollowUps } from './followUpStore';
 	import { pdfExtractionService } from './pdfExtractionService';
+	import { sanitizePrompt, ensureAppReady } from './sanitizeInput';
 	
 	const emit = createEventDispatcher();
 	
@@ -27,21 +28,37 @@
 	// Get placeholder text: show hint only when input is empty
 	$: placeholder = inputValue.trim() ? '' : finalHint;
 	
-	function handleSubmit() {
-		if (inputValue.trim()) {
-			emit('promptSubmit', { text: inputValue.trim() });
-			
-			// Clear follow‑up suggestions when user sends a message
-			clearFollowUps();
-			
-			inputValue = '';
+	async function handleSubmit() {
+		// Check if app is ready
+		const isReady = await ensureAppReady();
+		if (!isReady) {
+			console.warn('CopilotBar: App not ready, cannot process input');
+			// Show user feedback
+			alert('Please wait for the application to finish loading before sending messages.');
+			return;
 		}
+		
+		// Sanitize input
+		const sanitizedInput = sanitizePrompt(inputValue);
+		if (!sanitizedInput) {
+			console.warn('CopilotBar: Empty input after sanitization');
+			return;
+		}
+		
+		console.log('CopilotBar: Sending sanitized prompt:', sanitizedInput.substring(0, 50) + (sanitizedInput.length > 50 ? '...' : ''));
+		
+		emit('promptSubmit', { text: sanitizedInput });
+		
+		// Clear follow‑up suggestions when user sends a message
+		clearFollowUps();
+		
+		inputValue = '';
 	}
 	
-	function handleInputKeydown(event: KeyboardEvent) {
+	async function handleInputKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter' && !event.shiftKey) {
 			event.preventDefault();
-			handleSubmit();
+			await handleSubmit();
 		}
 	}
 	

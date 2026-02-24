@@ -25,6 +25,7 @@
 	import { saveChatMessage, getChatHistory, clearChatHistory, type ChatMessage } from '$lib/db';
 	import type { IntentType } from '$lib/services/unified/UnifiedIntentEngine';
 	import type { ActionResult } from '$lib/services/aiActions';
+	import { sanitizeForMatch, safeMatch, validateNonEmptyString } from '$lib/copilot/sanitizeInput';
 
 	let apiKey = '';
 	groqApiKey.subscribe(value => {
@@ -131,7 +132,16 @@
 	}
 
 	async function sendMessage() {
-		if (!inputMessage.trim() || sending) return;
+		// Sanitize and validate input
+		let userMessageText: string;
+		try {
+			userMessageText = validateNonEmptyString(inputMessage, 'Chat message');
+		} catch (validationError) {
+			error = validationError instanceof Error ? validationError.message : 'Invalid input';
+			return;
+		}
+
+		if (sending) return;
 
 		if (!apiKey) {
 			error = 'Please configure your Groq API key in Settings first.';
@@ -149,19 +159,26 @@
 
 		currentContext = await getAIContext();
 		const contextInfo = formatContextForAI(currentContext);
-		const userMessageText = inputMessage.trim();
 		
 		// Resolve pronoun references
-		const resolvedMessage = resolvePronounReference(
+		const resolutionResult = resolvePronounReference(
 			userMessageText,
-			'', // TODO: Get last AI message from unified system
-			null // TODO: Get last referenced item from unified system
+			{
+				lastReferencedItem: null,
+				lastCreatedItem: null,
+				currentProject: currentContext?.currentProject || null
+			}
 		);
+		
+		// Extract the resolved message string from the result
+		const resolvedMessageText = typeof resolutionResult === 'string'
+			? resolutionResult
+			: (resolutionResult?.resolvedMessage || userMessageText);
 		
 		// Add user message
 		const userMessage: Message = {
 			role: 'user',
-			content: resolvedMessage,
+			content: resolvedMessageText,
 			timestamp: new Date().toISOString()
 		};
 		messages = [...messages, userMessage];
@@ -170,7 +187,7 @@
 		try {
 			const savedId = await saveChatMessage({
 				role: 'user',
-				content: resolvedMessage,
+				content: resolvedMessageText,
 				actionUrl: userMessage.actionUrl,
 				actionType: userMessage.actionType,
 				actionResult: userMessage.actionResult,
@@ -185,7 +202,7 @@
 
 		try {
 			// First, check for context inference
-			const inference = await inferProjectFromMessage(resolvedMessage);
+			const inference = await inferProjectFromMessage(resolvedMessageText);
 			
 			// Handle multiple project matches
 			if (inference.shouldSwitch && inference.multipleMatches && inference.multipleMatches.length > 1) {
@@ -209,7 +226,7 @@
 			}
 			
 			// First, classify the intent using unified engine
-			const intent = unifiedIntentEngine.classifyIntent(resolvedMessage);
+			const intent = await unifiedIntentEngine.classifyIntent(resolvedMessageText);
 			
 			let actionResult: ActionResult | null = null;
 			

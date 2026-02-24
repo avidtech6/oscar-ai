@@ -116,11 +116,13 @@ CONFIDENCE: [number]%
 				suggestion = trimmed.replace('SUGGESTION:', '').trim();
 			} else if (trimmed.startsWith('CONFIDENCE:')) {
 				const confidenceText = trimmed.replace('CONFIDENCE:', '').trim();
-				const match = confidenceText.match(/(\d+)/);
-				if (match) {
-					confidence = parseInt(match[1], 10);
-					// Ensure confidence is between 0-100
-					confidence = Math.max(0, Math.min(100, confidence));
+				if (typeof confidenceText === 'string') {
+					const match = confidenceText.match(/(\d+)/);
+					if (match) {
+						confidence = parseInt(match[1], 10);
+						// Ensure confidence is between 0-100
+						confidence = Math.max(0, Math.min(100, confidence));
+					}
 				}
 			}
 		}
@@ -257,11 +259,13 @@ CONFIDENCE: [number]%
 				suggestion = trimmed.replace('SUGGESTION:', '').trim();
 			} else if (trimmed.startsWith('CONFIDENCE:')) {
 				const confidenceText = trimmed.replace('CONFIDENCE:', '').trim();
-				const match = confidenceText.match(/(\d+)/);
-				if (match) {
-					confidence = parseInt(match[1], 10);
-					// Ensure confidence is between 0-100
-					confidence = Math.max(0, Math.min(100, confidence));
+				if (typeof confidenceText === 'string') {
+					const match = confidenceText.match(/(\d+)/);
+					if (match) {
+						confidence = parseInt(match[1], 10);
+						// Ensure confidence is between 0-100
+						confidence = Math.max(0, Math.min(100, confidence));
+					}
 				}
 			}
 		}
@@ -377,11 +381,13 @@ export async function parseUserAnswer(answer: string, field: string): Promise<{c
 				cleaned = trimmed.replace('CLEANED:', '').trim();
 			} else if (trimmed.startsWith('CONFIDENCE:')) {
 				const confidenceText = trimmed.replace('CONFIDENCE:', '').trim();
-				const match = confidenceText.match(/(\d+)/);
-				if (match) {
-					confidence = parseInt(match[1], 10);
-					// Ensure confidence is between 0-100
-					confidence = Math.max(0, Math.min(100, confidence));
+				if (typeof confidenceText === 'string') {
+					const match = confidenceText.match(/(\d+)/);
+					if (match) {
+						confidence = parseInt(match[1], 10);
+						// Ensure confidence is between 0-100
+						confidence = Math.max(0, Math.min(100, confidence));
+					}
 				}
 			}
 		}

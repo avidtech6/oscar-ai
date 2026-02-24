@@ -89,15 +89,17 @@ export async function inferProjectFromMessage(
     
     // Check for project ID references
     if (confidence === 0) {
-      const projectIdPattern = /project[_\s-]?id[_\s-]?[:=]?[_\s-]?([a-f0-9-]+)/i;
-      const projectIdMatch = message.match(projectIdPattern);
-      if (projectIdMatch) {
-        const projectId = projectIdMatch[1];
-        if (project.id === projectId) {
-          confidence = 95;
-          reason = `Message contains project ID "${projectId}"`;
-        }
-      }
+    	const projectIdPattern = /project[_\s-]?id[_\s-]?[:=]?[_\s-]?([a-f0-9-]+)/i;
+    	if (typeof message === 'string') {
+    		const projectIdMatch = message.match(projectIdPattern);
+    		if (projectIdMatch) {
+    			const projectId = projectIdMatch[1];
+    			if (project.id === projectId) {
+    				confidence = 95;
+    				reason = `Message contains project ID "${projectId}"`;
+    			}
+    		}
+    	}
     }
     
     // Check for tree species references (arboricultural context)
@@ -198,49 +200,51 @@ export function resolvePronounReference(
   
   // Resolve based on context
   for (const { pattern, type } of pronounPatterns) {
-    const matches = message.match(pattern);
-    if (matches) {
-      matches.forEach(match => {
-        const matchLower = match.toLowerCase();
-        let replacement = match;
-        
-        if (type === 'item') {
-          if (context.lastReferencedItem) {
-            const item = context.lastReferencedItem;
-            if (item.title) {
-              replacement = `"${item.title}"`;
-            } else if (item.name) {
-              replacement = `"${item.name}"`;
-            } else if (item.id) {
-              replacement = `item ${item.id.slice(0, 8)}`;
-            }
-          } else if (context.lastCreatedItem) {
-            const item = context.lastCreatedItem;
-            if (item.title) {
-              replacement = `"${item.title}"`;
-            } else if (item.name) {
-              replacement = `"${item.name}"`;
-            }
-          }
-        } else if (type === 'person' && context.currentProject?.client) {
-          replacement = context.currentProject.client;
-        } else if (type === 'location' && context.currentProject?.location) {
-          replacement = context.currentProject.location;
-        }
-        
-        if (replacement !== match) {
-          // Preserve original case
-          if (match === match.toUpperCase()) {
-            replacement = replacement.toUpperCase();
-          } else if (match[0] === match[0].toUpperCase()) {
-            replacement = replacement.charAt(0).toUpperCase() + replacement.slice(1);
-          }
-          
-          resolvedMessage = resolvedMessage.replace(match, replacement);
-          replacements.push({ from: match, to: replacement, type });
-        }
-      });
-    }
+  	if (typeof message === 'string') {
+  		const matches = message.match(pattern);
+  		if (matches) {
+  			matches.forEach(match => {
+  				const matchLower = match.toLowerCase();
+  				let replacement = match;
+  				
+  				if (type === 'item') {
+  					if (context.lastReferencedItem) {
+  						const item = context.lastReferencedItem;
+  						if (item.title) {
+  							replacement = `"${item.title}"`;
+  						} else if (item.name) {
+  							replacement = `"${item.name}"`;
+  						} else if (item.id) {
+  							replacement = `item ${item.id.slice(0, 8)}`;
+  						}
+  					} else if (context.lastCreatedItem) {
+  						const item = context.lastCreatedItem;
+  						if (item.title) {
+  							replacement = `"${item.title}"`;
+  						} else if (item.name) {
+  							replacement = `"${item.name}"`;
+  						}
+  					}
+  				} else if (type === 'person' && context.currentProject?.client) {
+  					replacement = context.currentProject.client;
+  				} else if (type === 'location' && context.currentProject?.location) {
+  					replacement = context.currentProject.location;
+  				}
+  				
+  				if (replacement !== match) {
+  					// Preserve original case
+  					if (match === match.toUpperCase()) {
+  						replacement = replacement.toUpperCase();
+  					} else if (match[0] === match[0].toUpperCase()) {
+  						replacement = replacement.charAt(0).toUpperCase() + replacement.slice(1);
+  					}
+  					
+  					resolvedMessage = resolvedMessage.replace(match, replacement);
+  					replacements.push({ from: match, to: replacement, type });
+  				}
+  			});
+  		}
+  	}
   }
   
   return { resolvedMessage, replacements };
@@ -281,10 +285,12 @@ export function extractEntities(message: string): {
   ];
   
   datePatterns.forEach(pattern => {
-    const matches = safeMessage.match(pattern);
-    if (matches) {
-      entities.dates.push(...matches);
-    }
+  	if (typeof safeMessage === 'string') {
+  		const matches = safeMessage.match(pattern);
+  		if (matches) {
+  			entities.dates.push(...matches);
+  		}
+  	}
   });
   
   return entities;

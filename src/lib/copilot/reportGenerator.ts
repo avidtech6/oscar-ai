@@ -729,12 +729,15 @@ function convertMarkdownToHtml(markdown: string): string {
 		.replace(/\n/g, '<br>');
 	
 	// Wrap in proper HTML structure
+	const titleMatch = typeof html === 'string' ? html.match(/<h1>(.*?)<\/h1>/) : null;
+	const title = titleMatch ? titleMatch[1] : 'Arboricultural Report';
+	
 	return `<!DOCTYPE html>
 <html>
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>${html.match(/<h1>(.*?)<\/h1>/)?.[1] || 'Arboricultural Report'}</title>
+	<title>${title}</title>
 	<style>
 		body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
 		h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
