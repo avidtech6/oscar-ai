@@ -151,9 +151,9 @@ The original Oscar AI app was completely broken because:
 
 ## API Keys Configuration
 
-**Groq API Key (Dev):** `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`
+**Groq API Key:** Configured in `.env` file as `VITE_GROQ_API_KEY`
 
-Located in: `src/lib/stores/settings.ts`
+Located in: Environment variables and Supabase settings
 
 ---
 

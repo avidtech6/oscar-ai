@@ -36,7 +36,7 @@ Successfully resolved all critical errors in the local host version of Oscar AI 
 
 #### a) Updated `.env` file:
 ```env
-VITE_GROQ_API_KEY=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
+VITE_GROQ_API_KEY=[configured in environment variables]
 VITE_SUPABASE_URL=https://uoznborffctkpwgnghdr.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_8cCgepMSrGtTMb-kZEcuLg_eeihm7_R
 ```
