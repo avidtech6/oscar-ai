@@ -66,11 +66,16 @@ export function hasValidGroq(): boolean {
 }
 
 // Legacy exports for backward compatibility (deprecated - use getter functions instead)
-export const GROQ_API_KEY = getGroqApiKey();
-export const SUPABASE_URL = getSupabaseUrl();
-export const SUPABASE_ANON_KEY = getSupabaseAnonKey();
-export const HAS_VALID_SUPABASE = hasValidSupabase();
-export const HAS_VALID_GROQ = hasValidGroq();
+// Using object with getters to make them lazy-evaluated
+const legacyKeys = {
+  get GROQ_API_KEY() { return getGroqApiKey(); },
+  get SUPABASE_URL() { return getSupabaseUrl(); },
+  get SUPABASE_ANON_KEY() { return getSupabaseAnonKey(); },
+  get HAS_VALID_SUPABASE() { return hasValidSupabase(); },
+  get HAS_VALID_GROQ() { return hasValidGroq(); }
+};
+
+export const { GROQ_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY, HAS_VALID_SUPABASE, HAS_VALID_GROQ } = legacyKeys;
 
 // Log warnings for migration
 console.log('Keys module: Using CredentialManager-based credential system');
