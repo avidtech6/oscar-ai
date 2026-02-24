@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { groqApiKey, groqModels } from '$lib/stores/settings';
+import { groqModels } from '$lib/stores/settings';
 import { chat, type ChatMessage } from './groq';
 
 export type TransformAction = 
@@ -31,15 +31,6 @@ export interface TransformResult {
  */
 export async function transformText(request: TransformRequest): Promise<TransformResult> {
 	try {
-		const apiKey = get(groqApiKey);
-		if (!apiKey) {
-			return {
-				success: false,
-				transformedText: '',
-				error: 'Groq API key not configured. Please set your API key in Settings.'
-			};
-		}
-
 		const { action, text, customPrompt, context } = request;
 		
 		// Build system prompt based on action

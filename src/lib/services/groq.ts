@@ -1,5 +1,6 @@
 import { get } from 'svelte/store';
-import { groqApiKey, groqModels } from '$lib/stores/settings';
+import { groqModels } from '$lib/stores/settings';
+import { credentialManager } from '$lib/system/CredentialManager';
 
 export type ChatMessage = {
 	role: 'user' | 'assistant' | 'system';
@@ -7,8 +8,13 @@ export type ChatMessage = {
 };
 
 export async function chat(messages: ChatMessage[], onChunk?: (chunk: string) => void): Promise<string> {
-	const apiKey = get(groqApiKey);
-	if (!apiKey) throw new Error('Groq API key not configured');
+	// Ensure CredentialManager is ready
+	if (!credentialManager.isReady()) {
+		await credentialManager.initialize();
+	}
+	
+	const apiKey = credentialManager.getGroqKey();
+	if (!apiKey) throw new Error('Groq API key not configured. Please set it in Settings.');
 
 	const model = get(groqModels).chat;
 	const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -69,8 +75,13 @@ export async function chat(messages: ChatMessage[], onChunk?: (chunk: string) =>
 }
 
 export async function transcribe(audioFile: File, onProgress?: (progress: number) => void): Promise<string> {
-	const apiKey = get(groqApiKey);
-	if (!apiKey) throw new Error('Groq API key not configured');
+	// Ensure CredentialManager is ready
+	if (!credentialManager.isReady()) {
+		await credentialManager.initialize();
+	}
+	
+	const apiKey = credentialManager.getGroqKey();
+	if (!apiKey) throw new Error('Groq API key not configured. Please set it in Settings.');
 
 	const formData = new FormData();
 	formData.append('file', audioFile);

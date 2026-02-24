@@ -1,6 +1,5 @@
 // Client-side Groq Whisper transcription service
-import { get } from 'svelte/store';
-import { groqApiKey } from '../stores/settings';
+import { credentialManager } from '$lib/system/CredentialManager';
 
 export interface TranscriptionResult {
 	text: string;
@@ -10,7 +9,13 @@ export interface TranscriptionResult {
 
 export async function transcribeAudio(audioBlob: Blob): Promise<TranscriptionResult> {
 	console.log('Whisper: Starting transcription, blob size:', audioBlob.size, 'type:', audioBlob.type);
-	const apiKey = get(groqApiKey);
+	
+	// Ensure CredentialManager is ready
+	if (!credentialManager.isReady()) {
+		await credentialManager.initialize();
+	}
+	
+	const apiKey = credentialManager.getGroqKey();
 	console.log('Whisper: API key available:', !!apiKey, 'length:', apiKey ? apiKey.length : 0);
 	
 	if (!apiKey) {
