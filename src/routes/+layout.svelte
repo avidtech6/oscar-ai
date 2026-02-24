@@ -10,9 +10,11 @@
 	import { updateRoute } from '$lib/copilot/copilotContext';
 	import type { Project } from '$lib/db';
 	import { onDestroy } from 'svelte';
+	import { appInit } from '$lib/system/AppInit';
 
 	let projects: Project[] = [];
 	let loading = true;
+	let appInitialized = false;
 
 	// Update copilot context when route changes
 	$: updateRoute($page.url.pathname);
@@ -48,6 +50,17 @@
 
 	// Load projects from IndexedDB on mount
 	onMount(async () => {
+		// Initialize AppInit (must happen first)
+		try {
+			console.log('Layout: Initializing application...');
+			await appInit.initialize();
+			appInitialized = true;
+			console.log('Layout: Application initialized successfully');
+		} catch (error) {
+			console.error('Layout: Failed to initialize application:', error);
+			// Continue anyway - some features may be limited
+		}
+		
 		// Initialize settings (loads API key, theme, etc.)
 		initSettings();
 		

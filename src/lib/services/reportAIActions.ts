@@ -7,7 +7,7 @@
 
 import { get } from 'svelte/store';
 import { db } from '$lib/db';
-import { groqApiKey } from '$lib/stores/settings';
+import { credentialManager } from '$lib/system/CredentialManager';
 
 // Types for AI actions (re-exported for compatibility)
 export interface ActionResult {
@@ -34,8 +34,8 @@ export interface AIContext {
 // Suggest a client name based on project data with confidence score
 export async function suggestClientName(projectData: any): Promise<{suggestion: string; confidence: number}> {
 	try {
-		// Get API key from settings
-		const apiKey = get(groqApiKey);
+		// Get API key from CredentialManager
+		const apiKey = credentialManager.getGroqKey();
 		if (!apiKey) {
 			throw new Error('Groq API key not configured. Please set it in Settings.');
 		}
@@ -174,8 +174,8 @@ CONFIDENCE: [number]%
 // Suggest a site address based on project data with confidence score
 export async function suggestSiteAddress(projectData: any): Promise<{suggestion: string; confidence: number}> {
 	try {
-		// Get API key from settings
-		const apiKey = get(groqApiKey);
+		// Get API key from CredentialManager
+		const apiKey = credentialManager.getGroqKey();
 		if (!apiKey) {
 			throw new Error('Groq API key not configured. Please set it in Settings.');
 		}
@@ -326,8 +326,8 @@ export async function parseUserAnswer(answer: string, field: string): Promise<{c
 	}
 
 	try {
-		// Get API key from settings
-		const apiKey = get(groqApiKey);
+		// Get API key from CredentialManager
+		const apiKey = credentialManager.getGroqKey();
 		if (!apiKey) {
 			throw new Error('Groq API key not configured. Please set it in Settings.');
 		}
@@ -441,8 +441,8 @@ export async function generateFollowUpQuestions(field: string, answer: string): 
 	}
 
 	try {
-		// Get API key from settings
-		const apiKey = get(groqApiKey);
+		// Get API key from CredentialManager
+		const apiKey = credentialManager.getGroqKey();
 		if (!apiKey) {
 			throw new Error('Groq API key not configured. Please set it in Settings.');
 		}
@@ -508,8 +508,8 @@ export async function generateFollowUpQuestions(field: string, answer: string): 
 // Generate AI-powered gap-fill questions based on template and project data
 export async function generateAIGapFillQuestions(templateId: string, projectData: any): Promise<Array<{id: string; question: string; answer: string; field: string}>> {
 	try {
-		// Get API key from settings
-		const apiKey = get(groqApiKey);
+		// Get API key from CredentialManager
+		const apiKey = credentialManager.getGroqKey();
 		if (!apiKey) {
 			throw new Error('Groq API key not configured. Please set it in Settings.');
 		}

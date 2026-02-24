@@ -1,5 +1,7 @@
 import { supabase } from '$lib/supabase/client';
+import { HAS_VALID_SUPABASE } from '$lib/config/keys';
 import type { Note } from '$lib/db';
+import { dummyNotes } from '$lib/dummy/dummyData';
 
 export interface SupabaseNote {
 	id: string;
@@ -16,6 +18,13 @@ export interface SupabaseNote {
 }
 
 export async function getNotes(projectId: string): Promise<Note[]> {
+	// If Supabase is not configured, return dummy data
+	if (!HAS_VALID_SUPABASE) {
+		console.warn('Supabase not configured, returning dummy notes');
+		const filteredDummyNotes = dummyNotes.filter(note => note.projectId === projectId || !projectId);
+		return convertDummyNotesToNotes(filteredDummyNotes);
+	}
+
 	try {
 		const { data, error } = await supabase
 			.from('notes')
@@ -25,13 +34,17 @@ export async function getNotes(projectId: string): Promise<Note[]> {
 
 		if (error) {
 			console.error('Error fetching notes:', error);
-			return [];
+			// Fall back to dummy data on error
+			const filteredDummyNotes = dummyNotes.filter(note => note.projectId === projectId || !projectId);
+			return convertDummyNotesToNotes(filteredDummyNotes);
 		}
 
 		return (data as SupabaseNote[]).map(mapSupabaseNoteToNote);
 	} catch (error) {
 		console.error('Error in getNotes:', error);
-		return [];
+		// Fall back to dummy data on error
+		const filteredDummyNotes = dummyNotes.filter(note => note.projectId === projectId || !projectId);
+		return convertDummyNotesToNotes(filteredDummyNotes);
 	}
 }
 
@@ -189,4 +202,15 @@ function mapNoteToSupabaseNote(note: Note): Partial<SupabaseNote> {
 	}
 	
 	return result;
+}
+
+// Helper function to convert dummy notes to full Note objects
+function convertDummyNotesToNotes(dummyNotes: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>[]): Note[] {
+	const now = new Date();
+	return dummyNotes.map((dummyNote, index) => ({
+		...dummyNote,
+		id: `dummy-note-${index}`,
+		createdAt: now,
+		updatedAt: now
+	}));
 }

@@ -1,8 +1,27 @@
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '$lib/config/keys';
+import { getSUPABASE_URL, getSUPABASE_ANON_KEY } from '$lib/config/keys';
 
-// Create a single supabase client for interacting with your database
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Create a lazy-initialized supabase client
+let supabaseInstance: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseClient() {
+  if (!supabaseInstance) {
+    const url = getSUPABASE_URL();
+    const anonKey = getSUPABASE_ANON_KEY();
+    
+    if (!url || !anonKey) {
+      console.warn('Supabase credentials not configured. Some features may be limited.');
+      // Return a dummy client that will fail gracefully
+      supabaseInstance = createClient('https://dummy.supabase.co', 'dummy-key');
+    } else {
+      supabaseInstance = createClient(url, anonKey);
+    }
+  }
+  return supabaseInstance;
+}
+
+// Export the getter function
+export const supabase = getSupabaseClient();
 
 // Helper function to get the current user's ID
 export async function getCurrentUserId(): Promise<string | null> {
@@ -38,4 +57,9 @@ export async function signUp(email: string, password: string) {
 		password
 	});
 	return { data, error };
+}
+
+// Helper to reset the client (for testing or credential updates)
+export function resetSupabaseClient() {
+  supabaseInstance = null;
 }

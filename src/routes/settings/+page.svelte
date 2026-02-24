@@ -1,10 +1,11 @@
-oh, boy, hey boy, call me <script lang="ts">
+<script lang="ts">
 	import { onMount } from 'svelte';
 	import { settings, type Settings, dummyDataEnabled } from '$lib/stores/settings';
 	import { initializeBackend, configurePocketBase, getBackendType, getPocketBaseUrl } from '$lib/services/backend';
 	import { db, countDummyItems, deleteAllDummyData } from '$lib/db';
 	import { insertDummyData, removeDummyData } from '$lib/dummy/dummyData';
 	import { getVersionInfo } from '../../version';
+	import { credentialManager } from '$lib/system/CredentialManager';
 
 	let apiKey = '';
 	let pbUrl = '';
@@ -18,6 +19,16 @@ oh, boy, hey boy, call me <script lang="ts">
 	let dummyDataToggle = false;
 	let dummyCount = { projects: 0, tasks: 0, notes: 0, trees: 0, reports: 0 };
 	let clearing = false;
+	
+	// Credential manager state
+	let credentialStatus = 'Loading...';
+	let groqKey = '';
+	let openaiKey = '';
+	let anthropicKey = '';
+	let supabaseUrl = '';
+	let supabaseAnonKey = '';
+	let credentialSaving = false;
+	let credentialSaved = false;
 
 	onMount(async () => {
 		// Load current settings using store subscription
@@ -34,9 +45,68 @@ oh, boy, hey boy, call me <script lang="ts">
 		// Load dummy count
 		dummyCount = await countDummyItems();
 		
+		// Load credentials from CredentialManager
+		await loadCredentials();
+		
 		// Cleanup subscription
 		return unsubscribe;
 	});
+	
+	async function loadCredentials() {
+		try {
+			// Wait for credential manager to be ready
+			if (!credentialManager.isReady()) {
+				await credentialManager.initialize();
+			}
+			
+			credentialStatus = credentialManager.isReady() ? 'Ready' : 'Not ready';
+			
+			// Load current values
+			groqKey = credentialManager.getGroqKey() || '';
+			openaiKey = credentialManager.getOpenAIKey() || '';
+			anthropicKey = credentialManager.getAnthropicKey() || '';
+			supabaseUrl = credentialManager.getSupabaseUrl() || '';
+			supabaseAnonKey = credentialManager.getSupabaseAnonKey() || '';
+		} catch (error) {
+			console.error('Failed to load credentials:', error);
+			credentialStatus = 'Error loading credentials';
+		}
+	}
+	
+	async function saveCredentials() {
+		credentialSaving = true;
+		credentialSaved = false;
+		
+		try {
+			// Save credentials to CredentialManager
+			if (groqKey.trim()) await credentialManager.updateKey('groq_api_key', groqKey.trim());
+			if (openaiKey.trim()) await credentialManager.updateKey('openai_api_key', openaiKey.trim());
+			if (anthropicKey.trim()) await credentialManager.updateKey('anthropic_api_key', anthropicKey.trim());
+			if (supabaseUrl.trim()) await credentialManager.updateKey('supabase_url', supabaseUrl.trim());
+			if (supabaseAnonKey.trim()) await credentialManager.updateKey('supabase_anon_key', supabaseAnonKey.trim());
+			
+			credentialSaved = true;
+			setTimeout(() => {
+				credentialSaved = false;
+			}, 2000);
+			
+			// Reload to see updated status
+			await loadCredentials();
+		} catch (error) {
+			console.error('Failed to save credentials:', error);
+			alert('Failed to save credentials: ' + (error instanceof Error ? error.message : 'Unknown error'));
+		} finally {
+			credentialSaving = false;
+		}
+	}
+	
+	function clearCredentials() {
+		groqKey = '';
+		openaiKey = '';
+		anthropicKey = '';
+		supabaseUrl = '';
+		supabaseAnonKey = '';
+	}
 
 	async function toggleDummyData(event: Event) {
 		const target = event.target as HTMLInputElement;
@@ -308,6 +378,125 @@ oh, boy, hey boy, call me <script lang="ts">
 <div class="max-w-2xl mx-auto">
 	<h1 class="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
 
+	<!-- Credential Management -->
+	<div class="card p-6 mb-6">
+		<h2 class="text-lg font-semibold mb-4">Credential Management</h2>
+		<p class="text-sm text-gray-600 mb-4">
+			Centralized credential system. Credentials are loaded from multiple sources with priority: Local overrides > Supabase settings > Environment defaults.
+		</p>
+		
+		<div class="mb-4 p-3 bg-gray-50 rounded-lg">
+			<div class="flex items-center justify-between">
+				<span class="text-sm font-medium">Credential Status:</span>
+				<span class="px-2 py-1 text-xs rounded-full {credentialStatus === 'Ready' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+					{credentialStatus}
+				</span>
+			</div>
+		</div>
+		
+		<div class="space-y-6">
+			<div>
+				<h3 class="text-md font-medium mb-3">AI API Keys</h3>
+				<div class="space-y-4">
+					<div>
+						<label for="groqKey" class="block text-sm font-medium text-gray-700 mb-1">
+							Groq API Key
+						</label>
+						<input
+							id="groqKey"
+							type="password"
+							bind:value={groqKey}
+							placeholder="gsk_..."
+							class="input w-full"
+						/>
+						<p class="text-xs text-gray-500 mt-1">
+							For chat and transcription (Groq Whisper)
+						</p>
+					</div>
+					
+					<div>
+						<label for="openaiKey" class="block text-sm font-medium text-gray-700 mb-1">
+							OpenAI API Key
+						</label>
+						<input
+							id="openaiKey"
+							type="password"
+							bind:value={openaiKey}
+							placeholder="sk-..."
+							class="input w-full"
+						/>
+						<p class="text-xs text-gray-500 mt-1">
+							Optional: For OpenAI models
+						</p>
+					</div>
+					
+					<div>
+						<label for="anthropicKey" class="block text-sm font-medium text-gray-700 mb-1">
+							Anthropic API Key
+						</label>
+						<input
+							id="anthropicKey"
+							type="password"
+							bind:value={anthropicKey}
+							placeholder="sk-ant-..."
+							class="input w-full"
+						/>
+						<p class="text-xs text-gray-500 mt-1">
+							Optional: For Claude models
+						</p>
+					</div>
+				</div>
+			</div>
+			
+			<div>
+				<h3 class="text-md font-medium mb-3">Supabase Configuration</h3>
+				<div class="space-y-4">
+					<div>
+						<label for="supabaseUrl" class="block text-sm font-medium text-gray-700 mb-1">
+							Supabase URL
+						</label>
+						<input
+							id="supabaseUrl"
+							type="url"
+							bind:value={supabaseUrl}
+							placeholder="https://your-project.supabase.co"
+							class="input w-full"
+						/>
+					</div>
+					
+					<div>
+						<label for="supabaseAnonKey" class="block text-sm font-medium text-gray-700 mb-1">
+							Supabase Anon Key
+						</label>
+						<input
+							id="supabaseAnonKey"
+							type="password"
+							bind:value={supabaseAnonKey}
+							placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+							class="input w-full"
+						/>
+					</div>
+				</div>
+			</div>
+			<div class="flex items-center gap-3">
+				<button
+					on:click={saveCredentials}
+					disabled={credentialSaving}
+					class="btn btn-primary"
+				>
+					{credentialSaving ? 'Saving...' : credentialSaved ? 'Saved!' : 'Save Credentials'}
+				</button>
+				
+				<button
+					on:click={clearCredentials}
+					class="btn btn-secondary"
+				>
+					Clear All
+				</button>
+			</div>
+		</div>
+	</div>
+
 	<!-- AI Configuration -->
 	<div class="card p-6 mb-6">
 		<h2 class="text-lg font-semibold mb-4">AI Configuration</h2>
@@ -379,7 +568,7 @@ oh, boy, hey boy, call me <script lang="ts">
 				<div>
 					<h3 class="font-medium">Local Browser Storage</h3>
 					<p class="text-sm text-gray-600">
-						All your project data, notes, and reports are stored locally in your browser using IndexedDB. 
+						All your project data, notes, and reports are stored locally in your browser using IndexedDB.
 						Data never leaves your device.
 					</p>
 				</div>
