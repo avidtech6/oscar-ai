@@ -1,7 +1,7 @@
 // CredentialManager - Unified source of truth for API keys and credentials
 // Layered loading with priority: Local overrides > Supabase settings > Environment defaults
 
-import { supabase } from '$lib/supabase/client';
+import { getSupabase } from '$lib/supabase/client';
 
 export type CredentialKey = 
   | 'oscar_api_key'
@@ -107,7 +107,7 @@ class CredentialManager {
   	try {
   		// Use type assertion to bypass TypeScript errors for now
   		// The settings table might not exist in the generated types
-  		const { data, error } = await (supabase as any)
+  		const { data, error } = await (getSupabase() as any)
   			.from('settings')
   			.select('key, value')
   			.in('key', [
@@ -118,18 +118,18 @@ class CredentialManager {
   				'supabase_url',
   				'supabase_anon_key'
   			]);
- 
+  
   		if (error) {
   			console.warn('CredentialManager: Error loading Supabase settings:', error);
   			return {};
   		}
- 
+  
   		const settings: Partial<Credentials> = {};
   		(data as any[])?.forEach((setting: any) => {
   			const key = setting.key as CredentialKey;
   			settings[key] = setting.value;
   		});
- 
+  
   		return settings;
   	} catch (error) {
   		console.warn('CredentialManager: Error accessing Supabase:', error);
@@ -197,7 +197,7 @@ class CredentialManager {
 
   private async saveToSupabase(key: CredentialKey, value: string): Promise<void> {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await (getSupabase() as any)
         .from('settings')
         .upsert({
           key,
@@ -232,7 +232,7 @@ class CredentialManager {
     
     // Clear Supabase settings
     try {
-      await (supabase as any)
+      await (getSupabase() as any)
         .from('settings')
         .delete()
         .in('key', [

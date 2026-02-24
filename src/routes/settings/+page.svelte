@@ -7,7 +7,6 @@
 	import { getVersionInfo } from '../../version';
 	import { credentialManager } from '$lib/system/CredentialManager';
 
-	let apiKey = '';
 	let pbUrl = '';
 	let saving = false;
 	let saved = false;
@@ -30,23 +29,25 @@
 	let credentialSaving = false;
 	let credentialSaved = false;
 
-	onMount(async () => {
+	onMount(() => {
 		// Load current settings using store subscription
 		const unsubscribe = settings.subscribe((currentSettings) => {
-			apiKey = currentSettings.groqApiKey || '';
 			dummyDataToggle = currentSettings.dummyDataEnabled || false;
 		});
 		
 		// Initialize backend and get current config
-		const result = await initializeBackend();
-		backendType = result.backend;
-		pbUrl = getPocketBaseUrl() || '';
-		
-		// Load dummy count
-		dummyCount = await countDummyItems();
-		
-		// Load credentials from CredentialManager
-		await loadCredentials();
+		initializeBackend().then((result) => {
+			backendType = result.backend as 'pocketbase' | 'local';
+			pbUrl = getPocketBaseUrl() || '';
+			
+			// Load dummy count
+			countDummyItems().then((count) => {
+				dummyCount = count;
+			});
+			
+			// Load credentials from CredentialManager
+			loadCredentials();
+		});
 		
 		// Cleanup subscription
 		return unsubscribe;
@@ -171,15 +172,6 @@
 		connectionStatus = '';
 		
 		try {
-			// Save Groq API key using the settings store
-			settings.update(currentSettings => ({
-				...currentSettings,
-				groqApiKey: apiKey.trim()
-			}));
-			
-			// Also update localStorage for backward compatibility
-			localStorage.setItem('oscar_groq_api_key', apiKey.trim());
-			
 			// Configure PocketBase if URL provided
 			if (pbUrl.trim()) {
 				configurePocketBase(pbUrl.trim());
@@ -188,7 +180,7 @@
 				
 				try {
 					const result = await initializeBackend();
-					backendType = result.backend;
+					backendType = result.backend as 'pocketbase' | 'local';
 					connectionStatus = result.backend === 'pocketbase'
 						? 'Connected to PocketBase!'
 						: 'Connection failed. Using local storage.';
@@ -208,11 +200,6 @@
 		} finally {
 			saving = false;
 		}
-	}
-
-	function clearApiKey() {
-		apiKey = '';
-		saveSettings();
 	}
 
 	// Export/Import functions
@@ -280,12 +267,11 @@
 				
 				await db.projects.add({
 					name: proj.name,
-					clientName: proj.clientName || '',
-					siteAddress: proj.siteAddress || '',
-					createdAt: now.toISOString(),
-					updatedAt: now.toISOString(),
-					rootFolderId: '',
-					driveFolderId: ''
+					description: proj.description || '',
+					location: proj.location || '',
+					client: proj.client || '',
+					createdAt: now,
+					updatedAt: now
 				});
 				
 				if (proj.trees) {
@@ -497,56 +483,6 @@
 		</div>
 	</div>
 
-	<!-- AI Configuration -->
-	<div class="card p-6 mb-6">
-		<h2 class="text-lg font-semibold mb-4">AI Configuration</h2>
-		<p class="text-sm text-gray-600 mb-4">
-			Configure AI APIs for AI-powered features including chat assistant and voice transcription.
-		</p>
-		
-		<div class="space-y-6">
-			<div>
-				<h3 class="text-md font-medium mb-3">Groq API</h3>
-				<div class="space-y-4">
-					<div>
-						<label for="apiKey" class="block text-sm font-medium text-gray-700 mb-1">
-							Groq API Key
-						</label>
-						<input
-							id="apiKey"
-							type="password"
-							bind:value={apiKey}
-							placeholder="gsk_..."
-							class="input w-full"
-						/>
-						<p class="text-xs text-gray-500 mt-1">
-							Get your free API key from <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" class="text-forest-600 hover:underline">console.groq.com</a>
-						</p>
-					</div>
-					
-					<div class="flex items-center gap-3">
-						<button
-							on:click={saveSettings}
-							disabled={saving}
-							class="btn btn-primary"
-						>
-							{saving ? 'Saving...' : saved ? 'Saved!' : 'Save API Key'}
-						</button>
-						
-						{#if apiKey}
-							<button
-								on:click={clearApiKey}
-								class="btn btn-secondary"
-							>
-								Clear
-							</button>
-						{/if}
-					</div>
-				</div>
-			</div>
-
-		</div>
-	</div>
 
 	<!-- Data Storage -->
 	<div class="card p-6 mb-6">
@@ -653,14 +589,14 @@
 					<span class="text-xl">🤖</span>
 					<span>Groq AI (Chat)</span>
 				</div>
-				<span class="text-sm text-gray-600">{apiKey ? 'Configured' : 'Not configured'}</span>
+				<span class="text-sm text-gray-600">{groqKey ? 'Configured' : 'Not configured'}</span>
 			</div>
 			<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
 				<div class="flex items-center gap-3">
 					<span class="text-xl">🎙️</span>
 					<span>Groq Whisper (Transcription)</span>
 				</div>
-				<span class="text-sm text-gray-600">{apiKey ? 'Configured' : 'Not configured'}</span>
+				<span class="text-sm text-gray-600">{groqKey ? 'Configured' : 'Not configured'}</span>
 			</div>
 		</div>
 	</div>

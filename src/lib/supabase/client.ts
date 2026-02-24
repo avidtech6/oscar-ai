@@ -20,8 +20,18 @@ function getSupabaseClient() {
   return supabaseInstance;
 }
 
-// Export the getter function
-export const supabase = getSupabaseClient();
+// Export a getter function instead of executing immediately
+export function getSupabase() {
+  return getSupabaseClient();
+}
+
+// For backward compatibility, export a proxy object
+export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get(target, prop) {
+    const client = getSupabaseClient();
+    return (client as any)[prop];
+  }
+});
 
 // Helper function to get the current user's ID
 export async function getCurrentUserId(): Promise<string | null> {
