@@ -1,6 +1,6 @@
 import { writable, derived } from 'svelte/store';
 import { getSetting, setSetting, deleteSetting, migrateLocalStorageToIndexedDB } from '$lib/db/index';
-import { GROQ_API_KEY } from '$lib/config/keys';
+import { credentialManager } from '$lib/system/CredentialManager';
 
 const GROQ_API_KEY_STORAGE = 'oscar_groq_api_key';
 const THEME_STORAGE = 'oscar_theme';
@@ -8,8 +8,8 @@ const SIDEBAR_COLLAPSED_STORAGE = 'oscar_sidebar_collapsed';
 const DUMMY_DATA_ENABLED_KEY = 'oscar_dummy_data_enabled';
 const CURRENT_PROJECT_ID_KEY = 'oscar_current_project_id';
 
-// Load API keys from hardcoded constants
-const DEFAULT_GROQ_API_KEY = GROQ_API_KEY || '';
+// Load API keys from CredentialManager
+const DEFAULT_GROQ_API_KEY = '';
 
 export const groqApiKey = writable<string>('');
 export const theme = writable<'light' | 'dark'>('dark');
@@ -82,7 +82,17 @@ export async function initSettings() {
 
     // Phase 5: No localStorage fallback - migration should be complete
     // Use IndexedDB values only, with defaults if undefined
-    const finalGroqKey = storedGroqKey !== undefined ? storedGroqKey : DEFAULT_GROQ_API_KEY || '';
+    let defaultGroqKey = '';
+    try {
+        // Try to get default from CredentialManager if it's ready
+        if (credentialManager.isReady()) {
+            defaultGroqKey = credentialManager.getGroqKey() || '';
+        }
+    } catch (error) {
+        console.warn('CredentialManager not ready for default Groq key:', error);
+    }
+    
+    const finalGroqKey = storedGroqKey !== undefined ? storedGroqKey : defaultGroqKey;
     const finalTheme = storedTheme !== undefined ? storedTheme : 'dark';
     const finalSidebar = storedSidebar !== undefined ? storedSidebar : false;
     const finalDummyData = storedDummyData !== undefined ? storedDummyData : false;

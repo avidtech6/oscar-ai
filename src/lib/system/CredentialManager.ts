@@ -225,6 +225,57 @@ class CredentialManager {
     );
   }
 
+  // Validate specific credential types
+  isValidGroqKey(key?: string): boolean {
+    const apiKey = key || this.credentials.groq_api_key;
+    if (!apiKey) return false;
+    
+    // Groq API keys typically start with 'gsk_' and are at least 32 characters
+    return apiKey.startsWith('gsk_') && apiKey.length >= 32;
+  }
+
+  isValidOpenAIKey(key?: string): boolean {
+    const apiKey = key || this.credentials.openai_api_key;
+    if (!apiKey) return false;
+    
+    // OpenAI API keys typically start with 'sk-' and are at least 32 characters
+    return apiKey.startsWith('sk-') && apiKey.length >= 32;
+  }
+
+  isValidAnthropicKey(key?: string): boolean {
+    const apiKey = key || this.credentials.anthropic_api_key;
+    if (!apiKey) return false;
+    
+    // Anthropic API keys typically start with 'sk-ant-' and are at least 32 characters
+    return apiKey.startsWith('sk-ant-') && apiKey.length >= 32;
+  }
+
+  // Get validation status for all credentials
+  getValidationStatus(): Record<string, { valid: boolean; length: number; format: string }> {
+    return {
+      groq_api_key: {
+        valid: this.isValidGroqKey(),
+        length: this.credentials.groq_api_key.length,
+        format: this.credentials.groq_api_key.startsWith('gsk_') ? 'correct' : 'incorrect'
+      },
+      openai_api_key: {
+        valid: this.isValidOpenAIKey(),
+        length: this.credentials.openai_api_key.length,
+        format: this.credentials.openai_api_key.startsWith('sk-') ? 'correct' : 'incorrect'
+      },
+      anthropic_api_key: {
+        valid: this.isValidAnthropicKey(),
+        length: this.credentials.anthropic_api_key.length,
+        format: this.credentials.anthropic_api_key.startsWith('sk-ant-') ? 'correct' : 'incorrect'
+      },
+      supabase_url: {
+        valid: !!this.credentials.supabase_url && this.credentials.supabase_url.includes('supabase.co'),
+        length: this.credentials.supabase_url.length,
+        format: this.credentials.supabase_url.includes('supabase.co') ? 'correct' : 'incorrect'
+      }
+    };
+  }
+
   // Reset to environment defaults
   async resetToDefaults(): Promise<void> {
     this.credentials = this.loadEnvironmentDefaults();

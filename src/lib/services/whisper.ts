@@ -12,11 +12,12 @@ export async function transcribeAudio(audioBlob: Blob): Promise<TranscriptionRes
 	
 	// Ensure CredentialManager is ready
 	if (!credentialManager.isReady()) {
+		console.log('Whisper: CredentialManager not ready, initializing...');
 		await credentialManager.initialize();
 	}
 	
 	const apiKey = credentialManager.getGroqKey();
-	console.log('Whisper: API key available:', !!apiKey, 'length:', apiKey ? apiKey.length : 0);
+	console.log('Whisper: API key available:', !!apiKey, 'length:', apiKey ? apiKey.length : 0, 'starts with gsk_:', apiKey ? apiKey.startsWith('gsk_') : false);
 	
 	if (!apiKey) {
 		console.error('Whisper: No API key found');

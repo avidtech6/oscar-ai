@@ -10,13 +10,21 @@ export type ChatMessage = {
 export async function chat(messages: ChatMessage[], onChunk?: (chunk: string) => void): Promise<string> {
 	// Ensure CredentialManager is ready
 	if (!credentialManager.isReady()) {
+		console.log('Groq chat: CredentialManager not ready, initializing...');
 		await credentialManager.initialize();
 	}
 	
 	const apiKey = credentialManager.getGroqKey();
-	if (!apiKey) throw new Error('Groq API key not configured. Please set it in Settings.');
+	console.log('Groq chat: API key available:', !!apiKey, 'length:', apiKey ? apiKey.length : 0, 'starts with gsk_:', apiKey ? apiKey.startsWith('gsk_') : false);
+	
+	if (!apiKey) {
+		console.error('Groq chat: No API key found');
+		throw new Error('Groq API key not configured. Please set it in Settings.');
+	}
 
 	const model = get(groqModels).chat;
+	console.log('Groq chat: Using model:', model);
+	
 	const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
 		method: 'POST',
 		headers: {
@@ -32,8 +40,11 @@ export async function chat(messages: ChatMessage[], onChunk?: (chunk: string) =>
 		})
 	});
 
+	console.log('Groq chat: Response status:', response.status, response.statusText);
+	
 	if (!response.ok) {
 		const error = await response.text();
+		console.error('Groq chat: API error:', error);
 		throw new Error(`Groq API error: ${error}`);
 	}
 

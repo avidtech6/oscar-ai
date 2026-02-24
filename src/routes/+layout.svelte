@@ -62,7 +62,13 @@
 		}
 		
 		// Initialize settings (loads API key, theme, etc.)
-		initSettings();
+		try {
+			console.log('Layout: Initializing settings...');
+			await initSettings();
+			console.log('Layout: Settings initialized successfully');
+		} catch (error) {
+			console.error('Layout: Failed to initialize settings:', error);
+		}
 		
 		try {
 			projects = await db.projects.toArray();
