@@ -6,29 +6,44 @@
 	import { onMount } from 'svelte';
 	import { db } from '$lib/db';
 	import { initSettings } from '$lib/stores/settings';
-	import CopilotDock from '$lib/copilot/CopilotDock.svelte';
-	import { copilotState } from '$lib/copilot/copilotStore';
+	import CopilotBar from '$lib/copilot/CopilotBar.svelte';
+	import { updateRoute } from '$lib/copilot/copilotContext';
 	import type { Project } from '$lib/db';
 	import { onDestroy } from 'svelte';
 
 	let projects: Project[] = [];
 	let loading = true;
 
+	// Update copilot context when route changes
+	$: updateRoute($page.url.pathname);
 
-	// Simplified navigation items - no auth required
-	const navItems = [
-		{ id: 'dashboard', label: 'Dashboard', icon: 'home', href: '/dashboard' },
-		{ id: 'workspace', label: 'Projects', icon: 'folder', href: '/workspace' },
-		{ id: 'tasks', label: 'Tasks', icon: 'tasks', href: '/tasks' },
-		{ id: 'notes', label: 'Notes', icon: 'notes', href: '/notes' },
-		{ id: 'email', label: 'Email', icon: 'email', href: '/email' },
-		{ id: 'calendar', label: 'Calendar', icon: 'calendar', href: '/calendar' },
-		{ id: 'oscar', label: 'Oscar AI', icon: 'chat', href: '/oscar' },
-		{ id: 'reports', label: 'Reports', icon: 'document', href: '/reports' },
-		{ id: 'learn', label: 'Learn My Style', icon: 'learn', href: '/learn' },
-		{ id: 'blog', label: 'Blog Writer', icon: 'blog', href: '/blog' },
-		{ id: 'help', label: 'Help', icon: 'help', href: '/help' },
-		{ id: 'settings', label: 'Settings', icon: 'cog', href: '/settings' }
+
+	// Navigation structure with sections
+	const navSections = [
+		{
+			title: 'Workspace',
+			items: [
+				{ id: 'oscar', label: 'Oscar AI (Chat Assistant)', icon: 'chat', href: '/oscar' },
+				{ id: 'home', label: 'Home', icon: 'home', href: '/' },
+				{ id: 'projects', label: 'Projects', icon: 'folder', href: '/workspace' },
+				{ id: 'tasks', label: 'Tasks', icon: 'tasks', href: '/tasks' },
+				{ id: 'notes', label: 'Notes', icon: 'notes', href: '/notes' },
+				{ id: 'reports', label: 'Reports', icon: 'document', href: '/reports' }
+			]
+		},
+		{
+			title: 'Communication',
+			items: [
+				{ id: 'blog', label: 'Blog', icon: 'blog', href: '/blog' },
+				{ id: 'email', label: 'Email', icon: 'email', href: '/email' }
+			]
+		},
+		{
+			title: 'Support',
+			items: [
+				{ id: 'help', label: 'Help', icon: 'help', href: '/help' }
+			]
+		}
 	];
 
 	// Load projects from IndexedDB on mount
@@ -128,22 +143,32 @@
 
 		<!-- Navigation -->
 		<nav class="flex-1 p-2 lg:p-4 space-y-1 lg:space-y-2 overflow-y-auto">
-			{#each navItems as item}
-				<a
-					href={item.href}
-					on:click={closeSidebarOnMobile}
-					class="flex items-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors 
-						   {isActive(item.href) ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}
-						   {$sidebarOpen ? 'lg:justify-start' : 'lg:justify-center'}"
-					title={$sidebarOpen ? '' : item.label}
-				>
-					<span class="flex-shrink-0 w-5 h-5">
-						{@html icons[item.icon]}
-					</span>
-					{#if $sidebarOpen}
-						<span class="transition-opacity duration-200" transition:fly={{ x: -10, duration: 200 }}>{item.label}</span>
-					{/if}
-				</a>
+			{#each navSections as section, sectionIndex}
+				{#if $sidebarOpen && section.title}
+					<div class="pt-4 {sectionIndex > 0 ? 'mt-4 border-t border-forest-700' : ''}">
+						<div class="px-3 mb-2">
+							<span class="text-xs font-semibold text-forest-300 uppercase tracking-wider">{section.title}</span>
+						</div>
+					</div>
+				{/if}
+				
+				{#each section.items as item}
+					<a
+						href={item.href}
+						on:click={closeSidebarOnMobile}
+						class="flex items-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
+							   {isActive(item.href) ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}
+							   {$sidebarOpen ? 'lg:justify-start' : 'lg:justify-center'}"
+						title={$sidebarOpen ? '' : item.label}
+					>
+						<span class="flex-shrink-0 w-5 h-5">
+							{@html icons[item.icon]}
+						</span>
+						{#if $sidebarOpen}
+							<span class="transition-opacity duration-200" transition:fly={{ x: -10, duration: 200 }}>{item.label}</span>
+						{/if}
+					</a>
+				{/each}
 			{/each}
 
 			<!-- Projects Section -->
@@ -170,7 +195,7 @@
 							<a
 								href="/project/{project.id}"
 								on:click={closeSidebarOnMobile}
-								class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors 
+								class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
 									   {isActive('/project/' + project.id) ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}"
 								title={project.name}
 							>
@@ -187,7 +212,7 @@
 				<a
 					href="/workspace"
 					on:click={closeSidebarOnMobile}
-					class="flex items-center justify-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors 
+					class="flex items-center justify-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
 						   {isActive('/workspace') ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}"
 					title="Projects"
 				>
@@ -243,6 +268,6 @@
 		</div>
 		
 		<!-- Global Copilot System - Now inside main content -->
-		<CopilotDock />
+		<CopilotBar />
 	</main>
 </div>
