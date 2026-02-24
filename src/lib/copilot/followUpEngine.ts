@@ -26,7 +26,8 @@ export function getFollowUps(
 			{ label: 'Expand this', action: 'Expand on this summary with more details' },
 			{ label: 'Turn into report section', action: 'Turn this into a formal report section' },
 			{ label: 'Extract action items', action: 'Extract action items from this summary' },
-			{ label: 'Compile with other notes', action: 'Compile this with other notes into a draft' }
+			{ label: 'Compile with other notes', action: 'Compile this with other notes into a draft' },
+			{ label: 'Generate full report', action: 'Generate a full arboricultural report from this' }
 		);
 	}
 
@@ -53,6 +54,28 @@ export function getFollowUps(
 			{ label: 'Break into steps', action: 'Break these tasks into smaller steps' },
 			{ label: 'Assign priorities', action: 'Assign priorities to these tasks' },
 			{ label: 'Schedule them', action: 'Schedule these tasks on the calendar' }
+		);
+	}
+
+	// 5a. Check if assistant generated or mentioned reports
+	if (containsAny(assistantMessage, ['report', 'bs5837', 'impact', 'method', 'arboricultural', 'survey', 'assessment'])) {
+		suggestions.push(
+			{ label: 'Generate full report', action: 'Generate a full arboricultural report' },
+			{ label: 'Create summary report', action: 'Create a summary report' },
+			{ label: 'Add observations section', action: 'Add detailed observations section' },
+			{ label: 'Include recommendations', action: 'Include recommendations section' },
+			{ label: 'Add hazards assessment', action: 'Add hazards and constraints section' }
+		);
+	}
+
+	// 5b. Check if assistant mentioned PDF or document extraction
+	if (containsAny(assistantMessage, ['pdf', 'document', 'extract', 'upload', 'file', 'import', 'legacy', 'scan'])) {
+		suggestions.push(
+			{ label: 'Analyse extracted content', action: 'Analyse the extracted PDF content' },
+			{ label: 'Create note from PDF', action: 'Create a project note from the PDF content' },
+			{ label: 'Extract tables to CSV', action: 'Extract tables from the PDF as CSV' },
+			{ label: 'Compare with other documents', action: 'Compare this PDF with other project documents' },
+			{ label: 'Generate summary', action: 'Generate a summary of the PDF content' }
 		);
 	}
 
@@ -210,6 +233,14 @@ function getRecentActionSuggestions(recentAction: string): FollowUpAction[] {
 				{ label: 'Add structure', action: 'Add structure to this note' },
 				{ label: 'Compile with others', action: 'Compile this note with other project notes' }
 			];
+		case 'pdfExtracted':
+			return [
+				{ label: 'Analyse PDF content', action: 'Analyse the extracted PDF content' },
+				{ label: 'Create note from PDF', action: 'Create a project note from the PDF content' },
+				{ label: 'Extract tables to CSV', action: 'Extract tables from the PDF as CSV' },
+				{ label: 'Generate summary', action: 'Generate a summary of the PDF content' },
+				{ label: 'Compare with project', action: 'Compare this PDF with project documentation' }
+			];
 		default:
 			return [];
 	}
@@ -248,7 +279,18 @@ function shortenLabel(label: string): string {
 		'Compile with project notes': 'Compile notes',
 		'Compile all notes for this project': 'Compile project notes',
 		'Compile selected notes into a draft': 'Compile notes',
-		'Compile this note with other project notes': 'Compile notes'
+		'Compile this note with other project notes': 'Compile notes',
+		// PDF-related shortenings
+		'Analyse extracted content': 'Analyse PDF',
+		'Create note from PDF': 'PDF to note',
+		'Extract tables to CSV': 'Tables to CSV',
+		'Compare with other documents': 'Compare docs',
+		'Generate summary': 'PDF summary',
+		'Analyse PDF content': 'Analyse PDF',
+		'Create project note from PDF': 'PDF to note',
+		'Extract tables from PDF as CSV': 'Tables to CSV',
+		'Generate summary of PDF content': 'PDF summary',
+		'Compare with project documentation': 'Compare docs'
 	};
 	
 	return shortenMap[label] || label.substring(0, 17) + '…';

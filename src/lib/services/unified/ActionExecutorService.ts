@@ -295,6 +295,10 @@ export class ActionExecutorService {
         return await this.executeCreateDictation(data, context);
       case 'query':
         return await this.executeQuery(data, context);
+      case 'report':
+        return await this.executeCreateReport(data, context);
+      case 'compile':
+        return await this.executeCompileNotes(data, context);
       default:
         // For unsupported intents, return error
         return await this.executeUnifiedOnly(intentResult, data, context);
@@ -576,6 +580,137 @@ export class ActionExecutorService {
       return {
         success: false,
         message: 'Failed to execute query',
+        data,
+      };
+    }
+  }
+
+  private async executeCreateReport(data: ActionData, context: ExecutionContext): Promise<ActionResult> {
+    try {
+      // Check if we have a project context
+      if (!context.projectId) {
+        return {
+          success: false,
+          message: 'Please select a project first to generate a report',
+          requiresConfirmation: false,
+          data,
+        };
+      }
+
+      // Get project data
+      const project = await db.projects.get(context.projectId);
+      if (!project) {
+        return {
+          success: false,
+          message: 'Project not found',
+          requiresConfirmation: false,
+          data,
+        };
+      }
+
+      // Get project notes, trees, tasks, and voice notes
+      const [notes, trees, tasks, voiceNotes] = await Promise.all([
+        db.notes.where('projectId').equals(context.projectId).toArray(),
+        db.trees.where('projectId').equals(context.projectId).toArray(),
+        db.tasks.where('projectId').equals(context.projectId).toArray(),
+        db.voiceNotes.where('projectId').equals(context.projectId).toArray(),
+      ]);
+
+      // Import report generator
+      const { generateAndSaveReport } = await import('$lib/copilot/reportGenerator');
+      
+      // Generate report
+      const reportInput = {
+        project,
+        notes,
+        voiceNotes,
+        trees,
+        tasks,
+        reportType: data.reportType || 'full',
+        clientName: data.clientName || project.client,
+      };
+
+      const { report, reportId } = await generateAndSaveReport(reportInput, data.type || 'bs5837');
+
+      return {
+        success: true,
+        message: `Report "${report.title}" generated successfully`,
+        data: { report, reportId },
+        redirectUrl: `/reports?report=${reportId}`,
+      };
+    } catch (error) {
+      console.error('Error creating report:', error);
+      return {
+        success: false,
+        message: 'Failed to generate report',
+        data,
+      };
+    }
+  }
+
+  private async executeCompileNotes(data: ActionData, context: ExecutionContext): Promise<ActionResult> {
+    try {
+      // Check if we have a project context
+      if (!context.projectId) {
+        return {
+          success: false,
+          message: 'Please select a project first to compile notes',
+          requiresConfirmation: false,
+          data,
+        };
+      }
+
+      // Get project data
+      const project = await db.projects.get(context.projectId);
+      if (!project) {
+        return {
+          success: false,
+          message: 'Project not found',
+          requiresConfirmation: false,
+          data,
+        };
+      }
+
+      // Get project notes and voice notes
+      const [notes, voiceNotes] = await Promise.all([
+        db.notes.where('projectId').equals(context.projectId).toArray(),
+        db.voiceNotes.where('projectId').equals(context.projectId).toArray(),
+      ]);
+
+      // Import note compilation engine
+      const { compileNotes } = await import('$lib/copilot/noteCompilationEngine');
+      
+      // Compile notes
+      const compiledContent = await compileNotes({
+        project,
+        notes,
+        voiceNotes,
+        outputFormat: data.outputFormat || 'narrative',
+        contextTags: data.contextTags || [],
+      });
+
+      // Create a note from the compiled content
+      const noteData = {
+        title: `Compiled Notes: ${project.name}`,
+        content: compiledContent,
+        projectId: context.projectId,
+        tags: ['compiled', 'summary', 'draft'],
+        type: 'general',
+      };
+
+      const noteId = await db.notes.add(noteData as any);
+
+      return {
+        success: true,
+        message: `Notes compiled successfully and saved as a draft`,
+        data: { noteId, compiledContent },
+        redirectUrl: `/notes?note=${noteId}`,
+      };
+    } catch (error) {
+      console.error('Error compiling notes:', error);
+      return {
+        success: false,
+        message: 'Failed to compile notes',
         data,
       };
     }

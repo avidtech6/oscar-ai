@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { db } from '$lib/db';
 	import { supabase } from '$lib/supabase/client';
 	import { getNotes, createNote, updateNote, deleteNote as deleteNoteService } from '$lib/services/notesService';
 	import { getTrees, createTree, updateTree, deleteTree as deleteTreeService } from '$lib/services/treesService';
+	import { generateAndSaveReport } from '$lib/copilot/reportGenerator';
 	import type { Project, Tree, Note, Photo } from '$lib/db';
 	import VoiceRecorder from '$lib/components/VoiceRecorder.svelte';
 	import AIReviewChat from '$lib/components/ai/AIReviewChat.svelte';
@@ -17,7 +18,7 @@
 	import UnifiedAIPrompt from '$lib/components/ai/UnifiedAIPrompt.svelte';
 	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 	import PhotoUploader from '$lib/components/PhotoUploader.svelte';
-	
+
 	// Project Overview Widgets
 	import RecentNotes from '$lib/components/projectOverview/RecentNotes.svelte';
 	import RecentTrees from '$lib/components/projectOverview/RecentTrees.svelte';
@@ -68,7 +69,70 @@
 	onMount(async () => {
 		projectId = $page.params.id;
 		await loadProject();
+
+		// Add event listener for report generation
+		window.addEventListener('generateReport', handleGenerateReport as EventListener);
 	});
+
+	onDestroy(() => {
+		// Clean up event listener
+		window.removeEventListener('generateReport', handleGenerateReport as EventListener);
+	});
+
+	// Handle report generation event
+	async function handleGenerateReport(event: Event) {
+		const customEvent = event as CustomEvent;
+		const { projectId: eventProjectId, reportType = 'full' } = customEvent.detail || {};
+		
+		// Only proceed if the project ID matches
+		if (eventProjectId && eventProjectId !== projectId) return;
+
+		try {
+			// Show loading state - mobile friendly message
+			const originalError = error;
+			error = '📱 Generating professional report... This may take a moment.';
+			
+			// For mobile, we might want to show a more persistent notification
+			// but for now we'll use the existing error display
+
+			// Get voice notes from database (actual VoiceNote objects)
+			const { getVoiceNotes } = await import('$lib/db');
+			const voiceNotes = await getVoiceNotes(projectId);
+			
+			// Get tasks from database
+			const { getTasksByProject } = await import('$lib/db');
+			const tasks = await getTasksByProject(projectId);
+			
+			// Generate the report
+			const result = await generateAndSaveReport({
+				project: project!,
+				notes,
+				voiceNotes,
+				trees,
+				tasks,
+				reportType
+			}, 'bs5837'); // Default to bs5837 report type
+
+			// Mobile-friendly success message with emoji
+			error = `✅ Report generated! ID: ${result.reportId.substring(0, 8)}...`;
+			
+			// On mobile, we might want to show a toast or navigate to the report
+			// For now, clear after 4 seconds (longer for mobile users)
+			setTimeout(() => {
+				error = originalError;
+				// On mobile, you might want to automatically navigate to the report
+				// but for now we'll just show the success message
+			}, 4000);
+		} catch (err: any) {
+			// Mobile-friendly error message
+			error = `❌ Report generation failed: ${err.message || 'Please try again'}`;
+			
+			// Clear error after 5 seconds on mobile
+			setTimeout(() => {
+				error = '';
+			}, 5000);
+		}
+	}
 
 	async function loadProject() {
 		loading = true;

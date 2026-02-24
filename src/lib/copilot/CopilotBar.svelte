@@ -5,12 +5,15 @@
 	import { getHint, shortenHintForMobile } from './hintEngine';
 	import { copilotContext, updateInputEmpty } from './copilotContext';
 	import { clearFollowUps } from './followUpStore';
+	import { pdfExtractionService } from './pdfExtractionService';
 	
 	const emit = createEventDispatcher();
 	
 	let inputValue = '';
 	let isRecording = false;
 	let speechRecognition: any = null;
+	let isUploadingPdf = false;
+	let uploadProgress = 0;
 	
 	// Reactive hint based on copilot context
 	$: hint = getHint($copilotContext);
@@ -90,6 +93,84 @@
 		emit('openVoiceNote');
 	}
 	
+	// PDF upload functionality
+	async function handlePdfUpload(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const files = input.files;
+		
+		if (!files || files.length === 0) {
+			return;
+		}
+		
+		const file = files[0];
+		isUploadingPdf = true;
+		uploadProgress = 0;
+		
+		try {
+			// Simulate progress
+			const progressInterval = setInterval(() => {
+				uploadProgress = Math.min(uploadProgress + 10, 90);
+			}, 100);
+			
+			// Extract PDF
+			const result = await pdfExtractionService.extractPdf({
+				file,
+				project: $copilotContext.selectedProject,
+				options: {
+					extractText: true,
+					detectTables: true,
+					maxPages: 10
+				}
+			});
+			
+			clearInterval(progressInterval);
+			uploadProgress = 100;
+			
+			if (result.success) {
+				// Emit PDF extraction event
+				emit('pdfExtracted', {
+					file,
+					result: result.result,
+					metadata: result.metadata
+				});
+				
+				// Auto-fill input with extraction summary
+				const summary = `Extracted PDF: ${result.metadata?.filename || file.name}. ${result.result?.stats?.pageCount || 0} pages, ${result.result?.stats?.textLength || 0} characters.`;
+				inputValue = summary;
+				
+				// Show success message
+				console.log('PDF extraction successful:', result.metadata);
+			} else {
+				// Show error
+				inputValue = `Failed to extract PDF: ${result.error}`;
+				console.error('PDF extraction failed:', result.error);
+			}
+			
+		} catch (error) {
+			console.error('PDF upload error:', error);
+			inputValue = `Error uploading PDF: ${error instanceof Error ? error.message : 'Unknown error'}`;
+		} finally {
+			setTimeout(() => {
+				isUploadingPdf = false;
+				uploadProgress = 0;
+			}, 1000);
+			
+			// Reset file input
+			input.value = '';
+		}
+	}
+	
+	function triggerPdfUpload() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.pdf,application/pdf';
+		input.style.display = 'none';
+		input.onchange = handlePdfUpload;
+		document.body.appendChild(input);
+		input.click();
+		document.body.removeChild(input);
+	}
+	
 	// Listen for follow‑up action events
 	function handleFollowUpAction(event: CustomEvent) {
 		const actionText = event.detail.action;
@@ -120,16 +201,40 @@
 		}
 	}
 	
+	// Listen for PDF extraction events
+	function handlePdfExtractionEvent(event: CustomEvent) {
+		const { file, result, metadata } = event.detail;
+		console.log('PDF extraction event received:', metadata);
+		
+		// Update input with extraction summary
+		if (result && metadata) {
+			inputValue = `Extracted PDF: ${metadata.filename}. ${result.stats?.pageCount || 0} pages, ${result.stats?.textLength || 0} characters.`;
+		}
+	}
+	
+	// Listen for triggerPdfUpload events from QuickActions
+	function handleTriggerPdfUpload(event: CustomEvent) {
+		const { projectId, source } = event.detail || {};
+		console.log('Trigger PDF upload received from:', source, 'for project:', projectId);
+		
+		// Trigger the PDF upload
+		triggerPdfUpload();
+	}
+	
 	// Set up event listener on mount
 	import { onMount } from 'svelte';
 	
 	onMount(() => {
 		window.addEventListener('followUpAction', handleFollowUpAction as EventListener);
 		window.addEventListener('insightAction', handleInsightAction as EventListener);
+		window.addEventListener('pdfExtracted', handlePdfExtractionEvent as EventListener);
+		window.addEventListener('triggerPdfUpload', handleTriggerPdfUpload as EventListener);
 		
 		return () => {
 			window.removeEventListener('followUpAction', handleFollowUpAction as EventListener);
 			window.removeEventListener('insightAction', handleInsightAction as EventListener);
+			window.removeEventListener('pdfExtracted', handlePdfExtractionEvent as EventListener);
+			window.removeEventListener('triggerPdfUpload', handleTriggerPdfUpload as EventListener);
 		};
 	});
 </script>
@@ -163,11 +268,44 @@
 							</svg>
 						{/if}
 					</button>
+					
+					<!-- PDF upload progress indicator -->
+					{#if isUploadingPdf}
+						<div class="absolute -bottom-1 left-0 right-0">
+							<div class="h-1 bg-blue-200 rounded-full overflow-hidden">
+								<div
+									class="h-full bg-blue-600 transition-all duration-300"
+									style={`width: ${uploadProgress}%`}
+								></div>
+							</div>
+							<div class="text-xs text-gray-500 text-center mt-1">
+								Extracting PDF... {uploadProgress}%
+							</div>
+						</div>
+					{/if}
 				</div>
 			</div>
 			
 			<!-- Action buttons -->
 			<div class="flex items-center gap-2">
+				<!-- PDF upload button -->
+				<button
+					on:click={triggerPdfUpload}
+					class="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+					title="Upload and extract PDF"
+					disabled={isUploadingPdf}
+				>
+					{#if isUploadingPdf}
+						<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+						</svg>
+					{:else}
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+						</svg>
+					{/if}
+				</button>
+				
 				<!-- Voice note button (waveform icon) -->
 				<button
 					on:click={openVoiceNote}
@@ -196,10 +334,53 @@
 </div>
 
 <style>
-	/* Hide on mobile - mobile has its own bar */
+	/* Mobile-optimized styling */
 	@media (max-width: 768px) {
 		div {
-			display: none;
+			height: auto;
+			padding: 8px 12px;
+		}
+		
+		.h-full {
+			height: auto;
+		}
+		
+		.px-6 {
+			padding-left: 12px;
+			padding-right: 12px;
+		}
+		
+		.gap-4 {
+			gap: 8px;
+		}
+		
+		.max-w-3xl {
+			max-width: 100%;
+		}
+		
+		.p-3 {
+			padding: 8px;
+		}
+		
+		/* Make buttons more touch-friendly */
+		button {
+			min-height: 44px;
+			min-width: 44px;
+		}
+		
+		/* Adjust input for mobile */
+		input[type="text"] {
+			font-size: 16px; /* Prevents iOS zoom on focus */
+			padding: 12px 40px 12px 12px;
+		}
+		
+		/* PDF upload progress indicator mobile adjustments */
+		.absolute.-bottom-1 {
+			bottom: -4px;
+		}
+		
+		.text-xs {
+			font-size: 10px;
 		}
 	}
 </style>

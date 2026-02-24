@@ -70,6 +70,12 @@ function getActionAwareHint(recentAction: string): string | null {
 			return "Want Oscar to break this down…";
 		case 'noteCreated':
 			return "Start writing, compile, or ask Oscar to help…";
+		case 'reportGenerated':
+			return "Refine or expand this report…";
+		case 'notesCompiled':
+			return "Generate a professional report from these notes…";
+		case 'pdfExtracted':
+			return "Analyse extracted content or create a note…";
 		default:
 			return null;
 	}
@@ -115,7 +121,14 @@ function getProjectInsightsHint(project: Project, isMobile: boolean): string {
 		"Check project status or generate a report…",
 		"Analyse project data or plan next steps…",
 		"Review recent activity or add observations…",
-		"Compile project notes into a draft…"
+		"Compile project notes into a draft…",
+		"Generate a professional arboricultural report…",
+		"Create a client‑ready report from project data…",
+		"Summarise findings in a formal report…",
+		"Import legacy documents or PDFs…",
+		"Extract data from uploaded documents…",
+		"Analyse PDF content for project insights…",
+		"Create notes from imported documents…"
 	];
 	
 	// Pick a hint based on project name hash for variety
@@ -228,7 +241,18 @@ export function shortenHintForMobile(hint: string): string {
 		"Ask Oscar to help organise or compile your notes…": "Organise notes…",
 		"Compile project notes into a draft…": "Compile notes…",
 		"Get help or learn how to use Oscar…": "Get help…",
-		"Configure settings or preferences…": "Configure…"
+		"Configure settings or preferences…": "Configure…",
+		"Generate a professional arboricultural report…": "Generate report…",
+		"Create a client‑ready report from project data…": "Create report…",
+		"Summarise findings in a formal report…": "Formal report…",
+		"Refine or expand this report…": "Refine report…",
+		"Generate a professional report from these notes…": "Generate report…",
+		// PDF-related hints
+		"Analyse extracted content or create a note…": "Analyse PDF…",
+		"Import legacy documents or PDFs…": "Import PDFs…",
+		"Extract data from uploaded documents…": "Extract data…",
+		"Analyse PDF content for project insights…": "Analyse PDF…",
+		"Create notes from imported documents…": "Create from PDF…"
 	};
 
 	// Check if we have a direct mapping

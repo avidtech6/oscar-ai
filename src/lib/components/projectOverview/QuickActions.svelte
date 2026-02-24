@@ -4,67 +4,100 @@
 	export let projectId: string = '';
 
 	const quickActions = [
-		{
-			id: 'add_note',
-			label: 'Add Note',
-			icon: '📝',
-			color: 'bg-blue-50 hover:bg-blue-100 text-blue-700',
-			action: () => goto(`/project/${projectId}?tab=notes&action=create`)
-		},
-		{
-			id: 'add_tree',
-			label: 'Add Tree',
-			icon: '🌳',
-			color: 'bg-green-50 hover:bg-green-100 text-green-700',
-			action: () => goto(`/project/${projectId}?tab=trees&action=create`)
-		},
-		{
-			id: 'upload_photo',
-			label: 'Upload Photo',
-			icon: '📷',
-			color: 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700',
-			action: () => goto(`/project/${projectId}?tab=photos&action=upload`)
-		},
-		{
-			id: 'create_report',
-			label: 'Create Report',
-			icon: '📄',
-			color: 'bg-purple-50 hover:bg-purple-100 text-purple-700',
-			action: () => goto(`/reports?project=${projectId}&action=create`)
-		},
-		{
-			id: 'add_task',
-			label: 'Add Task',
-			icon: '✅',
-			color: 'bg-red-50 hover:bg-red-100 text-red-700',
-			action: () => goto(`/tasks?project=${projectId}&action=create`)
-		},
-		{
-			id: 'voice_note',
-			label: 'Voice Note',
-			icon: '🎤',
-			color: 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700',
-			action: () => goto(`/project/${projectId}?tab=voice`)
-		},
-		{
-			id: 'compile_notes',
-			label: 'Compile',
-			icon: '📚',
-			color: 'bg-teal-50 hover:bg-teal-100 text-teal-700',
-			action: () => {
-				// This would trigger the note compilation engine
-				// For now, we'll navigate to a compilation page or show a modal
-				// We'll use the unified AI prompt for now
-				const event = new CustomEvent('openUnifiedAIPrompt', {
-					detail: {
-						projectId,
-						initialPrompt: 'Compile all project notes into a draft report'
-					}
-				});
-				window.dispatchEvent(event);
-			}
+	{
+		id: 'add_note',
+		label: 'Add Note',
+		icon: '📝',
+		color: 'bg-blue-50 hover:bg-blue-100 text-blue-700',
+		action: () => goto(`/project/${projectId}?tab=notes&action=create`)
+	},
+	{
+		id: 'add_tree',
+		label: 'Add Tree',
+		icon: '🌳',
+		color: 'bg-green-50 hover:bg-green-100 text-green-700',
+		action: () => goto(`/project/${projectId}?tab=trees&action=create`)
+	},
+	{
+		id: 'upload_photo',
+		label: 'Upload Photo',
+		icon: '📷',
+		color: 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700',
+		action: () => goto(`/project/${projectId}?tab=photos&action=upload`)
+	},
+	{
+		id: 'create_report',
+		label: 'Create Report',
+		icon: '📄',
+		color: 'bg-purple-50 hover:bg-purple-100 text-purple-700',
+		action: () => goto(`/reports?project=${projectId}&action=create`)
+	},
+	{
+		id: 'generate_report',
+		label: 'Generate Report',
+		icon: '✨',
+		color: 'bg-pink-50 hover:bg-pink-100 text-pink-700',
+		action: () => {
+			// Trigger the new report generation engine
+			const event = new CustomEvent('generateReport', {
+				detail: {
+					projectId,
+					reportType: 'full',
+					source: 'quick_actions'
+				}
+			});
+			window.dispatchEvent(event);
 		}
-	];
+	},
+	{
+		id: 'add_task',
+		label: 'Add Task',
+		icon: '✅',
+		color: 'bg-red-50 hover:bg-red-100 text-red-700',
+		action: () => goto(`/tasks?project=${projectId}&action=create`)
+	},
+	{
+		id: 'voice_note',
+		label: 'Voice Note',
+		icon: '🎤',
+		color: 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700',
+		action: () => goto(`/project/${projectId}?tab=voice`)
+	},
+	{
+		id: 'compile_notes',
+		label: 'Compile',
+		icon: '📚',
+		color: 'bg-teal-50 hover:bg-teal-100 text-teal-700',
+		action: () => {
+			// This would trigger the note compilation engine
+			// For now, we'll navigate to a compilation page or show a modal
+			// We'll use the unified AI prompt for now
+			const event = new CustomEvent('openUnifiedAIPrompt', {
+				detail: {
+					projectId,
+					initialPrompt: 'Compile all project notes into a draft report'
+				}
+			});
+			window.dispatchEvent(event);
+		}
+	},
+	{
+		id: 'upload_pdf',
+		label: 'Upload PDF',
+		icon: '📄',
+		color: 'bg-orange-50 hover:bg-orange-100 text-orange-700',
+		action: () => {
+			// Trigger PDF upload via CopilotBar
+			const event = new CustomEvent('triggerPdfUpload', {
+				detail: {
+					projectId,
+					source: 'quick_actions'
+				}
+			});
+			window.dispatchEvent(event);
+		}
+	}
+];
 
 	function handleAction(action: () => void) {
 		action();
