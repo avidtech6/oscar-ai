@@ -4,6 +4,7 @@
 	import { getSpeechRecognition } from '$lib/services/voiceDictation';
 	import { getHint, shortenHintForMobile } from './hintEngine';
 	import { copilotContext, updateInputEmpty } from './copilotContext';
+	import { clearFollowUps } from './followUpStore';
 	
 	const emit = createEventDispatcher();
 	
@@ -26,6 +27,10 @@
 	function handleSubmit() {
 		if (inputValue.trim()) {
 			emit('promptSubmit', { text: inputValue.trim() });
+			
+			// Clear follow‑up suggestions when user sends a message
+			clearFollowUps();
+			
 			inputValue = '';
 		}
 	}
@@ -84,6 +89,49 @@
 	function openVoiceNote() {
 		emit('openVoiceNote');
 	}
+	
+	// Listen for follow‑up action events
+	function handleFollowUpAction(event: CustomEvent) {
+		const actionText = event.detail.action;
+		if (actionText) {
+			// Insert the follow‑up action text into the input
+			inputValue = actionText;
+			
+			// Focus the input field
+			const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+			if (input) {
+				input.focus();
+			}
+		}
+	}
+	
+	// Listen for insight action events
+	function handleInsightAction(event: CustomEvent) {
+		const actionText = event.detail.action;
+		if (actionText) {
+			// Insert the insight action text into the input
+			inputValue = actionText;
+			
+			// Focus the input field
+			const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+			if (input) {
+				input.focus();
+			}
+		}
+	}
+	
+	// Set up event listener on mount
+	import { onMount } from 'svelte';
+	
+	onMount(() => {
+		window.addEventListener('followUpAction', handleFollowUpAction as EventListener);
+		window.addEventListener('insightAction', handleInsightAction as EventListener);
+		
+		return () => {
+			window.removeEventListener('followUpAction', handleFollowUpAction as EventListener);
+			window.removeEventListener('insightAction', handleInsightAction as EventListener);
+		};
+	});
 </script>
 
 <div class="w-full h-16 bg-white border-t border-gray-200">

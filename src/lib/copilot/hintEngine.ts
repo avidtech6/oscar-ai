@@ -102,13 +102,26 @@ function getNoteAwareHint(note: Note, isMobile: boolean): string {
 
 // Project-aware hints
 function getProjectAwareHint(project: Project, isMobile: boolean): string {
-	// In a real implementation, we would check if the project has tasks, photos, notes, etc.
-	// For now, use generic project hints
-	if (!project.description || project.description.trim().length === 0) {
-		return isMobile ? "Start building…" : "Start building this project with Oscar…";
-	}
+	// Use project insights for better hints
+	return getProjectInsightsHint(project, isMobile);
+}
 
-	return isMobile ? "Plan next steps…" : "Plan your next steps or generate a report…";
+// Simplified project insights hint generator
+function getProjectInsightsHint(project: Project, isMobile: boolean): string {
+	// These would be based on actual project data in a real implementation
+	// For now, use generic but more specific hints
+	const hints = [
+		"Review project insights or ask for a summary…",
+		"Check project status or generate a report…",
+		"Analyse project data or plan next steps…",
+		"Review recent activity or add observations…"
+	];
+	
+	// Pick a hint based on project name hash for variety
+	const hash = project.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+	const hintIndex = hash % hints.length;
+	
+	return isMobile ? hints[hintIndex].replace(/…$/, '…').substring(0, 30) + "…" : hints[hintIndex];
 }
 
 // Report-aware hints
