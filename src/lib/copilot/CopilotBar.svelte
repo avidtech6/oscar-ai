@@ -334,53 +334,96 @@
 </div>
 
 <style>
-	/* Mobile-optimized styling */
-	@media (max-width: 768px) {
-		div {
-			height: auto;
-			padding: 8px 12px;
-		}
-		
-		.h-full {
-			height: auto;
-		}
-		
+/* Mobile-optimized styling */
+@media (max-width: 768px) {
+	div {
+		height: auto;
+		padding: 8px 12px;
+	}
+	
+	.h-full {
+		height: auto;
+	}
+	
+	.px-6 {
+		padding-left: 12px;
+		padding-right: 12px;
+	}
+	
+	.gap-4 {
+		gap: 8px;
+	}
+	
+	.max-w-3xl {
+		max-width: 100%;
+	}
+	
+	.p-3 {
+		padding: 8px;
+	}
+	
+	/* Make buttons more touch-friendly */
+	button {
+		min-height: 44px;
+		min-width: 44px;
+	}
+	
+	/* Adjust input for mobile */
+	input[type="text"] {
+		font-size: 16px; /* Prevents iOS zoom on focus */
+		padding: 12px 40px 12px 12px;
+	}
+	
+	/* PDF upload progress indicator mobile adjustments */
+	.absolute.-bottom-1 {
+		bottom: -4px;
+	}
+	
+	.text-xs {
+		font-size: 10px;
+	}
+	
+	/* Improve mobile layout for action buttons */
+	.flex.items-center.gap-2 {
+		flex-shrink: 0;
+	}
+	
+	/* Ensure proper spacing on very small screens */
+	@media (max-width: 480px) {
 		.px-6 {
-			padding-left: 12px;
-			padding-right: 12px;
+			padding-left: 8px;
+			padding-right: 8px;
 		}
 		
 		.gap-4 {
-			gap: 8px;
+			gap: 6px;
 		}
 		
-		.max-w-3xl {
-			max-width: 100%;
+		/* Hide voice note button on very small screens */
+		button[title="Record voice note"] {
+			display: none;
 		}
 		
-		.p-3 {
-			padding: 8px;
-		}
-		
-		/* Make buttons more touch-friendly */
-		button {
-			min-height: 44px;
-			min-width: 44px;
-		}
-		
-		/* Adjust input for mobile */
+		/* Adjust input padding for mic button */
 		input[type="text"] {
-			font-size: 16px; /* Prevents iOS zoom on focus */
-			padding: 12px 40px 12px 12px;
-		}
-		
-		/* PDF upload progress indicator mobile adjustments */
-		.absolute.-bottom-1 {
-			bottom: -4px;
-		}
-		
-		.text-xs {
-			font-size: 10px;
+			padding-right: 36px;
 		}
 	}
+	
+	/* Improve mic button positioning on mobile */
+	.absolute.right-2 {
+		right: 6px;
+	}
+	
+	/* Ensure CopilotBar doesn't overlap with mobile keyboard */
+	@media (max-height: 600px) {
+		div {
+			padding: 6px 8px;
+		}
+		
+		input[type="text"] {
+			padding: 10px 36px 10px 10px;
+		}
+	}
+}
 </style>

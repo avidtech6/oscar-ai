@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import { browser } from '$app/environment';
 
 // User type
 export interface User {
@@ -193,7 +194,7 @@ export const isGeneratingPdf = writable<boolean>(false);
 export const showComponentDrawer = writable<boolean>(false);
 
 // UI State
-export const sidebarOpen = writable<boolean>(true);
+export const sidebarOpen = writable<boolean>(browser ? window.innerWidth >= 1024 : true);
 export const recording = writable<boolean>(false);
 export const currentView = writable<'dashboard' | 'notebook' | 'report' | 'settings' | 'oscar' | 'document' | 'project'>('dashboard');
 export const uiMode = writable<UIMode>('split-view');
