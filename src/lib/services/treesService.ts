@@ -71,7 +71,7 @@ export async function createTree(tree: Omit<Tree, 'id' | 'createdAt' | 'updatedA
 			dbh: tree.DBH || null,
 			height: tree.height || null,
 			age: tree.age || null,
-			category: tree.category || null,
+			category: (tree.category as 'A' | 'B' | 'C' | 'U' | '' | null) || null,
 			condition: tree.condition || null,
 			notes: tree.notes || null,
 			photos: tree.photos || [],
@@ -107,7 +107,7 @@ export async function updateTree(treeId: string, updates: Partial<Tree>): Promis
 		if (updates.DBH !== undefined) supabaseUpdates.dbh = updates.DBH;
 		if (updates.height !== undefined) supabaseUpdates.height = updates.height;
 		if (updates.age !== undefined) supabaseUpdates.age = updates.age;
-		if (updates.category !== undefined) supabaseUpdates.category = updates.category;
+		if (updates.category !== undefined) supabaseUpdates.category = (updates.category as 'A' | 'B' | 'C' | 'U' | '' | null) || null;
 		if (updates.condition !== undefined) supabaseUpdates.condition = updates.condition;
 		if (updates.notes !== undefined) supabaseUpdates.notes = updates.notes;
 		if (updates.photos !== undefined) supabaseUpdates.photos = updates.photos;
@@ -222,7 +222,7 @@ function mapTreeToSupabaseTree(tree: Tree): Partial<SupabaseTree> {
 		dbh: tree.DBH || null,
 		height: tree.height || null,
 		age: tree.age || null,
-		category: tree.category || null,
+		category: (tree.category as 'A' | 'B' | 'C' | 'U' | '' | null) || null,
 		condition: tree.condition || null,
 		notes: tree.notes || null,
 		photos: tree.photos || [],

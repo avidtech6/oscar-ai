@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
+	import PhotoUploader from './PhotoUploader.svelte';
 	
 	export let value: string = '';
 	export let placeholder: string = 'Start writing...';
 	export let readonly: boolean = false;
 	export let enableDictation: boolean = true;
 	export let enableImageUpload: boolean = true;
+	export let projectId: string = '';
+	export let noteId: string | null = null;
+	export let treeId: string | null = null;
 	
 	const dispatch = createEventDispatcher();
 	
@@ -149,6 +153,16 @@
 	
 	function triggerImageUpload() {
 		showImageUpload = !showImageUpload;
+	}
+	
+	// Handle photo upload from PhotoUploader component
+	function handlePhotoUpload(event: CustomEvent<{ urls: string[] }>) {
+		const { urls } = event.detail;
+		if (urls.length > 0) {
+			// Insert the first uploaded image
+			insertImage(urls[0], 'Uploaded photo');
+			showImageUpload = false;
+		}
 	}
 	
 	// Clear formatting
@@ -339,11 +353,34 @@
 		<!-- Image upload form -->
 		{#if showImageUpload}
 			<div class="p-3 border-b border-gray-300 bg-gray-50">
+				<div class="mb-3">
+					<p class="text-sm font-medium text-gray-700 mb-2">Upload Image</p>
+					<PhotoUploader
+						{projectId}
+						{noteId}
+						{treeId}
+						buttonText="Upload Photo"
+						buttonVariant="primary"
+						showPreview={false}
+						multiple={false}
+						on:upload={handlePhotoUpload}
+					/>
+				</div>
+				
+				<div class="relative my-3">
+					<div class="absolute inset-0 flex items-center">
+						<div class="w-full border-t border-gray-300"></div>
+					</div>
+					<div class="relative flex justify-center text-sm">
+						<span class="px-2 bg-gray-50 text-gray-500">or paste URL</span>
+					</div>
+				</div>
+				
 				<div class="flex items-center gap-2">
 					<input
 						type="text"
 						bind:value={imageUploadUrl}
-						placeholder="Paste image URL or upload via PhotoUploader"
+						placeholder="Paste image URL here..."
 						class="flex-1 input text-sm py-1"
 					/>
 					<button
@@ -361,9 +398,6 @@
 						Cancel
 					</button>
 				</div>
-				<p class="text-xs text-gray-500 mt-1">
-					Tip: Use the PhotoUploader component to upload images first, then paste the URL here.
-				</p>
 			</div>
 		{/if}
 	{/if}

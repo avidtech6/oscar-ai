@@ -105,7 +105,9 @@ export async function generateDummyData(): Promise<void> {
 		age: 'Mature',
 		category: 'A',
 		condition: 'Good',
+		notes: 'Mature oak tree in good condition. Located near north gate.',
 		photos: [],
+		RPA: 15.2,
 		isDummy: true
 	});
 	

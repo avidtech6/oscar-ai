@@ -127,7 +127,9 @@ export const dummyTrees: Omit<Tree, 'id' | 'createdAt' | 'updatedAt'>[] = [
 		age: 'Mature (80-100 years)',
 		category: 'A',
 		condition: 'Good',
+		notes: 'Healthy specimen with good crown structure. Located near playground.',
 		photos: [],
+		RPA: 12.5,
 		isDummy: true
 	},
 	{
@@ -140,7 +142,9 @@ export const dummyTrees: Omit<Tree, 'id' | 'createdAt' | 'updatedAt'>[] = [
 		age: 'Semi-mature (30-40 years)',
 		category: 'B',
 		condition: 'Fair',
+		notes: 'Some dieback in upper crown. Monitor for birch dieback disease.',
 		photos: [],
+		RPA: 4.8,
 		isDummy: true
 	},
 	{
@@ -153,7 +157,9 @@ export const dummyTrees: Omit<Tree, 'id' | 'createdAt' | 'updatedAt'>[] = [
 		age: 'Veteran (150+ years)',
 		category: 'A',
 		condition: 'Poor (decay present)',
+		notes: 'Significant decay in main stem. Consider reduction or removal for safety.',
 		photos: [],
+		RPA: 22.6,
 		isDummy: true
 	}
 ];

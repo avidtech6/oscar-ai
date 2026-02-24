@@ -146,35 +146,10 @@
 			}
 
 			// Load trees from Supabase
-			const supabaseTrees = await getTrees(projectId);
-			trees = supabaseTrees.map(tree => ({
-				id: tree.id,
-				projectId: tree.project_id,
-				number: tree.label || '',
-				species: tree.species || '',
-				scientificName: '',
-				DBH: 0,
-				height: 0,
-				age: '',
-				category: '' as 'A' | 'B' | 'C' | 'U' | '',
-				condition: tree.condition || '',
-				notes: tree.notes || '',
-				RPA: 0,
-				createdAt: tree.created_at,
-				updatedAt: tree.updated_at
-			}));
+			trees = await getTrees(projectId);
 
 			// Load notes from Supabase
-			const supabaseNotes = await getNotes(projectId);
-			notes = supabaseNotes.map(note => ({
-				id: note.id,
-				projectId: note.project_id,
-				title: note.title || '',
-				content: note.content || '',
-				type: 'general' as 'general' | 'voice' | 'field',
-				createdAt: note.created_at,
-				updatedAt: note.updated_at
-			}));
+			notes = await getNotes(projectId);
 
 			// Load photos from IndexedDB (existing - will be migrated to Supabase later)
 			photos = await db.photos.where('projectId').equals(projectId).toArray();
@@ -195,7 +170,7 @@
 		try {
 			// Update project timestamp in IndexedDB
 			await db.projects.update(projectId, {
-				updatedAt: new Date().toISOString()
+				updatedAt: new Date()
 			});
 		} catch (e) {
 			error = 'Failed to save';
@@ -221,11 +196,18 @@
 		try {
 			// Create tree in Supabase
 			const treeId = await createTree({
-				project_id: projectId,
-				label: treeData.number,
+				projectId: projectId,
+				number: treeData.number,
 				species: treeData.species,
+				scientificName: treeData.scientificName,
+				DBH: treeData.DBH,
+				height: treeData.height,
+				age: treeData.age,
+				category: treeData.category,
 				condition: treeData.condition,
-				notes: treeData.notes
+				notes: treeData.notes,
+				photos: [],
+				RPA: treeData.DBH * 12
 			});
 
 			// Also add to IndexedDB for compatibility
@@ -240,9 +222,10 @@
 				category: treeData.category,
 				condition: treeData.condition,
 				notes: treeData.notes,
+				photos: [],
 				RPA: treeData.DBH * 12,
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString()
+				createdAt: new Date(),
+				updatedAt: new Date()
 			});
 
 			// Refresh trees list
@@ -254,12 +237,12 @@
 		}
 	}
 
-	async function deleteTreeItem(treeId: number) {
+	async function deleteTreeItem(treeId: string) {
 		if (!confirm('Are you sure you want to delete this tree?')) return;
 
 		try {
 			// Delete from Supabase
-			await deleteTreeService(treeId.toString());
+			await deleteTreeService(treeId);
 			
 			// Delete from IndexedDB
 			await db.trees.delete(treeId);
@@ -278,9 +261,11 @@
 		try {
 			// Create note in Supabase
 			const noteId = await createNote({
-				project_id: projectId,
+				projectId: projectId,
 				title: newNote.title,
-				content: newNote.content
+				content: newNote.content,
+				type: newNote.type,
+				tags: []
 			});
 
 			// Also add to IndexedDB for compatibility
@@ -289,8 +274,9 @@
 				title: newNote.title,
 				content: newNote.content,
 				type: newNote.type,
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString()
+				tags: [],
+				createdAt: new Date(),
+				updatedAt: new Date()
 			});
 
 			// Refresh notes list
@@ -343,9 +329,11 @@
 			
 			// Create in Supabase
 			await createNote({
-				project_id: projectId,
+				projectId: projectId,
 				title: noteTitle,
-				content: text
+				content: text,
+				type: 'voice',
+				tags: []
 			});
 
 			// Also add to IndexedDB for compatibility
@@ -354,8 +342,9 @@
 				title: noteTitle,
 				content: text,
 				type: 'voice',
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString()
+				tags: [],
+				createdAt: new Date(),
+				updatedAt: new Date()
 			});
 
 			// Refresh notes list
@@ -367,12 +356,12 @@
 		}
 	}
 
-	async function deleteNoteItem(noteId: number) {
+	async function deleteNoteItem(noteId: string) {
 		if (!confirm('Are you sure you want to delete this note?')) return;
 
 		try {
 			// Delete from Supabase
-			await deleteNoteService(noteId.toString());
+			await deleteNoteService(noteId);
 			
 			// Delete from IndexedDB
 			await db.notes.delete(noteId);
@@ -549,7 +538,7 @@
 
 	// Start editing a note
 	function startEditNote(note: Note) {
-		editingNoteId = note.id;
+		editingNoteId = note.id || null;
 		editingNoteContent = note.content;
 	}
 
@@ -570,7 +559,7 @@
 
 	// Start editing tree notes
 	function startEditTreeNotes(tree: Tree) {
-		editingTreeId = tree.id;
+		editingTreeId = tree.id || null;
 		editingTreeNotes = tree.notes || '';
 	}
 
@@ -741,7 +730,7 @@
 								<div class="flex justify-between items-start mb-2">
 									<h3 class="font-medium text-gray-800">{tree.number} - {tree.species}</h3>
 									<button
-										on:click={() => deleteTreeItem(Number(tree.id))}
+										on:click={() => tree.id && deleteTreeItem(tree.id)}
 										class="text-red-500 hover:text-red-700 text-sm"
 									>
 										Delete
@@ -758,6 +747,8 @@
 												value={editingTreeNotes}
 												on:change={(e) => editingTreeNotes = e.detail}
 												placeholder="Add notes about this tree..."
+												projectId={projectId}
+												treeId={tree.id}
 											/>
 											<div class="flex gap-2 mt-2">
 												<button
@@ -870,6 +861,7 @@
 								value={newNote.content}
 								on:change={(e) => newNote.content = e.detail}
 								placeholder="Write your note here..."
+								projectId={projectId}
 							/>
 						</div>
 						<div class="flex justify-end">
@@ -908,7 +900,7 @@
 											Edit
 										</button>
 										<button
-											on:click={() => deleteNoteItem(Number(note.id))}
+											on:click={() => note.id && deleteNoteItem(note.id)}
 											class="text-red-500 hover:text-red-700 text-sm"
 										>
 											Delete
@@ -922,6 +914,8 @@
 											value={editingNoteContent}
 											on:change={(e) => editingNoteContent = e.detail}
 											placeholder="Edit note content..."
+											projectId={projectId}
+											noteId={note.id}
 										/>
 										<div class="flex gap-2 mt-2">
 											<button
@@ -956,7 +950,7 @@
 				<div class="flex justify-between items-center mb-6">
 					<h2 class="text-xl font-semibold text-gray-800">Photos</h2>
 					<div class="flex gap-2">
-						<PhotoUploader onUpload={handleImageUpload} />
+						<PhotoUploader projectId={projectId} on:upload={handleImageUpload} />
 						<button
 							on:click={() => showPhotoCapture = true}
 							class="btn btn-primary"
@@ -970,7 +964,7 @@
 					<div class="text-center py-8 text-gray-500">
 						<p>No photos added yet.</p>
 						<div class="mt-4 flex justify-center gap-2">
-							<PhotoUploader onUpload={handleImageUpload} />
+							<PhotoUploader projectId={projectId} on:upload={handleImageUpload} />
 							<button
 								on:click={() => showPhotoCapture = true}
 								class="btn btn-primary"
@@ -1000,7 +994,7 @@
 										{new Date(photo.createdAt).toLocaleDateString()}
 									</p>
 									<button
-										on:click={() => deletePhoto(photo.id)}
+										on:click={() => photo.id && deletePhoto(photo.id)}
 										class="mt-2 text-red-500 hover:text-red-700 text-sm"
 									>
 										Delete
@@ -1019,8 +1013,8 @@
 				<div class="flex justify-between items-center mb-6">
 					<h2 class="text-xl font-semibold text-gray-800">Voice Notes</h2>
 					<VoiceRecorder
-						onTranscript={handleVoiceTranscript}
-						projectId={projectId}
+						on:transcript={handleVoiceTranscript}
+						{projectId}
 					/>
 				</div>
 
@@ -1041,7 +1035,7 @@
 										</p>
 									</div>
 									<button
-										on:click={() => deleteNoteItem(Number(note.id))}
+										on:click={() => note.id && deleteNoteItem(note.id)}
 										class="text-red-500 hover:text-red-700 text-sm"
 									>
 										Delete
@@ -1147,22 +1141,26 @@
 
 		{#if showPhotoCapture}
 			<PhotoCapture
-				onClose={() => showPhotoCapture = false}
-				onSave={handlePhotoUpload}
+				isOpen={showPhotoCapture}
+				projectId={projectId}
+				on:close={() => showPhotoCapture = false}
+				on:upload={handlePhotoUpload}
 			/>
 		{/if}
 
 		{#if showAIReview}
 			<AIReviewChat
 				projectId={projectId}
-				onClose={() => showAIReview = false}
+				open={showAIReview}
+				on:close={() => showAIReview = false}
 			/>
 		{/if}
 
 		{#if showUnifiedAIPrompt}
 			<UnifiedAIPrompt
 				projectId={projectId}
-				onClose={() => showUnifiedAIPrompt = false}
+				isOpen={showUnifiedAIPrompt}
+				on:close={() => showUnifiedAIPrompt = false}
 			/>
 		{/if}
 	{/if}
