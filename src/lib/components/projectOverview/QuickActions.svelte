@@ -45,6 +45,24 @@
 			icon: '🎤',
 			color: 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700',
 			action: () => goto(`/project/${projectId}?tab=voice`)
+		},
+		{
+			id: 'compile_notes',
+			label: 'Compile',
+			icon: '📚',
+			color: 'bg-teal-50 hover:bg-teal-100 text-teal-700',
+			action: () => {
+				// This would trigger the note compilation engine
+				// For now, we'll navigate to a compilation page or show a modal
+				// We'll use the unified AI prompt for now
+				const event = new CustomEvent('openUnifiedAIPrompt', {
+					detail: {
+						projectId,
+						initialPrompt: 'Compile all project notes into a draft report'
+					}
+				});
+				window.dispatchEvent(event);
+			}
 		}
 	];
 

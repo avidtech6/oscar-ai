@@ -25,7 +25,8 @@ export function getFollowUps(
 		suggestions.push(
 			{ label: 'Expand this', action: 'Expand on this summary with more details' },
 			{ label: 'Turn into report section', action: 'Turn this into a formal report section' },
-			{ label: 'Extract action items', action: 'Extract action items from this summary' }
+			{ label: 'Extract action items', action: 'Extract action items from this summary' },
+			{ label: 'Compile with other notes', action: 'Compile this with other notes into a draft' }
 		);
 	}
 
@@ -71,7 +72,8 @@ export function getFollowUps(
 		suggestions.push(
 			{ label: 'Summarise note', action: 'Summarise this note' },
 			{ label: 'Clean up writing', action: 'Clean up this writing' },
-			{ label: 'Expand narrative', action: 'Expand this into a narrative' }
+			{ label: 'Expand narrative', action: 'Expand this into a narrative' },
+			{ label: 'Compile with project notes', action: 'Compile this note with other project notes' }
 		);
 	}
 
@@ -79,7 +81,8 @@ export function getFollowUps(
 		suggestions.push(
 			{ label: 'Summarise project', action: 'Summarise this project' },
 			{ label: 'Generate report draft', action: 'Generate a report draft for this project' },
-			{ label: 'List next steps', action: 'List the next steps for this project' }
+			{ label: 'List next steps', action: 'List the next steps for this project' },
+			{ label: 'Compile project notes', action: 'Compile all notes for this project into a draft' }
 		);
 	}
 
@@ -154,7 +157,8 @@ function getRouteBasedSuggestions(route: string, isMobile: boolean): FollowUpAct
 	if (normalizedRoute.includes('notes')) {
 		suggestions.push(
 			{ label: 'Organise notes', action: 'Help me organise my notes' },
-			{ label: 'Find related', action: 'Find related notes' }
+			{ label: 'Find related', action: 'Find related notes' },
+			{ label: 'Compile notes', action: 'Compile selected notes into a draft' }
 		);
 	}
 
@@ -203,7 +207,8 @@ function getRecentActionSuggestions(recentAction: string): FollowUpAction[] {
 		case 'noteCreated':
 			return [
 				{ label: 'Expand note', action: 'Expand this note' },
-				{ label: 'Add structure', action: 'Add structure to this note' }
+				{ label: 'Add structure', action: 'Add structure to this note' },
+				{ label: 'Compile with others', action: 'Compile this note with other project notes' }
 			];
 		default:
 			return [];
@@ -237,7 +242,13 @@ function shortenLabel(label: string): string {
 		'Turn into blog post': 'Blog post',
 		'Break into steps': 'Break steps',
 		'Assign priorities': 'Priorities',
-		'Schedule on calendar': 'Schedule'
+		'Schedule on calendar': 'Schedule',
+		'Compile with other notes': 'Compile notes',
+		'Compile this with other notes': 'Compile notes',
+		'Compile with project notes': 'Compile notes',
+		'Compile all notes for this project': 'Compile project notes',
+		'Compile selected notes into a draft': 'Compile notes',
+		'Compile this note with other project notes': 'Compile notes'
 	};
 	
 	return shortenMap[label] || label.substring(0, 17) + '…';

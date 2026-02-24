@@ -419,6 +419,59 @@
 		});
 	}
 
+	// Filtering state
+	let treeFilter = '';
+	let noteFilter = '';
+	let photoFilter = '';
+	let allItemsFilter = '';
+
+	// Filtered trees
+	$: filteredTrees = treeFilter
+		? trees.filter(tree =>
+			(tree.number?.toLowerCase().includes(treeFilter.toLowerCase()) ||
+			tree.species?.toLowerCase().includes(treeFilter.toLowerCase()) ||
+			tree.condition?.toLowerCase().includes(treeFilter.toLowerCase()) ||
+			tree.notes?.toLowerCase().includes(treeFilter.toLowerCase()))
+		)
+		: trees;
+
+	// Filtered notes
+	$: filteredNotes = noteFilter
+		? notes.filter(note =>
+			note.title?.toLowerCase().includes(noteFilter.toLowerCase()) ||
+			note.content?.toLowerCase().includes(noteFilter.toLowerCase())
+		)
+		: notes;
+
+	// Filtered photos
+	$: filteredPhotos = photoFilter
+		? photos.filter(photo =>
+			photo.filename?.toLowerCase().includes(photoFilter.toLowerCase())
+		)
+		: photos;
+
+	// Filtered all items
+	$: filteredAllItems = allItemsFilter
+		? getAllItems().filter(item => {
+			if (item.type === 'tree') {
+				return (
+					item.number?.toLowerCase().includes(allItemsFilter.toLowerCase()) ||
+					item.species?.toLowerCase().includes(allItemsFilter.toLowerCase()) ||
+					item.condition?.toLowerCase().includes(allItemsFilter.toLowerCase()) ||
+					item.notes?.toLowerCase().includes(allItemsFilter.toLowerCase())
+				);
+			} else if (item.type === 'note') {
+				return (
+					item.title?.toLowerCase().includes(allItemsFilter.toLowerCase()) ||
+					item.content?.toLowerCase().includes(allItemsFilter.toLowerCase())
+				);
+			} else if (item.type === 'photo') {
+				return item.filename?.toLowerCase().includes(allItemsFilter.toLowerCase());
+			}
+			return false;
+		})
+		: getAllItems();
+
 	// Handle image upload from PhotoUploader
 	function handleImageUpload(event: CustomEvent<{ urls: string[] }>) {
 		const { urls } = event.detail;
@@ -580,13 +633,31 @@
 		{#if activeTab === 'trees'}
 			<div class="bg-white rounded-lg shadow p-6">
 				<div class="flex justify-between items-center mb-6">
-					<h2 class="text-xl font-semibold text-gray-800">Trees</h2>
+					<h2 class="text-xl font-semibold text-gray-800">Trees ({filteredTrees.length})</h2>
 					<button
 						on:click={() => showTreeModal = true}
 						class="btn btn-primary"
 					>
 						Add Tree
 					</button>
+				</div>
+
+				<!-- Tree Filter -->
+				<div class="mb-6">
+					<div class="relative">
+						<svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+						</svg>
+						<input
+							type="text"
+							bind:value={treeFilter}
+							placeholder="Filter trees by number, species, condition, or notes..."
+							class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						/>
+					</div>
+					{#if treeFilter && filteredTrees.length === 0}
+						<p class="text-sm text-gray-500 mt-2">No trees match your filter.</p>
+					{/if}
 				</div>
 
 				{#if trees.length === 0}
@@ -601,7 +672,7 @@
 					</div>
 				{:else}
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-						{#each trees as tree (tree.id)}
+						{#each filteredTrees as tree (tree.id)}
 							<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
 								<div class="flex justify-between items-start mb-2">
 									<h3 class="font-medium text-gray-800">{tree.number} - {tree.species}</h3>
@@ -621,7 +692,7 @@
 										<div class="mt-4">
 											<RichTextEditor
 												value={editingTreeNotes}
-												onChange={(content) => editingTreeNotes = content}
+												on:change={(e) => editingTreeNotes = e.detail}
 												placeholder="Add notes about this tree..."
 											/>
 											<div class="flex gap-2 mt-2">
@@ -670,14 +741,50 @@
 		<!-- Notes Tab -->
 		{#if activeTab === 'notes'}
 			<div class="bg-white rounded-lg shadow p-6">
-				<div class="flex justify-between items-center mb-6">
-					<h2 class="text-xl font-semibold text-gray-800">Notes</h2>
-					<button
-						on:click={() => activeTab = 'voice'}
-						class="btn btn-secondary"
-					>
-						Add Voice Note
-					</button>
+				<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+					<h2 class="text-xl font-semibold text-gray-800">Notes ({filteredNotes.length})</h2>
+					<div class="flex flex-col sm:flex-row gap-2">
+						<button
+							on:click={() => activeTab = 'voice'}
+							class="btn btn-secondary"
+						>
+							Add Voice Note
+						</button>
+						<button
+							on:click={() => {
+								// Trigger note compilation
+								const event = new CustomEvent('openUnifiedAIPrompt', {
+									detail: {
+										projectId,
+										initialPrompt: 'Compile all project notes into a draft report'
+									}
+								});
+								window.dispatchEvent(event);
+							}}
+							class="btn btn-primary"
+							disabled={notes.length === 0}
+						>
+							Compile Notes
+						</button>
+					</div>
+				</div>
+
+				<!-- Note Filter -->
+				<div class="mb-6">
+					<div class="relative">
+						<svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+						</svg>
+						<input
+							type="text"
+							bind:value={noteFilter}
+							placeholder="Filter notes by title or content..."
+							class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						/>
+					</div>
+					{#if noteFilter && filteredNotes.length === 0}
+						<p class="text-sm text-gray-500 mt-2">No notes match your filter.</p>
+					{/if}
 				</div>
 
 				<!-- New Note Form -->
@@ -697,7 +804,7 @@
 							<label class="block text-sm font-medium text-gray-700 mb-1">Content</label>
 							<RichTextEditor
 								value={newNote.content}
-								onChange={(content) => newNote.content = content}
+								on:change={(e) => newNote.content = e.detail}
 								placeholder="Write your note here..."
 							/>
 						</div>
@@ -720,7 +827,7 @@
 					</div>
 				{:else}
 					<div class="space-y-4">
-						{#each notes as note (note.id)}
+						{#each filteredNotes as note (note.id)}
 							<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
 								<div class="flex justify-between items-start mb-3">
 									<div>
@@ -749,7 +856,7 @@
 									<div class="mt-3">
 										<RichTextEditor
 											value={editingNoteContent}
-											onChange={(content) => editingNoteContent = content}
+											on:change={(e) => editingNoteContent = e.detail}
 											placeholder="Edit note content..."
 										/>
 										<div class="flex gap-2 mt-2">

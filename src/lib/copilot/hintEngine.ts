@@ -69,7 +69,7 @@ function getActionAwareHint(recentAction: string): string | null {
 		case 'taskCreated':
 			return "Want Oscar to break this down…";
 		case 'noteCreated':
-			return "Start writing or ask Oscar to help…";
+			return "Start writing, compile, or ask Oscar to help…";
 		default:
 			return null;
 	}
@@ -86,7 +86,7 @@ function getNoteAwareHint(note: Note, isMobile: boolean): string {
 	}
 
 	if (contentLength > 500) {
-		return isMobile ? "Summarise this note…" : "Summarise or clean up this note…";
+		return isMobile ? "Summarise this note…" : "Summarise, clean up, or compile this note…";
 	}
 
 	if (hasPhotos) {
@@ -114,7 +114,8 @@ function getProjectInsightsHint(project: Project, isMobile: boolean): string {
 		"Review project insights or ask for a summary…",
 		"Check project status or generate a report…",
 		"Analyse project data or plan next steps…",
-		"Review recent activity or add observations…"
+		"Review recent activity or add observations…",
+		"Compile project notes into a draft…"
 	];
 	
 	// Pick a hint based on project name hash for variety
@@ -152,9 +153,9 @@ function getRouteAwareHint(route: string, isMobile: boolean): string | null {
 
 	if (normalizedRoute.includes('notes')) {
 		if (normalizedRoute.includes('note/')) {
-			return isMobile ? "Edit note…" : "Summarise, clean up, or expand this note…";
+			return isMobile ? "Edit note…" : "Summarise, clean up, or compile this note…";
 		}
-		return isMobile ? "Organise notes…" : "Ask Oscar to help organise your notes…";
+		return isMobile ? "Organise notes…" : "Ask Oscar to help organise or compile your notes…";
 	}
 
 	if (normalizedRoute.includes('tasks')) {
@@ -220,8 +221,12 @@ export function shortenHintForMobile(hint: string): string {
 		"Transcribe or attach your recording…": "Transcribe recording…",
 		"Want Oscar to break this down…": "Break down…",
 		"Start writing or ask Oscar to help…": "Start writing…",
+		"Start writing, compile, or ask Oscar to help…": "Start writing…",
 		"Ask a follow‑up question or request more details…": "Follow‑up…",
 		"Schedule tasks or plan your week…": "Schedule…",
+		"Summarise, clean up, or compile this note…": "Edit note…",
+		"Ask Oscar to help organise or compile your notes…": "Organise notes…",
+		"Compile project notes into a draft…": "Compile notes…",
 		"Get help or learn how to use Oscar…": "Get help…",
 		"Configure settings or preferences…": "Configure…"
 	};

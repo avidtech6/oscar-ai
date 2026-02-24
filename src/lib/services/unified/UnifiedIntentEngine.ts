@@ -9,7 +9,7 @@ import { actionExecutorService } from './ActionExecutorService';
 
 export type IntentType =
   | 'task' | 'subtask' | 'note' | 'project' | 'blog' | 'report'
-  | 'diagram' | 'tree' | 'query' | 'update' | 'chat'
+  | 'diagram' | 'tree' | 'query' | 'update' | 'chat' | 'compile'
   | 'voice_note' | 'dictation' | 'transcription' | 'voice_command';
 
 export interface IntentResult {
@@ -43,6 +43,9 @@ const VOICE_PATTERNS = [
   { pattern: /\b(generate|create)\s+(a\s+)?report\b/i, intent: 'report' as IntentType },
   { pattern: /\b(write|create)\s+(a\s+)?blog\s+(post|article)\b/i, intent: 'blog' as IntentType },
   { pattern: /\b(create|draw)\s+(a\s+)?diagram\b/i, intent: 'diagram' as IntentType },
+  // Note compilation patterns
+  { pattern: /\b(compile|combine|merge|summarize|consolidate)\s+(notes|voice notes|transcripts)\b/i, intent: 'compile' as IntentType },
+  { pattern: /\b(create|make|write)\s+(a\s+)?(draft|summary|narrative|section)\s+(from|using)\s+notes\b/i, intent: 'compile' as IntentType },
 ];
 
 const TEXT_PATTERNS = [
@@ -56,6 +59,10 @@ const TEXT_PATTERNS = [
   { pattern: /\b(tree|plant|species)\b/i, intent: 'tree' as IntentType },
   { pattern: /\b(show|list|what|where|when)\b/i, intent: 'query' as IntentType },
   { pattern: /\b(change|update|rename|modify)\b/i, intent: 'update' as IntentType },
+  // Note compilation patterns
+  { pattern: /\b(compile|combine|merge|summarize|consolidate)\s+(notes|voice notes|transcripts)\b/i, intent: 'compile' as IntentType },
+  { pattern: /\b(create|make|write)\s+(a\s+)?(draft|summary|narrative|section)\s+(from|using)\s+notes\b/i, intent: 'compile' as IntentType },
+  { pattern: /\b(draft|write)\s+(a\s+)?(report|section|summary)\s+from\s+(my|the)\s+notes\b/i, intent: 'compile' as IntentType },
 ];
 
 export class UnifiedIntentEngine {
@@ -144,7 +151,7 @@ export class UnifiedIntentEngine {
     const intentAdjustments: Record<IntentType, number> = {
       voice_note: 0, dictation: 5, transcription: 0, voice_command: 10,
       task: 5, note: 5, project: 10, report: 5, blog: 5, diagram: 5, tree: 5,
-      query: 0, update: 0, subtask: 0, chat: 0
+      query: 0, update: 0, subtask: 0, chat: 0, compile: 5
     };
     
     confidence += intentAdjustments[intent] || 0;
@@ -282,7 +289,7 @@ export class UnifiedIntentEngine {
     // Adjust based on intent specificity
     const specificity: Record<IntentType, number> = {
       task: 90, subtask: 85, note: 80, project: 95, blog: 85, report: 90,
-      diagram: 85, tree: 90, query: 70, update: 80, chat: 30,
+      diagram: 85, tree: 90, query: 70, update: 80, chat: 30, compile: 85,
       voice_note: 85, dictation: 90, transcription: 85, voice_command: 95,
     };
     
@@ -338,6 +345,7 @@ export class UnifiedIntentEngine {
       query: [], // No conversion needed
       update: ['Apply update', 'Save as draft', 'Ignore'],
       chat: [], // No conversion needed
+      compile: ['Generate draft', 'Save as report', 'Export as document', 'Ignore'],
     };
     
     return conversionMap[intent] || [];
@@ -404,6 +412,7 @@ export class UnifiedIntentEngine {
       dictation: 'createDictation',
       transcription: 'createTranscription',
       voice_command: 'executeVoiceCommand',
+      compile: 'compileNotes',
     };
     return actionMap[intent] || 'chat';
   }

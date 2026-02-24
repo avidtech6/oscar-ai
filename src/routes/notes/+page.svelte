@@ -14,6 +14,7 @@
 	import { goto } from '$app/navigation';
 	import { fade, slide } from 'svelte/transition';
 	import MicButton from '$lib/components/MicButton.svelte';
+	import PhotoUploader from '$lib/components/PhotoUploader.svelte';
 
 	let apiKey = '';
 	groqApiKey.subscribe(value => {
@@ -41,6 +42,7 @@
 		projectId: '',
 		type: 'general' as 'general' | 'voice' | 'field'
 	};
+	let noteAttachments: string[] = []; // Array of image URLs for the current note
 
 	// AI state
 	let isProcessingAI = false;
@@ -138,6 +140,7 @@
 			projectId: '',
 			type: 'general'
 		};
+		noteAttachments = [];
 		showForm = true;
 	}
 
@@ -150,9 +153,27 @@
 			projectId: note.projectId || '',
 			type: note.type || 'general'
 		};
+		noteAttachments = note.attachments || [];
 		showForm = true;
 	}
 
+	// Handle photo upload
+	function handlePhotoUpload(event: CustomEvent<{ urls: string[] }>) {
+		const newUrls = event.detail.urls;
+		noteAttachments = [...noteAttachments, ...newUrls];
+		
+		// Also insert image URLs into content as markdown
+		newUrls.forEach(url => {
+			noteForm.content += `\n\n![Image](${url})`;
+		});
+	}
+	
+	// Remove attachment
+	function removeAttachment(index: number) {
+		noteAttachments.splice(index, 1);
+		noteAttachments = noteAttachments; // Trigger reactivity
+	}
+	
 	async function saveNote() {
 		if (!noteForm.title.trim()) return;
 		
@@ -167,6 +188,7 @@
 					tags,
 					projectId: noteForm.projectId || undefined,
 					type: noteForm.type,
+					attachments: noteAttachments,
 					updatedAt: new Date()
 				});
 			} else {
@@ -176,6 +198,7 @@
 					tags,
 					projectId: noteForm.projectId || undefined,
 					type: noteForm.type,
+					attachments: noteAttachments,
 					createdAt: new Date(),
 					updatedAt: new Date()
 				});
@@ -183,6 +206,7 @@
 			
 			showForm = false;
 			editingNote = null;
+			noteAttachments = [];
 			await loadNotes();
 		} catch (e) {
 			error = 'Failed to save note';
@@ -1011,7 +1035,7 @@
 	<title>Notes - Oscar AI</title>
 </svelte:head>
 
-<div class="max-w-6xl mx-auto">
+<div class="max-w-6xl mx-auto pb-16">
 	<!-- Header -->
 	<div class="mb-6 flex items-center justify-between">
 		<div>
@@ -1326,6 +1350,34 @@
 							
 							<p class="text-gray-600 text-sm line-clamp-3 mb-3 cursor-pointer" on:click={() => openEditForm(note)}>{note.content}</p>
 							
+							<!-- Attachments Preview -->
+							{#if note.attachments && note.attachments.length > 0}
+								<div class="mb-2">
+									<div class="flex items-center gap-1 mb-1">
+										<svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+										</svg>
+										<span class="text-xs text-gray-500">{note.attachments.length} image{note.attachments.length !== 1 ? 's' : ''}</span>
+									</div>
+									<div class="flex gap-1">
+										{#each note.attachments.slice(0, 2) as url, i}
+											<div class="w-10 h-10 rounded border border-gray-300 overflow-hidden">
+												<img
+													src={url}
+													alt={`Attachment ${i + 1}`}
+													class="w-full h-full object-cover"
+												/>
+											</div>
+										{/each}
+										{#if note.attachments.length > 2}
+											<div class="w-10 h-10 rounded border border-gray-300 bg-gray-100 flex items-center justify-center">
+												<span class="text-xs text-gray-600">+{note.attachments.length - 2}</span>
+											</div>
+										{/if}
+									</div>
+								</div>
+							{/if}
+							
 							<div class="flex flex-wrap gap-1 mb-2">
 								{#if note.type}
 									<span class="px-2 py-0.5 text-xs rounded {getTypeColor(note.type)}">
@@ -1447,6 +1499,53 @@
 					<div class="mt-2">
 						<MicButton on:transcript={(e) => noteForm.content += e.detail.text} />
 					</div>
+				</div>
+				
+				<!-- Attachments Section -->
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-1">Attachments</label>
+					<div class="mb-4">
+						<PhotoUploader
+							projectId={noteForm.projectId || ''}
+							noteId={editingNote?.id || null}
+							buttonText="Add Photo"
+							buttonVariant="secondary"
+							showPreview={true}
+							multiple={true}
+							on:upload={handlePhotoUpload}
+						/>
+					</div>
+					
+					{#if noteAttachments.length > 0}
+						<div class="mt-4">
+							<h4 class="text-sm font-medium text-gray-700 mb-2">
+								Attached Images ({noteAttachments.length})
+							</h4>
+							<div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+								{#each noteAttachments as url, i}
+									<div class="relative group">
+										<img
+											src={url}
+											alt={`Attachment ${i + 1}`}
+											class="w-full h-24 object-cover rounded-lg border border-gray-300"
+										/>
+										<button
+											on:click={() => removeAttachment(i)}
+											class="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+											title="Remove image"
+										>
+											<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+											</svg>
+										</button>
+										<div class="text-xs text-gray-500 truncate mt-1">
+											Image {i + 1}
+										</div>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/if}
 				</div>
 				
 				<!-- Voice Recording -->

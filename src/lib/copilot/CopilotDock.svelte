@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { copilotState, setMicro, setMid, setFull } from './copilotStore';
 	import { pageContext, itemContext, smartHint, selectedIds, microCue } from './copilotStore';
+	import { followUps, applyFollowUp } from './followUpStore';
 	import ContextChips from './ContextChips.svelte';
 	import SmartHint from './SmartHint.svelte';
 	import CopilotTools from './CopilotTools.svelte';
@@ -31,8 +32,10 @@
 		// Try to use the existing voice recording service if available
 		try {
 			// Check if there's a global voice recording service
-			if (window.voiceRecordingService) {
-				window.voiceRecordingService.startRecording();
+			// Use type assertion to avoid TypeScript error
+			const win = window as any;
+			if (win.voiceRecordingService) {
+				win.voiceRecordingService.startRecording();
 			} else {
 				// Fallback to showing a message
 				alert('Voice dictation would start here. This would trigger the existing VoiceRecordingService.');
@@ -116,6 +119,11 @@
 			case 'context': return 'bg-green-500';
 			default: return 'bg-gray-300';
 		}
+	}
+	
+	// Handle follow‑up action click
+	function handleFollowUpClick(action: any) {
+		applyFollowUp(action);
 	}
 </script>
 
@@ -303,10 +311,32 @@
 			
 			<!-- Conversation Area -->
 			<div class="flex-1 overflow-y-auto p-4">
-				<div class="text-center py-8 text-gray-500">
-					<p class="mb-2">No conversation yet.</p>
-					<p class="text-sm">Ask Oscar AI anything about your project, or use the quick actions below.</p>
-				</div>
+				{#if $followUps.length > 0}
+					<!-- Follow‑up suggestions -->
+					<div class="mb-6">
+						<h3 class="text-sm font-medium text-gray-700 mb-3">Follow‑up suggestions</h3>
+						<div class="space-y-2">
+							{#each $followUps as followUp}
+								<button
+									on:click={() => handleFollowUpClick(followUp)}
+									class="w-full text-left p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors group"
+								>
+									<div class="flex items-center justify-between">
+										<span class="text-sm text-blue-800 font-medium">{followUp.label}</span>
+										<svg class="w-4 h-4 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+										</svg>
+									</div>
+								</button>
+							{/each}
+						</div>
+					</div>
+				{:else}
+					<div class="text-center py-8 text-gray-500">
+						<p class="mb-2">No conversation yet.</p>
+						<p class="text-sm">Ask Oscar AI anything about your project, or use the quick actions below.</p>
+					</div>
+				{/if}
 			</div>
 			
 			<!-- Quick Actions -->
@@ -377,5 +407,25 @@
 	.overflow-y-auto::-webkit-scrollbar-thumb {
 		background-color: #cbd5e0;
 		border-radius: 3px;
+	}
+	
+	/* Mobile‑specific touch targets */
+	@media (max-width: 768px) {
+		/* Larger touch targets for follow‑up buttons */
+		button[class*="bg-blue-50"] {
+			min-height: 52px;
+			padding-top: 12px;
+			padding-bottom: 12px;
+		}
+		
+		/* Larger text for mobile */
+		.text-sm {
+			font-size: 0.9375rem; /* Slightly larger than 0.875rem */
+		}
+		
+		/* More spacing between follow‑up items */
+		.space-y-2 > * + * {
+			margin-top: 0.75rem;
+		}
 	}
 </style>

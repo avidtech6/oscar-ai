@@ -46,7 +46,7 @@ export async function inferProjectFromMessage(
     };
   }
 
-  const messageLower = message.toLowerCase();
+  const messageLower = typeof message === 'string' ? message.toLowerCase() : String(message || '').toLowerCase();
   
   // Check for direct project name mentions
   const matchingProjects: Array<{ project: Project; confidence: number; reason: string }> = [];

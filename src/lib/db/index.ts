@@ -38,6 +38,7 @@ export interface Note {
 	transcript?: string;
 	tags: string[];
 	type: 'general' | 'voice' | 'field';
+	attachments?: string[]; // Array of image URLs
 	isDummy?: boolean;
 	createdAt: Date;
 	updatedAt: Date;
