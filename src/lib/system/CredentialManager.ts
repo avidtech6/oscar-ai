@@ -56,27 +56,65 @@ class CredentialManager {
 
   private async loadCredentials(): Promise<void> {
     try {
-      // Layer 1: Environment defaults (dev fallback)
+      console.log('CredentialManager: Starting credential loading...');
+      
+      // Layer 1: Environment defaults (dev fallback) - MUST load first for Supabase connection
       const envDefaults = this.loadEnvironmentDefaults();
+      console.log('CredentialManager: Environment defaults loaded:', {
+        hasGroqKey: !!envDefaults.groq_api_key,
+        hasSupabaseUrl: !!envDefaults.supabase_url,
+        hasSupabaseKey: !!envDefaults.supabase_anon_key
+      });
       
-      // Layer 2: Local overrides from localStorage
-      const localOverrides = this.loadLocalOverrides();
-      
-      // Layer 3: Supabase settings (production)
+      // Layer 2: Supabase settings (production) - load before local overrides
+      // This needs to happen early because Supabase may contain the Groq API key
       const supabaseSettings = await this.loadSupabaseSettings();
+      console.log('CredentialManager: Supabase settings loaded:', {
+        hasGroqKey: !!supabaseSettings.groq_api_key,
+        keys: Object.keys(supabaseSettings)
+      });
+      
+      // Layer 3: Local overrides from localStorage (user preferences)
+      const localOverrides = this.loadLocalOverrides();
+      console.log('CredentialManager: Local overrides loaded:', {
+        hasGroqKey: !!localOverrides.groq_api_key,
+        keys: Object.keys(localOverrides)
+      });
       
       // Merge with priority: Local > Supabase > Environment
+      // This ensures user preferences override everything, then Supabase, then environment
       this.credentials = {
         ...envDefaults,
         ...supabaseSettings,
         ...localOverrides
       };
 
-      console.log('CredentialManager: Loaded credentials successfully');
+      // Cache the merged credentials to IndexedDB for faster startup next time
+      await this.cacheToIndexedDB(this.credentials);
+      
+      console.log('CredentialManager: Loaded credentials successfully', {
+        finalGroqKey: this.credentials.groq_api_key ? '***' + this.credentials.groq_api_key.slice(-4) : 'empty',
+        source: this.credentials.groq_api_key === envDefaults.groq_api_key ? 'environment' :
+                this.credentials.groq_api_key === supabaseSettings.groq_api_key ? 'supabase' :
+                this.credentials.groq_api_key === localOverrides.groq_api_key ? 'local' : 'unknown'
+      });
     } catch (error) {
       console.error('CredentialManager: Error loading credentials:', error);
-      // Fall back to environment defaults
-      this.credentials = this.loadEnvironmentDefaults();
+      // Try to load from IndexedDB cache as fallback
+      try {
+        const cached = await this.loadFromIndexedDBCache();
+        if (cached && Object.keys(cached).length > 0) {
+          console.log('CredentialManager: Using cached credentials from IndexedDB');
+          this.credentials = { ...this.loadEnvironmentDefaults(), ...cached };
+        } else {
+          // Fall back to environment defaults
+          this.credentials = this.loadEnvironmentDefaults();
+        }
+      } catch (cacheError) {
+        console.warn('CredentialManager: Error loading from cache:', cacheError);
+        // Final fallback to environment defaults
+        this.credentials = this.loadEnvironmentDefaults();
+      }
     }
   }
 
@@ -105,9 +143,25 @@ class CredentialManager {
 
   private async loadSupabaseSettings(): Promise<Partial<Credentials>> {
   	try {
+      console.log('CredentialManager: Attempting to load settings from Supabase...');
+      
+      // Get the Supabase client
+      const supabase = getSupabase();
+      if (!supabase) {
+        console.warn('CredentialManager: Supabase client not available');
+        return {};
+      }
+      
+      // Check if we have valid Supabase credentials
+      const envDefaults = this.loadEnvironmentDefaults();
+      if (!envDefaults.supabase_url || !envDefaults.supabase_anon_key) {
+        console.warn('CredentialManager: Supabase credentials not configured in environment');
+        return {};
+      }
+      
   		// Use type assertion to bypass TypeScript errors for now
   		// The settings table might not exist in the generated types
-  		const { data, error } = await (getSupabase() as any)
+  		const { data, error } = await (supabase as any)
   			.from('settings')
   			.select('key, value')
   			.in('key', [
@@ -121,18 +175,36 @@ class CredentialManager {
   
   		if (error) {
   			console.warn('CredentialManager: Error loading Supabase settings:', error);
+        console.warn('CredentialManager: Supabase error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
   			return {};
   		}
   
+      console.log('CredentialManager: Supabase query successful, found', data?.length || 0, 'settings');
+      
   		const settings: Partial<Credentials> = {};
   		(data as any[])?.forEach((setting: any) => {
   			const key = setting.key as CredentialKey;
-  			settings[key] = setting.value;
+        const value = setting.value;
+        settings[key] = value;
+        console.log(`CredentialManager: Loaded ${key} from Supabase (length: ${value?.length || 0})`);
   		});
+  
+      // Check if we got a Groq API key
+      if (settings.groq_api_key) {
+        console.log('CredentialManager: Found Groq API key in Supabase');
+      } else {
+        console.log('CredentialManager: No Groq API key found in Supabase');
+      }
   
   		return settings;
   	} catch (error) {
   		console.warn('CredentialManager: Error accessing Supabase:', error);
+      console.warn('CredentialManager: Error details:', error);
   		return {};
   	}
   }
@@ -213,6 +285,52 @@ class CredentialManager {
     } catch (error) {
       console.warn('CredentialManager: Error accessing Supabase:', error);
     }
+  }
+
+  // IndexedDB caching for faster startup
+  private async cacheToIndexedDB(credentials: Credentials): Promise<void> {
+    try {
+      // Use the existing db module if available, otherwise fall back to localStorage
+      const { setSetting } = await import('$lib/db/index');
+      await setSetting('cached_credentials', JSON.stringify(credentials));
+      console.log('CredentialManager: Cached credentials to IndexedDB');
+    } catch (error) {
+      console.warn('CredentialManager: Error caching to IndexedDB:', error);
+      // Fall back to localStorage
+      try {
+        localStorage.setItem('oscar.cached_credentials', JSON.stringify(credentials));
+      } catch (localError) {
+        console.warn('CredentialManager: Error caching to localStorage:', localError);
+      }
+    }
+  }
+
+  private async loadFromIndexedDBCache(): Promise<Partial<Credentials>> {
+    try {
+      // Try to load from IndexedDB first
+      const { getSetting } = await import('$lib/db/index');
+      const cached = await getSetting('cached_credentials');
+      
+      if (cached) {
+        console.log('CredentialManager: Loaded cached credentials from IndexedDB');
+        return JSON.parse(cached);
+      }
+    } catch (error) {
+      console.warn('CredentialManager: Error loading from IndexedDB:', error);
+    }
+    
+    // Fall back to localStorage
+    try {
+      const cached = localStorage.getItem('oscar.cached_credentials');
+      if (cached) {
+        console.log('CredentialManager: Loaded cached credentials from localStorage');
+        return JSON.parse(cached);
+      }
+    } catch (error) {
+      console.warn('CredentialManager: Error loading from localStorage cache:', error);
+    }
+    
+    return {};
   }
 
   // Check if credentials are valid

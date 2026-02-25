@@ -92,7 +92,8 @@ export async function initSettings() {
         console.warn('CredentialManager not ready for default Groq key:', error);
     }
     
-    const finalGroqKey = storedGroqKey !== undefined ? storedGroqKey : defaultGroqKey;
+    // For Groq API key, use stored value if it exists and is not empty, otherwise use default from CredentialManager
+    const finalGroqKey = (storedGroqKey !== undefined && storedGroqKey !== '') ? storedGroqKey : defaultGroqKey;
     const finalTheme = storedTheme !== undefined ? storedTheme : 'dark';
     const finalSidebar = storedSidebar !== undefined ? storedSidebar : false;
     const finalDummyData = storedDummyData !== undefined ? storedDummyData : false;
