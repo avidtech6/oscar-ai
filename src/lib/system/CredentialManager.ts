@@ -89,6 +89,13 @@ class CredentialManager {
         ...localOverrides
       };
 
+      console.log('CredentialManager: Merged credentials:', JSON.stringify({
+        envDefaults: { groq: envDefaults.groq_api_key ? '***' + envDefaults.groq_api_key.slice(-4) : 'empty' },
+        supabaseSettings: { groq: supabaseSettings.groq_api_key ? '***' + supabaseSettings.groq_api_key.slice(-4) : 'empty' },
+        localOverrides: { groq: localOverrides.groq_api_key ? '***' + localOverrides.groq_api_key.slice(-4) : 'empty' },
+        final: { groq: this.credentials.groq_api_key ? '***' + this.credentials.groq_api_key.slice(-4) : 'empty' }
+      }, null, 2));
+
       // Cache the merged credentials to IndexedDB for faster startup next time
       await this.cacheToIndexedDB(this.credentials);
       
@@ -155,8 +162,8 @@ class CredentialManager {
       // Check if we have valid Supabase credentials
       const envDefaults = this.loadEnvironmentDefaults();
       if (!envDefaults.supabase_url || !envDefaults.supabase_anon_key) {
-        console.warn('CredentialManager: Supabase credentials not configured in environment');
-        return {};
+        console.log('CredentialManager: Supabase credentials not configured in environment, using fallback defaults');
+        // Continue anyway - Supabase client may have fallback defaults
       }
       
   		// Use type assertion to bypass TypeScript errors for now
@@ -185,15 +192,24 @@ class CredentialManager {
   		}
   
       console.log('CredentialManager: Supabase query successful, found', data?.length || 0, 'settings');
+      // Force serialization by converting to array
+      if (data && Array.isArray(data)) {
+        console.log('CredentialManager: Raw Supabase data entries:', data.map(d => ({ key: d.key, valueLength: d.value?.length })));
+      } else {
+        console.log('CredentialManager: Raw Supabase data:', data);
+      }
       
-  		const settings: Partial<Credentials> = {};
-  		(data as any[])?.forEach((setting: any) => {
-  			const key = setting.key as CredentialKey;
+      const settings: Partial<Credentials> = {};
+      (data as any[])?.forEach((setting: any) => {
+        const key = setting.key as CredentialKey;
         const value = setting.value;
         settings[key] = value;
         console.log(`CredentialManager: Loaded ${key} from Supabase (length: ${value?.length || 0})`);
-  		});
-  
+      });
+      
+      console.log('CredentialManager: Compiled settings object keys:', Object.keys(settings));
+      console.log('CredentialManager: Compiled settings groq_api_key present?', !!settings.groq_api_key);
+      
       // Check if we got a Groq API key
       if (settings.groq_api_key) {
         console.log('CredentialManager: Found Groq API key in Supabase');
