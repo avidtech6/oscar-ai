@@ -7,6 +7,7 @@
 	import { db } from '$lib/db';
 	import { initSettings } from '$lib/stores/settings';
 	import CopilotBar from '$lib/copilot/CopilotBar.svelte';
+	import MobileBottomBar from '$lib/components/MobileBottomBar.svelte';
 	import { updateRoute } from '$lib/copilot/copilotContext';
 	import { onUserPrompt } from '$lib/copilot/eventModel';
 	import type { Project } from '$lib/db';
@@ -35,10 +36,9 @@
 			]
 		},
 		{
-			title: 'Communication',
+			title: 'Communication Hub',
 			items: [
-				{ id: 'blog', label: 'Blog', icon: 'blog', href: '/blog' },
-				{ id: 'email', label: 'Email', icon: 'email', href: '/email' }
+				{ id: 'communication', label: 'Communication Hub', icon: 'message', href: '/communication' }
 			]
 		},
 		{
@@ -308,4 +308,7 @@
 			</div>
 		{/if}
 	</main>
+	
+	<!-- Mobile Bottom Bar -->
+	<MobileBottomBar />
 </div>
