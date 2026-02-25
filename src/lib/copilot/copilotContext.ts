@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import type { Note, Project, Report, Task } from '$lib/db';
-import type { CopilotContext } from './hintEngine';
+import type { CopilotContext } from '$lib/copilot/context/contextTypes';
 
 // Initial context
 const initialContext: CopilotContext = {
@@ -13,7 +13,24 @@ const initialContext: CopilotContext = {
 	recentAction: undefined,
 	assistantActive: false,
 	inputEmpty: true,
-	isMobile: browser ? window.innerWidth < 768 : false
+	isMobile: browser ? window.innerWidth < 768 : false,
+	// Required properties from CopilotContext interface
+	ui: {
+		currentScreen: 'unknown',
+		contextPanelOpen: false,
+		assistLayerOpen: false,
+		smartShareActive: false,
+		isComposing: false,
+		isViewingCampaign: false,
+		deliverabilityWarningsVisible: false,
+		lastUpdated: new Date()
+	},
+	navigationHistory: [],
+	hintPreferences: {
+		showTechnicalHints: true,
+		showSmartSharePrompts: true,
+		showDeliverabilityWarnings: true
+	}
 };
 
 // Create the writable store

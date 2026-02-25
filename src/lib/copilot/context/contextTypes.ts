@@ -1,9 +1,11 @@
 /**
  * Copilot Context Types
- * 
+ *
  * Defines the context-aware tracking system for the Communication Hub.
  * Tracks user's current screen, UI state, and provides selectors for AI intelligence.
  */
+
+import type { Project, Note, Report, Task } from '$lib/db';
 
 export type ScreenType =
 	| 'inbox'
@@ -163,6 +165,33 @@ export interface CopilotContext {
 		showSmartSharePrompts: boolean;
 		showDeliverabilityWarnings: boolean;
 	};
+
+	/** Current route/path */
+	route: string;
+	
+	/** Currently selected project */
+	selectedProject?: Project;
+	
+	/** Currently selected note */
+	selectedNote?: Note;
+	
+	/** Currently selected report */
+	selectedReport?: Report;
+	
+	/** Currently selected task */
+	selectedTask?: Task;
+	
+	/** Most recent user action */
+	recentAction?: string;
+	
+	/** Whether the assistant is active */
+	assistantActive: boolean;
+	
+	/** Whether the input field is empty */
+	inputEmpty: boolean;
+	
+	/** Whether the user is on a mobile device */
+	isMobile: boolean;
 }
 
 export type ContextChangeEvent = {

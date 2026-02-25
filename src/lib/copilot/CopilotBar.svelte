@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { page } from '$app/stores';
 	import { getSpeechRecognition } from '$lib/services/voiceDictation';
-	import { getHint, shortenHintForMobile } from './hintEngine';
+	import { getHintForContext, shortenHintForMobile } from './hints/hintEngine';
 	import { copilotContext, updateInputEmpty } from './copilotContext';
 	import { clearFollowUps } from './followUpStore';
 	import { pdfExtractionService } from './pdfExtractionService';
@@ -17,7 +17,7 @@
 	let uploadProgress = 0;
 	
 	// Reactive hint based on copilot context
-	$: hint = getHint($copilotContext);
+	$: hint = getHintForContext($copilotContext);
 	
 	// Apply mobile shortening if needed
 	$: finalHint = $copilotContext.isMobile ? shortenHintForMobile(hint) : hint;

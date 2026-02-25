@@ -1,4 +1,4 @@
-import type { CopilotContext } from './hintEngine';
+import type { CopilotContext } from '$lib/copilot/context/contextTypes';
 
 export interface FollowUpAction {
 	label: string;

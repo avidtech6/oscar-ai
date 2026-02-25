@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import type { ProjectInsight } from './projectInsightsEngine';
-import type { CopilotContext } from './hintEngine';
+import type { CopilotContext } from '$lib/copilot/context/contextTypes';
 import type { Project } from '$lib/db';
 
 // Store for project insights

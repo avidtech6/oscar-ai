@@ -1,5 +1,5 @@
 import type { Project, Note, Task, Tree, VoiceNote } from '$lib/db';
-import type { CopilotContext } from './hintEngine';
+import type { CopilotContext } from '$lib/copilot/context/contextTypes';
 
 export interface ProjectInsight {
 	label: string;
