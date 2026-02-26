@@ -7,11 +7,10 @@ const config = {
 			fallback: 'index.html',
 			pages: 'build',
 			assets: 'build',
-			failMaxPageSizeWarning: true
+			failMaxPageSizeWarning: true,
+			strict: false
 		}),
-		prerender: {
-			entries: []
-		},
+		prerender: { entries: [] },
 		alias: {
 			$components: 'src/lib/components',
 			$server: 'src/lib/server',
