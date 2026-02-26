@@ -404,7 +404,7 @@
 	</div>
 </div>
 
-<style>
+<!-- <style>
 /* Universal prompt bar keyboard handling */
 :root {
 	--keyboard-height: 0px;
@@ -516,4 +516,4 @@
 		}
 	}
 }
-</style>
+</style> -->
