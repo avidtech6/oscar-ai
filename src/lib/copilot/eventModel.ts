@@ -8,6 +8,7 @@ import {
 	expand,
 	collapse
 } from './copilotStore';
+import { processUserPrompt } from '$lib/services/semanticRouting';
 
 // Event: Page changed
 export function onPageChange(pageContext: any) {
@@ -84,13 +85,16 @@ export function onAIActionApplied(action: string, result: string) {
 }
 
 // Event: User prompt submitted
-export function onUserPrompt(prompt: string) {
+export async function onUserPrompt(prompt: string) {
 	addMessage('user', prompt);
 	
-	// Simulate AI response (in real implementation, this would call an API)
-	setTimeout(() => {
-		addMessage('ai', `I received your question: "${prompt}". In a real implementation, I would process this and provide a helpful response.`);
-	}, 500);
+	try {
+		const aiResponse = await processUserPrompt(prompt);
+		addMessage('ai', aiResponse);
+	} catch (error) {
+		console.error('Failed to process user prompt:', error);
+		addMessage('ai', `Sorry, I encountered an error while processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`);
+	}
 }
 
 // Initialize with default context

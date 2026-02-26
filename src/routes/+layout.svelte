@@ -13,6 +13,7 @@
 	import type { Project } from '$lib/db';
 	import { onDestroy } from 'svelte';
 	import { appInit } from '$lib/system/AppInit';
+	import SemanticContextSheet from '$lib/components/semantic/SemanticContextSheet.svelte';
 
 	let projects: Project[] = [];
 	let loading = true;
@@ -315,4 +316,7 @@
 	
 	<!-- Mobile Bottom Bar -->
 	<MobileBottomBar />
+	
+	<!-- Semantic Context Sheet (global) -->
+	<SemanticContextSheet />
 </div>
