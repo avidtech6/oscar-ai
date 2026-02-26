@@ -20,7 +20,7 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4">
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold text-gray-900">{title}</h1>
+			<h1 class="text-xl md:text-2xl font-bold text-gray-900">{title}</h1>
 			<p class="text-gray-600 mt-1">{subtitle}</p>
 		</div>
 		<div class="flex items-center gap-3">

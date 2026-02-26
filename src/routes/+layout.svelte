@@ -32,13 +32,17 @@
 				{ id: 'projects', label: 'Projects', icon: 'folder', href: '/workspace' },
 				{ id: 'tasks', label: 'Tasks', icon: 'tasks', href: '/tasks' },
 				{ id: 'notes', label: 'Notes', icon: 'notes', href: '/notes' },
-				{ id: 'reports', label: 'Reports', icon: 'document', href: '/reports' }
+				{ id: 'reports', label: 'Reports', icon: 'document', href: '/reports' },
+				{ id: 'calendar', label: 'Calendar', icon: 'calendar', href: '/calendar' },
+				{ id: 'notifications', label: 'Notifications', icon: 'help', href: '/notifications' }
 			]
 		},
 		{
-			title: 'Communication Hub',
+			title: 'Capture',
 			items: [
-				{ id: 'communication', label: 'Communication Hub', icon: 'message', href: '/communication' }
+				{ id: 'camera', label: 'Camera', icon: 'camera', href: '/camera' },
+				{ id: 'files', label: 'Files', icon: 'notes', href: '/files' },
+				{ id: 'voice', label: 'Voice Note', icon: 'message', href: '/voice' }
 			]
 		},
 		{
@@ -294,7 +298,7 @@
 		{/if}
 
 		<!-- Page content -->
-		<div class="flex-1 overflow-auto">
+		<div class="flex-1 overflow-auto p-4 lg:p-6">
 			<slot />
 		</div>
 		

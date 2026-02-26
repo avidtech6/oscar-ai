@@ -9,6 +9,10 @@ export const messages = writable<Array<{type: string, text: string, id?: string}
 export const smartHint = writable('');
 export const microCue = writable<'nudge' | 'clarify' | 'context' | null>(null);
 
+// Image attachment store
+export const imageAttachment = writable<string | null>(null);
+export const hasImageAttachment = writable(false);
+
 // Three-state copilot architecture
 export const copilotState = writable<'micro' | 'mid' | 'full'>('micro');
 
