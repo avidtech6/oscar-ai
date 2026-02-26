@@ -14,6 +14,7 @@
 	import { onDestroy } from 'svelte';
 	import { appInit } from '$lib/system/AppInit';
 	import SemanticContextSheet from '$lib/components/semantic/SemanticContextSheet.svelte';
+	import DecisionSheet from '$lib/components/semantic/DecisionSheet.svelte';
 
 	let projects: Project[] = [];
 	let loading = true;
@@ -319,4 +320,7 @@
 	
 	<!-- Semantic Context Sheet (global) -->
 	<SemanticContextSheet />
+	
+	<!-- Decision Sheet (global) -->
+	<DecisionSheet />
 </div>

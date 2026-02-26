@@ -9,6 +9,7 @@ import {
 	collapse
 } from './copilotStore';
 import { processUserPrompt } from '$lib/services/semanticRouting';
+import { handleUserPrompt } from '$lib/services/intelligenceLayer';
 
 // Event: Page changed
 export function onPageChange(pageContext: any) {
@@ -86,11 +87,11 @@ export function onAIActionApplied(action: string, result: string) {
 
 // Event: User prompt submitted
 export async function onUserPrompt(prompt: string) {
+	console.log('[eventModel] onUserPrompt:', prompt);
 	addMessage('user', prompt);
 	
 	try {
-		const aiResponse = await processUserPrompt(prompt);
-		addMessage('ai', aiResponse);
+		await handleUserPrompt(prompt);
 	} catch (error) {
 		console.error('Failed to process user prompt:', error);
 		addMessage('ai', `Sorry, I encountered an error while processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`);

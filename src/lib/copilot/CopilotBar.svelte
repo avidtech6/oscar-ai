@@ -7,28 +7,50 @@
 	import { clearFollowUps } from './followUpStore';
 	import { pdfExtractionService } from './pdfExtractionService';
 	import { sanitizePrompt, ensureAppReady } from './sanitizeInput';
-	
+	import { onMount, onDestroy } from 'svelte';
+
 	const emit = createEventDispatcher();
-	
+
 	let inputValue = '';
 	let isRecording = false;
 	let speechRecognition: any = null;
 	let isUploadingPdf = false;
 	let uploadProgress = 0;
-	
+
+	// Keyboard visibility detection
+	let keyboardHeight = 0;
+	let isKeyboardVisible = false;
+
+	function updateKeyboardHeight() {
+		if (typeof window === 'undefined' || !window.visualViewport) return;
+		const viewport = window.visualViewport;
+		// Keyboard height is the difference between window innerHeight and visualViewport height
+		const diff = window.innerHeight - viewport.height;
+		keyboardHeight = diff > 50 ? diff : 0; // threshold to avoid small differences
+		isKeyboardVisible = keyboardHeight > 0;
+		// Update CSS custom property for styling
+		document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+		if (isKeyboardVisible) {
+			document.documentElement.classList.add('keyboard-open');
+		} else {
+			document.documentElement.classList.remove('keyboard-open');
+		}
+	}
+
 	// Reactive hint based on copilot context
 	$: hint = getHintForContext($copilotContext);
-	
+
 	// Apply mobile shortening if needed
 	$: finalHint = $copilotContext.isMobile ? shortenHintForMobile(hint) : hint;
-	
+
 	// Update input empty state when inputValue changes
 	$: updateInputEmpty(!inputValue.trim());
-	
+
 	// Get placeholder text: show hint only when input is empty
 	$: placeholder = inputValue.trim() ? '' : finalHint;
 	
 	async function handleSubmit() {
+		console.log('CopilotBar: handleSubmit called, inputValue:', inputValue);
 		// Check if app is ready
 		const isReady = await ensureAppReady();
 		if (!isReady) {
@@ -46,7 +68,7 @@
 		}
 		
 		console.log('CopilotBar: Sending sanitized prompt:', sanitizedInput.substring(0, 50) + (sanitizedInput.length > 50 ? '...' : ''));
-		
+		console.log('CopilotBar: Emitting promptSubmit event');
 		emit('promptSubmit', { text: sanitizedInput });
 		
 		// Clear follow‑up suggestions when user sends a message
@@ -238,20 +260,31 @@
 		triggerPdfUpload();
 	}
 	
-	// Set up event listener on mount
-	import { onMount } from 'svelte';
-	
+	// Set up event listeners on mount
 	onMount(() => {
 		window.addEventListener('followUpAction', handleFollowUpAction as EventListener);
 		window.addEventListener('insightAction', handleInsightAction as EventListener);
 		window.addEventListener('pdfExtracted', handlePdfExtractionEvent as EventListener);
 		window.addEventListener('triggerPdfUpload', handleTriggerPdfUpload as EventListener);
 		
+		// Keyboard detection
+		if (typeof window !== 'undefined' && window.visualViewport) {
+			window.visualViewport.addEventListener('resize', updateKeyboardHeight);
+			window.visualViewport.addEventListener('scroll', updateKeyboardHeight);
+			// Initial update
+			updateKeyboardHeight();
+		}
+		
 		return () => {
 			window.removeEventListener('followUpAction', handleFollowUpAction as EventListener);
 			window.removeEventListener('insightAction', handleInsightAction as EventListener);
 			window.removeEventListener('pdfExtracted', handlePdfExtractionEvent as EventListener);
 			window.removeEventListener('triggerPdfUpload', handleTriggerPdfUpload as EventListener);
+			
+			if (typeof window !== 'undefined' && window.visualViewport) {
+				window.visualViewport.removeEventListener('resize', updateKeyboardHeight);
+				window.visualViewport.removeEventListener('scroll', updateKeyboardHeight);
+			}
 		};
 	});
 </script>
@@ -351,8 +384,27 @@
 </div>
 
 <style>
+/* Universal prompt bar keyboard handling */
+:root {
+	--keyboard-height: 0px;
+}
+
 /* Mobile-optimized styling */
 @media (max-width: 768px) {
+	/* Make the CopilotBar fixed at the bottom on mobile */
+	div.w-full.h-16.bg-white.border-t.border-gray-200 {
+		position: fixed;
+		bottom: var(--keyboard-height, 0);
+		left: 0;
+		right: 0;
+		z-index: 100;
+		transition: bottom 0.3s ease;
+		/* Ensure it stays above other content */
+		box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+	}
+	
+	/* The layout already provides padding for the bottom bar */
+	
 	div {
 		height: auto;
 		padding: 8px 12px;
