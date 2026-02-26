@@ -16,16 +16,36 @@
 
 <style>
 	.toast-success {
-		@apply bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow;
+		background-color: rgb(220 252 231);
+		border: 1px solid rgb(74 222 128);
+		color: rgb(21 128 61);
+		padding: 0.75rem 1rem;
+		border-radius: 0.5rem;
+		box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 	}
 	.toast-error {
-		@apply bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow;
+		background-color: rgb(254 226 226);
+		border: 1px solid rgb(248 113 113);
+		color: rgb(185 28 28);
+		padding: 0.75rem 1rem;
+		border-radius: 0.5rem;
+		box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 	}
 	.toast-info {
-		@apply bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg shadow;
+		background-color: rgb(219 234 254);
+		border: 1px solid rgb(96 165 250);
+		color: rgb(29 78 216);
+		padding: 0.75rem 1rem;
+		border-radius: 0.5rem;
+		box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 	}
 	.toast-warning {
-		@apply bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg shadow;
+		background-color: rgb(254 249 195);
+		border: 1px solid rgb(250 204 21);
+		color: rgb(161 98 7);
+		padding: 0.75rem 1rem;
+		border-radius: 0.5rem;
+		box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 	}
 	@keyframes fade-in {
 		from { opacity: 0; transform: translateY(-10px); }

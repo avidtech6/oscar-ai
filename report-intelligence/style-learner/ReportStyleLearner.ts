@@ -9,13 +9,12 @@
 import type { DecompiledReport } from '../decompiler/DecompiledReport';
 import type { ReportTypeDefinition } from '../registry/ReportTypeDefinition';
 import type { ReportTypeRegistry } from '../registry/ReportTypeRegistry';
+import type { StyleProfile, StyleApplicationResult } from './StyleProfile';
 import {
-  StyleProfile,
   createStyleProfile,
   generateStyleProfileId,
   validateStyleProfile,
-  mergeStyleProfiles,
-  type StyleApplicationResult
+  mergeStyleProfiles
 } from './StyleProfile';
 
 /**

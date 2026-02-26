@@ -12,7 +12,7 @@ async function getPDFParser(): Promise<any> {
   if (!pdfParserInstance) {
     try {
       // Dynamic import to avoid TypeScript compilation issues
-      const { PDFParser } = await import('../../report-intelligence/pdf-parsing/PDFParser');
+      const { PDFParser } = await import('../../../report-intelligence/pdf-parsing/PDFParser');
       pdfParserInstance = new PDFParser();
     } catch (error) {
       console.error('Failed to load PDFParser:', error);

@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { tasksStore, addTask, toggleTask, deleteTask } from '$lib/stores/tasks';
+	import { tasksStore } from '$lib/stores/tasks';
 
 	let newTaskTitle = '';
 	let newTaskPriority: 'low' | 'medium' | 'high' = 'medium';
 
 	function handleAddTask() {
 		if (!newTaskTitle.trim()) return;
-		addTask({
+		tasksStore.addTask({
 			title: newTaskTitle,
 			priority: newTaskPriority,
 			completed: false
@@ -82,7 +82,7 @@
 					<div class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
 						<div class="flex items-center gap-3">
 							<button
-								on:click={() => toggleTask(task.id)}
+								on:click={() => tasksStore.toggleTask(task.id)}
 								class="w-6 h-6 border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-100"
 							>
 								{#if task.completed}
@@ -106,7 +106,7 @@
 							</div>
 						</div>
 						<button
-							on:click={() => deleteTask(task.id)}
+							on:click={() => tasksStore.deleteTask(task.id)}
 							class="text-gray-400 hover:text-red-500 p-1"
 						>
 							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,7 +133,7 @@
 					<div class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg opacity-75">
 						<div class="flex items-center gap-3">
 							<button
-								on:click={() => toggleTask(task.id)}
+								on:click={() => tasksStore.toggleTask(task.id)}
 								class="w-6 h-6 border border-gray-300 rounded-full flex items-center justify-center bg-green-100"
 							>
 								<svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +155,7 @@
 							</div>
 						</div>
 						<button
-							on:click={() => deleteTask(task.id)}
+							on:click={() => tasksStore.deleteTask(task.id)}
 							class="text-gray-400 hover:text-red-500 p-1"
 						>
 							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -108,7 +108,7 @@ export async function updateReport(reportId: string, updates: Partial<Report> & 
 
 		const { error } = await supabase
 			.from('reports')
-			.update(supabaseUpdates)
+			.update(supabaseUpdates as never)
 			.eq('id', reportId);
 
 		if (error) {

@@ -107,12 +107,15 @@ export function sanitizePrompt(prompt: any): string {
  * Returns true if app is initialized and credentials are ready
  */
 export async function ensureAppReady(): Promise<boolean> {
+  console.log('ensureAppReady: called');
   try {
     // Import dynamically to avoid circular dependencies
     const { appInit } = await import('$lib/system/AppInit');
     const { credentialManager } = await import('$lib/system/CredentialManager');
     
+    console.log('ensureAppReady: imports loaded');
     await appInit.waitForReady();
+    console.log('ensureAppReady: appInit ready');
     
     if (!credentialManager.isReady()) {
       logAppReadiness('ensureAppReady', false, { credentialManagerReady: false });
@@ -124,6 +127,7 @@ export async function ensureAppReady(): Promise<boolean> {
       appInitialized: true,
       credentialManagerReady: true
     });
+    console.log('ensureAppReady: returning true');
     return true;
   } catch (error) {
     logAppReadiness('ensureAppReady', false, { error: error instanceof Error ? error.message : 'Unknown error' });

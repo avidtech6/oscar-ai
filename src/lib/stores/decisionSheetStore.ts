@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { debugStore } from './debugStore';
 
 export interface DecisionSheetAction {
 	id: string;
@@ -34,6 +35,7 @@ function openSheet(
 	actions: DecisionSheetAction[],
 	onCancel?: () => void
 ) {
+	debugStore.log('DecisionSheetStore', 'openSheet', { title, message, actionsCount: actions.length });
 	console.log('[DecisionSheetStore] openSheet:', title, message, actions.length);
 	set({
 		isOpen: true,
@@ -46,10 +48,12 @@ function openSheet(
 }
 
 function closeSheet() {
+	debugStore.log('DecisionSheetStore', 'closeSheet');
 	update(state => ({ ...state, isOpen: false }));
 }
 
 function reset() {
+	debugStore.log('DecisionSheetStore', 'reset');
 	set(initialState);
 }
 
@@ -59,6 +63,7 @@ function openSubsystemDecision(
 	suggestedActions: string[],
 	onActionSelected: (actionLabel: string) => void
 ) {
+	debugStore.log('DecisionSheetStore', 'openSubsystemDecision', { subsystem, suggestedActions });
 	const actions: DecisionSheetAction[] = suggestedActions.map((label, idx) => ({
 		id: `action_${idx}`,
 		label,
@@ -78,6 +83,7 @@ function openAmbiguousDecision(
 	prompt: string,
 	onActionSelected: (actionLabel: string) => void
 ) {
+	debugStore.log('DecisionSheetStore', 'openAmbiguousDecision', { prompt });
 	const actions: DecisionSheetAction[] = [
 		{ id: 'stay', label: 'Stay Here', handler: () => onActionSelected('Stay Here') },
 		{ id: 'notes', label: 'Switch to Notes', handler: () => onActionSelected('Switch to Notes') },
@@ -98,6 +104,7 @@ function openMediaDecision(
 	mediaType: 'photo' | 'voice' | 'file',
 	onActionSelected: (actionLabel: string) => void
 ) {
+	debugStore.log('DecisionSheetStore', 'openMediaDecision', { mediaType });
 	let title = '';
 	let message = '';
 	let actions: DecisionSheetAction[] = [];

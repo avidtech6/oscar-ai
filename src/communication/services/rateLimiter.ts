@@ -132,7 +132,7 @@ export class SafetyGuardrails {
 		to: string[];
 		subject: string;
 		body: string;
-		attachments?: File[];
+		attachments?: any[]; // Accept EmailAttachment[] or File[]
 	}): { valid: boolean; error?: string } {
 		// Check recipient count
 		if (params.to.length > 100) {
@@ -160,7 +160,18 @@ export class SafetyGuardrails {
 		
 		// Check attachments
 		if (params.attachments) {
-			const totalSize = params.attachments.reduce((sum, file) => sum + file.size, 0);
+			// Calculate total size for EmailAttachment or File objects
+			const totalSize = params.attachments.reduce((sum, att) => {
+				if ('size' in att) {
+					return sum + att.size;
+				}
+				// For EmailAttachment objects
+				if ('size' in att) {
+					return sum + (att as any).size;
+				}
+				return sum;
+			}, 0);
+			
 			if (totalSize > 25 * 1024 * 1024) { // 25MB
 				return { valid: false, error: 'Total attachment size exceeds 25MB limit' };
 			}

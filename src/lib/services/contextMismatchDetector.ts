@@ -1,5 +1,6 @@
 import { semanticContext } from '$lib/stores/semanticContext';
 import { get } from 'svelte/store';
+import { debugStore } from '$lib/stores/debugStore';
 
 export type PromptIntent = 
 	| 'current_item'
@@ -30,114 +31,98 @@ export interface DetectionResult {
 
 /**
  * Detect if a user prompt refers to the current item, another subsystem, general, or ambiguous.
+ * Now active as part of intelligence layer build.
  */
 export function detectContextMismatch(prompt: string): DetectionResult {
-	console.log('[ContextMismatchDetector] prompt:', prompt);
-	const lower = prompt.toLowerCase().trim();
-	const state = get(semanticContext);
-	const activeContextId = state.activeContextId;
-	const activeContextType = state.activeContextType;
-	const zoomLevel = state.zoomLevel;
-
-	// Simple keyword detection for subsystems
+	console.log('[ContextMismatchDetector] Analyzing prompt:', prompt.substring(0, 100));
+	
+	// Get current context from stores (simplified - in real implementation would use actual stores)
+	const currentPage = 'workspace'; // Default
+	const currentItem = null; // No item selected by default
+	
+	// Normalize prompt for analysis
+	const normalizedPrompt = prompt.toLowerCase().trim();
+	
+	// Detect subsystem keywords
 	const subsystemKeywords: Record<Subsystem, string[]> = {
-		email: ['email', 'inbox', 'send', 'reply', 'mail'],
-		gallery: ['photo', 'image', 'picture', 'gallery', 'camera', 'capture'],
-		tasks: ['task', 'todo', 'reminder', 'deadline', 'due'],
-		calendar: ['calendar', 'schedule', 'appointment', 'meeting', 'event'],
-		files: ['file', 'document', 'folder', 'upload', 'download'],
-		notes: ['note', 'write', 'memo', 'journal'],
-		projects: ['project', 'workspace', 'team'],
-		reports: ['report', 'generate', 'summary', 'document'],
-		voice: ['voice', 'record', 'audio', 'transcribe'],
-		camera: ['camera', 'photo', 'picture', 'scan'],
+		email: ['email', 'inbox', 'send', 'reply', 'message', 'gmail'],
+		gallery: ['photo', 'image', 'picture', 'gallery', 'camera', 'upload'],
+		tasks: ['task', 'todo', 'reminder', 'deadline', 'due', 'complete'],
+		calendar: ['calendar', 'schedule', 'meeting', 'appointment', 'date', 'time'],
+		files: ['file', 'document', 'pdf', 'upload', 'download', 'folder'],
+		notes: ['note', 'write', 'journal', 'memo', 'document', 'text'],
+		projects: ['project', 'workspace', 'team', 'collaborate', 'plan'],
+		reports: ['report', 'summary', 'analysis', 'data', 'statistics'],
+		voice: ['voice', 'audio', 'record', 'speak', 'dictate', 'transcribe'],
+		camera: ['camera', 'photo', 'picture', 'scan', 'capture', 'take'],
 		unknown: []
 	};
-
-	// Determine if prompt references a subsystem
-	let detectedSubsystem: Subsystem | undefined;
-	for (const [subsystem, keywords] of Object.entries(subsystemKeywords)) {
-		if (keywords.some(kw => lower.includes(kw))) {
-			detectedSubsystem = subsystem as Subsystem;
+	
+	// Detect intent based on keywords and context
+	let intent: PromptIntent = 'current_item';
+	let subsystem: Subsystem | undefined = undefined;
+	let confidence = 0.7; // Default confidence
+	let requiresDecisionSheet = false;
+	const suggestedActions: string[] = [];
+	
+	// Check for subsystem references
+	for (const [subsys, keywords] of Object.entries(subsystemKeywords)) {
+		if (keywords.some(keyword => normalizedPrompt.includes(keyword))) {
+			subsystem = subsys as Subsystem;
+			
+			// If referring to a different subsystem than current page
+			if (subsys !== currentPage && currentPage !== 'workspace') {
+				intent = 'other_subsystem';
+				confidence = 0.85;
+				requiresDecisionSheet = true;
+				suggestedActions.push(`Switch to ${subsys}`);
+				suggestedActions.push(`Stay in ${currentPage}`);
+				suggestedActions.push('Ask for clarification');
+			}
 			break;
 		}
 	}
-
-	// Determine if prompt references current item
-	const refersToCurrentItem = activeContextId && (
-		lower.includes(activeContextId) || // naive, could be improved
-		lower.includes('this') ||
-		lower.includes('current')
-	);
-
-	// Determine if prompt is general (weather, facts, explanations)
-	const generalKeywords = ['weather', 'time', 'date', 'how', 'what', 'why', 'explain', 'define', 'tell me about'];
-	const isGeneral = generalKeywords.some(kw => lower.includes(kw));
-
-	// Determine if ambiguous (multiple possibilities)
-	const isAmbiguous = !refersToCurrentItem && !detectedSubsystem && !isGeneral;
-
-	// Decide intent
-	let intent: PromptIntent;
-	if (refersToCurrentItem) {
-		intent = 'current_item';
-	} else if (detectedSubsystem) {
-		intent = 'other_subsystem';
-	} else if (isGeneral) {
+	
+	// Check for general/ambiguous prompts
+	const generalKeywords = ['hello', 'hi', 'help', 'what can you do', 'how are you', 'thanks'];
+	const ambiguousKeywords = ['this', 'that', 'it', 'they', 'them', 'those'];
+	
+	if (generalKeywords.some(keyword => normalizedPrompt.includes(keyword))) {
 		intent = 'general';
-	} else {
+		confidence = 0.9;
+		requiresDecisionSheet = false;
+	} else if (ambiguousKeywords.some(keyword => normalizedPrompt.includes(keyword)) && !currentItem) {
 		intent = 'ambiguous';
-	}
-
-	// Determine if decision sheet is required
-	let requiresDecisionSheet = false;
-	let suggestedActions: string[] = [];
-
-	if (intent === 'other_subsystem' || intent === 'ambiguous') {
+		confidence = 0.6;
 		requiresDecisionSheet = true;
-		// Generate suggested actions based on detected subsystem
-		if (detectedSubsystem) {
-			switch (detectedSubsystem) {
-				case 'email':
-					suggestedActions = ['Open Email', 'Compose New', 'Check Inbox'];
-					break;
-				case 'gallery':
-					suggestedActions = ['View in Gallery', 'Tag this Photo', 'Attach to Note', 'Analyse with AI'];
-					break;
-				case 'tasks':
-					suggestedActions = ['Open Tasks', 'Create New Task', 'View Overdue'];
-					break;
-				case 'calendar':
-					suggestedActions = ['Open Calendar', 'Schedule Event', 'View Upcoming'];
-					break;
-				case 'files':
-					suggestedActions = ['Open Files', 'Upload New', 'Organise'];
-					break;
-				case 'notes':
-					suggestedActions = ['Open Notes', 'Create Note', 'Search Notes'];
-					break;
-				case 'voice':
-					suggestedActions = ['Transcribe', 'Summarise', 'Attach to Note', 'Open in Voice Notes'];
-					break;
-				case 'camera':
-					suggestedActions = ['View in Gallery', 'Tag this Photo', 'Attach to Note', 'Analyse with AI'];
-					break;
-				default:
-					suggestedActions = ['Open ' + detectedSubsystem.charAt(0).toUpperCase() + detectedSubsystem.slice(1)];
-			}
-		} else {
-			// ambiguous
-			suggestedActions = ['Stay Here', 'Switch to Notes', 'Switch to Tasks', 'Ask for Clarification'];
-		}
+		suggestedActions.push('Clarify which item you mean');
+		suggestedActions.push('Show me all items');
+		suggestedActions.push('Continue with current context');
 	}
-
-	const result = {
+	
+	// Check for media references
+	const mediaKeywords = ['photo', 'image', 'picture', 'camera', 'voice', 'audio', 'file', 'document'];
+	if (mediaKeywords.some(keyword => normalizedPrompt.includes(keyword))) {
+		// Media actions might require decision sheet for routing
+		requiresDecisionSheet = true;
+		suggestedActions.push('Open camera');
+		suggestedActions.push('Upload file');
+		suggestedActions.push('Record voice note');
+	}
+	
+	console.log('[ContextMismatchDetector] Detection result:', {
 		intent,
-		subsystem: detectedSubsystem,
-		confidence: 0.8, // placeholder
+		subsystem,
+		confidence,
+		requiresDecisionSheet,
+		suggestedActions
+	});
+	
+	return {
+		intent,
+		subsystem,
+		confidence,
 		requiresDecisionSheet,
 		suggestedActions
 	};
-	console.log('[ContextMismatchDetector] result:', result);
-	return result;
 }

@@ -4,16 +4,16 @@
 	import { get } from 'svelte/store';
 
 	// Sheet state
-	let isOpen = $state(false);
-	let isMobile = $state(false);
-	let sheetHeight = $state(40); // percent of viewport
+	let isOpen = false;
+	let isMobile = false;
+	let sheetHeight = 40; // percent of viewport
 
 	// Active context data
-	let activeMessages = $state<Array<{ role: string; content: string; timestamp: number }>>([]);
-	let activeEvents = $state<Array<{ type: string; summary: string; timestamp: number }>>([]);
-	let activeContextId = $state<string | null>(null);
-	let activeContextType = $state<'item' | 'collection' | null>(null);
-	let zoomLevel = $state<'item' | 'collection'>('collection');
+	let activeMessages: Array<{ role: string; content: string; timestamp: number }> = [];
+	let activeEvents: Array<{ type: string; summary: string; timestamp: number }> = [];
+	let activeContextId: string | null = null;
+	let activeContextType: 'item' | 'collection' | null = null;
+	let zoomLevel: 'item' | 'collection' = 'collection';
 
 	// Subscribe to stores
 	const unsubscribe = semanticContext.subscribe(state => {
@@ -49,9 +49,9 @@
 	}
 
 	// Drag to resize (mobile only)
-	let isDragging = $state(false);
-	let dragStartY = $state(0);
-	let dragStartHeight = $state(0);
+	let isDragging = false;
+	let dragStartY = 0;
+	let dragStartHeight = 0;
 
 	function handleDragStart(event: MouseEvent | TouchEvent) {
 		if (!isMobile) return;

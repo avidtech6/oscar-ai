@@ -104,7 +104,7 @@ export async function createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedA
 
 export async function updateNote(noteId: string, updates: Partial<Note>): Promise<boolean> {
 	try {
-		const supabaseUpdates: any = {};
+		const supabaseUpdates: Partial<SupabaseNote> = {};
 		
 		if (updates.title !== undefined) supabaseUpdates.title = updates.title;
 		if (updates.content !== undefined) supabaseUpdates.content = updates.content;
@@ -117,7 +117,7 @@ export async function updateNote(noteId: string, updates: Partial<Note>): Promis
 
 		const { error } = await supabase
 			.from('notes')
-			.update(supabaseUpdates)
+			.update(supabaseUpdates as never)
 			.eq('id', noteId);
 
 		if (error) {

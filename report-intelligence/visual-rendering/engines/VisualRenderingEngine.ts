@@ -251,32 +251,32 @@ export class VisualRenderingEngine {
    * Add item to cache
    */
   private addToCache(key: string, content: RenderingResult): void {
-    // Check cache size and evict if needed
-    if (this.cache.size >= this.config.cacheMaxSize * 10) { // Approximate entries
-      // Remove least recently used entry
-      const lru = Array.from(this.cache.entries())
-        .reduce((oldest, current) => 
-          current[1].accessedAt < oldest[1].accessedAt ? current : oldest
-        );
-      this.cache.delete(lru[0]);
-    }
-    
-    const entry: RenderCacheEntry = {
-      key,
-      content,
-      metadata: {
-        documentId: content.documentId,
-        timestamp: Date.now(),
-        size: content.html.length + content.css.length,
-        format: 'html',
-        optionsHash: this.hashString(JSON.stringify(this.options))
-      },
-      accessedAt: Date.now(),
-      createdAt: Date.now()
-    };
-    
-    this.cache.set(key, entry);
+  // Check cache size and evict if needed
+  if (this.cache.size >= this.config.cacheMaxSize * 10) { // Approximate entries
+    // Remove least recently used entry
+    const lru = Array.from(this.cache.entries())
+      .reduce((oldest, current) =>
+        current[1].accessedAt < oldest[1].accessedAt ? current : oldest
+      );
+    this.cache.delete(lru[0]);
   }
+  
+  const entry: RenderCacheEntry = {
+    key,
+    content,
+    metadata: {
+      documentId: content.content.title, // Use content.title as documentId
+      timestamp: Date.now(),
+      size: (content.html?.length || 0) + (content.css?.length || 0),
+      format: 'html',
+      optionsHash: this.hashString(JSON.stringify(this.options))
+    },
+    accessedAt: Date.now(),
+    createdAt: Date.now()
+  };
+  
+  this.cache.set(key, entry);
+}
 
   /**
    * Update job progress
@@ -290,9 +290,9 @@ export class VisualRenderingEngine {
       // Notify progress listeners
       this.notifyProgress(jobId, {
         jobId,
+        status: 'processing',
         progress,
-        currentStep: step,
-        timestamp: Date.now()
+        currentStep: step
       });
     }
   }
@@ -528,20 +528,27 @@ export class VisualRenderingEngine {
       
       // 7. Create rendering result
       const renderingResult: RenderingResult = {
+        id: jobIdToUse,
         jobId: jobIdToUse,
+        version: '1.0.0',
         status: 'completed',
+        progress: 100,
+        content: document,
+        options: this.options,
         html: finalHTML,
         css: finalCSS,
-        documentId: document.title,
         pages: [],
+        snapshots: [],
         metrics: {
           startTime: new Date(startTime),
           endTime: new Date(),
           duration: Date.now() - startTime,
-          htmlSize: finalHTML.length,
-          cssSize: finalCSS.length,
+          pageCount: 0,
+          elementCount: this.countElements(document),
           imageCount: this.countImages(document),
-          elementCount: this.countElements(document)
+          layoutPasses: 0,
+          cacheHits: 0,
+          cacheMisses: 0
         },
         warnings: [...(renderResult.warnings || []), ...jobStatus.warnings],
         errors: (renderResult.errors || []).map(error => ({
@@ -549,8 +556,8 @@ export class VisualRenderingEngine {
           message: error,
           timestamp: new Date()
         })),
-        snapshots: [],
-        pdfExport: undefined
+        createdAt: new Date(startTime),
+        updatedAt: new Date()
       };
       
       this.updateJobProgress(jobIdToUse, 80, 'Capturing snapshots');
@@ -565,12 +572,14 @@ export class VisualRenderingEngine {
           
           return {
             id: snapshot.id,
-            timestamp: new Date(snapshot.timestamp),
-            format: snapshot.format as 'png' | 'jpeg' | 'webp',
             pageNumber: snapshot.pageNumber,
+            format: snapshot.format as 'png' | 'jpeg' | 'webp',
             dataUrl,
             width: snapshot.dimensions.width,
             height: snapshot.dimensions.height,
+            size: dataUrl.length,
+            quality: 90,
+            captureTime: new Date(snapshot.timestamp),
             metadata: {
               documentId: snapshot.documentId,
               tags: snapshot.tags
@@ -584,17 +593,27 @@ export class VisualRenderingEngine {
       // 9. Export to PDF if enabled
       if (this.config.enablePDFExport) {
         try {
-          const pdfResult = await this.pdfExporter.exportToPDF({
-            html: finalHTML,
-            css: finalCSS,
-            options: {
-              documentTitle: document.title,
-              includePageNumbers: true,
-              includeCoverPage: this.config.enableCoverPages
-            }
-          });
+          // Create a document content for PDF export
+          const pdfDocument: DocumentContent = {
+            title: document.title,
+            sections: document.sections,
+            author: document.author,
+            date: document.date,
+            metadata: document.metadata
+          };
           
-          renderingResult.pdfExport = pdfResult;
+          const pdfResult = await this.pdfExporter.exportToPDF(pdfDocument);
+          
+          // Convert the result to the expected PDFExportResult type
+          renderingResult.pdfExport = {
+            id: `pdf_${Date.now()}`,
+            fileName: `${document.title}.pdf`,
+            fileSize: pdfResult.fileSize || 0,
+            pageCount: pdfResult.pageCount,
+            quality: 'standard',
+            generationTime: Date.now() - startTime,
+            metadata: pdfResult.metadata
+          };
         } catch (pdfError) {
           renderingResult.warnings.push(`PDF export failed: ${pdfError instanceof Error ? pdfError.message : String(pdfError)}`);
         }
@@ -710,20 +729,35 @@ export class VisualRenderingEngine {
       
       // Create rendering result
       const renderingResult: RenderingResult = {
+        id: jobIdToUse,
         jobId: jobIdToUse,
+        version: '1.0.0',
         status: 'completed',
+        progress: 100,
+        content: {
+          title: documentId,
+          sections: [{
+            id: 'page-section',
+            type: 'section',
+            title: `Page ${pageContent.pageNumber || 1}`,
+            content: pageContent.content
+          }]
+        },
+        options: this.options,
         html: pageHTML.html,
         css: css + (pageHTML.css || ''),
-        documentId,
         pages: [],
+        snapshots: [],
         metrics: {
           startTime: new Date(startTime),
           endTime: new Date(),
           duration: Date.now() - startTime,
-          htmlSize: pageHTML.html.length,
-          cssSize: css.length + (pageHTML.css?.length || 0),
+          pageCount: 1,
+          elementCount: pageContent.content.length,
           imageCount: this.countImagesInPage(pageContent),
-          elementCount: pageContent.content.length
+          layoutPasses: 0,
+          cacheHits: 0,
+          cacheMisses: 0
         },
         warnings: [...(pageHTML.warnings || []), ...jobStatus.warnings],
         errors: (pageHTML.errors || []).map(error => ({
@@ -731,8 +765,8 @@ export class VisualRenderingEngine {
           message: error,
           timestamp: new Date()
         })),
-        snapshots: [],
-        pdfExport: undefined
+        createdAt: new Date(startTime),
+        updatedAt: new Date()
       };
       
       this.updateJobProgress(jobIdToUse, 70, 'Capturing snapshot');
@@ -752,12 +786,14 @@ export class VisualRenderingEngine {
           
           renderingResult.snapshots.push({
             id: snapshot.id,
-            timestamp: new Date(snapshot.timestamp),
-            format: snapshot.format as 'png' | 'jpeg' | 'webp',
             pageNumber: snapshot.pageNumber,
+            format: snapshot.format as 'png' | 'jpeg' | 'webp',
             dataUrl,
             width: snapshot.dimensions.width,
             height: snapshot.dimensions.height,
+            size: dataUrl.length,
+            quality: 90,
+            captureTime: new Date(snapshot.timestamp),
             metadata: {
               documentId: snapshot.documentId,
               tags: snapshot.tags
@@ -814,15 +850,7 @@ export class VisualRenderingEngine {
     const renderResult = await this.renderDocument(document);
     
     // Then export to PDF
-    const pdfResult = await this.pdfExporter.exportToPDF({
-      html: renderResult.html,
-      css: renderResult.css,
-      options: options || {
-        documentTitle: document.title,
-        includePageNumbers: true,
-        includeCoverPage: this.config.enableCoverPages
-      }
-    });
+    const pdfResult = await this.pdfExporter.exportToPDF(document);
     
     return pdfResult;
   }

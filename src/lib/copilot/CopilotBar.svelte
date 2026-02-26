@@ -8,6 +8,7 @@
 	import { pdfExtractionService } from './pdfExtractionService';
 	import { sanitizePrompt, ensureAppReady } from './sanitizeInput';
 	import { onMount, onDestroy } from 'svelte';
+	import { debugStore } from '$lib/stores/debugStore';
 
 	const emit = createEventDispatcher();
 
@@ -49,11 +50,20 @@
 	// Get placeholder text: show hint only when input is empty
 	$: placeholder = inputValue.trim() ? '' : finalHint;
 	
+	// Debug logging for input changes
+	$: debugStore.log('CopilotBar', 'inputValue updated', { value: inputValue, trimmed: inputValue.trim() });
+	
 	async function handleSubmit() {
+		debugStore.log('CopilotBar', 'handleSubmit called', { inputValue });
 		console.log('CopilotBar: handleSubmit called, inputValue:', inputValue);
-		// Check if app is ready
+		// DEBUG: Alert to confirm submit is triggered
+		if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+			alert(`CopilotBar: Submitting "${inputValue}"`);
+		}
+		// Check app readiness
 		const isReady = await ensureAppReady();
 		if (!isReady) {
+			debugStore.log('CopilotBar', 'App not ready', { isReady });
 			console.warn('CopilotBar: App not ready, cannot process input');
 			// Show user feedback
 			alert('Please wait for the application to finish loading before sending messages.');
@@ -63,10 +73,12 @@
 		// Sanitize input
 		const sanitizedInput = sanitizePrompt(inputValue);
 		if (!sanitizedInput) {
+			debugStore.log('CopilotBar', 'Empty input after sanitization', { inputValue });
 			console.warn('CopilotBar: Empty input after sanitization');
 			return;
 		}
 		
+		debugStore.log('CopilotBar', 'Sending sanitized prompt', { sanitizedInput });
 		console.log('CopilotBar: Sending sanitized prompt:', sanitizedInput.substring(0, 50) + (sanitizedInput.length > 50 ? '...' : ''));
 		console.log('CopilotBar: Emitting promptSubmit event');
 		emit('promptSubmit', { text: sanitizedInput });
@@ -75,6 +87,12 @@
 		clearFollowUps();
 		
 		inputValue = '';
+	}
+
+	async function handleClick() {
+		debugStore.log('CopilotBar', 'button clicked', { inputValue });
+		console.log('CopilotBar: button clicked');
+		await handleSubmit();
 	}
 	
 	async function handleInputKeydown(event: KeyboardEvent) {
@@ -262,6 +280,8 @@
 	
 	// Set up event listeners on mount
 	onMount(() => {
+		console.log('CopilotBar: mounted');
+		debugStore.log('CopilotBar', 'mounted');
 		window.addEventListener('followUpAction', handleFollowUpAction as EventListener);
 		window.addEventListener('insightAction', handleInsightAction as EventListener);
 		window.addEventListener('pdfExtracted', handlePdfExtractionEvent as EventListener);
@@ -276,6 +296,7 @@
 		}
 		
 		return () => {
+			console.log('CopilotBar: unmounting');
 			window.removeEventListener('followUpAction', handleFollowUpAction as EventListener);
 			window.removeEventListener('insightAction', handleInsightAction as EventListener);
 			window.removeEventListener('pdfExtracted', handlePdfExtractionEvent as EventListener);
@@ -369,7 +390,7 @@
 				
 				<!-- Send button -->
 				<button
-					on:click={handleSubmit}
+					on:click={handleClick}
 					disabled={!inputValue.trim()}
 					class="p-3 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 					title="Send message"

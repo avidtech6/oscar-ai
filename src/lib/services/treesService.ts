@@ -118,7 +118,7 @@ export async function updateTree(treeId: string, updates: Partial<Tree>): Promis
 
 		const { error } = await supabase
 			.from('trees')
-			.update(supabaseUpdates)
+			.update(supabaseUpdates as never)
 			.eq('id', treeId);
 
 		if (error) {

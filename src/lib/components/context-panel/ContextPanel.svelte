@@ -5,13 +5,13 @@
 	import ContextPanelHint from './ContextPanelHint.svelte';
 	
 	// Reactive stores
-	let isOpen = $state(false);
-	let isMobile = $state(false);
-	let currentContext = $state('global');
-	let hasNewHints = $state(false);
-	let filteredHintsList = $state([]);
-	let panelWidth = $state(320);
-	let animationDuration = $state(300);
+	let isOpen = false;
+	let isMobile = false;
+	let currentContext = 'global';
+	let hasNewHints = false;
+	let filteredHintsList: any[] = [];
+	let panelWidth = 320;
+	let animationDuration = 300;
 	
 	// Subscribe to stores
 	const unsubscribe = contextPanelStore.subscribe(state => {

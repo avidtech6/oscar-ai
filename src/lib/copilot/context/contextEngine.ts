@@ -32,7 +32,11 @@ const DEFAULT_CONTEXT: CopilotContext = {
 		showTechnicalHints: true,
 		showSmartSharePrompts: true,
 		showDeliverabilityWarnings: true
-	}
+	},
+	route: '',
+	assistantActive: false,
+	inputEmpty: true,
+	isMobile: false
 };
 
 class ContextEngine {

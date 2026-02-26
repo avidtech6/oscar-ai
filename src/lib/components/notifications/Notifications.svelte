@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { notificationsStore, markAsRead, clearAll } from '$lib/stores/notifications';
+	import { notificationsStore } from '$lib/stores/notifications';
 
 	let filter: 'all' | 'unread' = 'all';
 
@@ -14,8 +14,12 @@
 
 	function markAllAsRead() {
 		$notificationsStore.forEach(n => {
-			if (!n.read) markAsRead(n.id);
+			if (!n.read) notificationsStore.markAsRead(n.id);
 		});
+	}
+
+	function clearAll() {
+		notificationsStore.clearAll();
 	}
 </script>
 
@@ -110,7 +114,7 @@
 						{/if}
 					</div>
 					<button
-						on:click={() => markAsRead(notification.id)}
+						on:click={() => notificationsStore.markAsRead(notification.id)}
 						class="text-gray-400 hover:text-gray-600 p-1"
 						title="Mark as read"
 					>

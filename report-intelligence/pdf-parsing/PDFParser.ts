@@ -233,7 +233,7 @@ export class PDFParser {
           columns: [],
           contentRegions: [],
           tables: [],
-          pageBreak: { type: 'none' },
+          pageBreak: { type: 'none' as const },
         };
     
     // Extract fonts and styles (if enabled)

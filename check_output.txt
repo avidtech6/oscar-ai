@@ -1,0 +1,3075 @@
+
+> oscar-ai-dev@2.0.0 check
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
+
+
+====================================
+Loading svelte-check in workspace: d:\PROJECTS\oscar-ai
+Getting Svelte diagnostics...
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\stores\notificationStore.ts[39m:123:7
+[31mError[39m: Type '{ total: number; unread: number; urgent: number; byType: Record<string, number>; byPriority: Record<string, number>; } | undefined' is not assignable to type '{ total: number; unread: number; urgent: number; byType: Record<string, number>; byPriority: Record<string, number>; } | null'.
+  Type 'undefined' is not assignable to type '{ total: number; unread: number; urgent: number; byType: Record<string, number>; byPriority: Record<string, number>; } | null'. 
+[36m						...state, 
+						[35mstats[36m: result.data,
+						loading: false 
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\memory\memoryEngine.ts[39m:171:4
+[31mError[39m: Type 'MemoryItem | null' is not assignable to type 'MemoryItem | undefined'.
+  Type 'null' is not assignable to type 'MemoryItem | undefined'. 
+[36m		if (!memoryItem) {
+			[35mmemoryItem[36m = await this.storage.getMemory(id);
+			if (memoryItem) {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\memory\providerEngine.ts[39m:557:6
+[31mError[39m: Property 'tags' does not exist on type 'MemoryItem'. 
+[36m			m.summary.toLowerCase().includes('config') ||
+			m.[35mtags[36m?.includes('provider-configuration')
+		);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\integrationTest.ts[39m:72:9
+[31mError[39m: Type '{ ui: { currentScreen: "message-view"; contextPanelOpen: false; assistLayerOpen: false; smartShareActive: false; isComposing: false; isViewingCampaign: false; deliverabilityWarningsVisible: false; lastUpdated: Date; }; ... 4 more ...; smartShare: { ...; }; }' is missing the following properties from type 'CopilotContext': route, assistantActive, inputEmpty, isMobile 
+[36m		// Create a sample context that matches the actual type definitions
+		const [35msampleContext[36m: CopilotContext = {
+			ui: {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\agents\agentIntegration.test.ts[39m:140:2
+[31mError[39m: Cannot find name 'beforeEach'. 
+[36m	
+	[35mbeforeEach[36m(async () => {
+		// Initialize components
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\agents\agentIntegration.test.ts[39m:172:2
+[31mError[39m: Cannot find name 'afterEach'. 
+[36m	
+	[35mafterEach[36m(async () => {
+		// Clean up
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\integrationTest.ts[39m:18:7
+[31mError[39m: Type '{ ui: { currentScreen: ScreenType; contextPanelOpen: false; assistLayerOpen: false; smartShareActive: false; isComposing: false; isViewingCampaign: false; deliverabilityWarningsVisible: false; lastUpdated: Date; }; navigationHistory: ScreenType[]; hintPreferences: { ...; }; }' is missing the following properties from type 'CopilotContext': route, assistantActive, inputEmpty, isMobile 
+[36m// Create proper mock context
+const [35mmockContext[36m: CopilotContext = {
+	ui: {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:8:61
+[31mError[39m: Cannot find module 'vitest' or its corresponding type declarations. 
+[36m
+import { describe, it, expect, beforeEach, afterEach } from [35m'vitest'[36m;
+import { WorkflowEngine } from '../workflowEngine';
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:70:82
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'.
+  Type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is missing the following properties from type 'CopilotContext': route, assistantActive, inputEmpty, isMobile 
+[36m		it('should start a workflow', async () => {
+			const workflowInstance = await workflowEngine.startWorkflow('provider_setup', [35mmockContext[36m);
+			
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:83:82
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'. 
+[36m		it('should pause and resume a workflow', async () => {
+			const workflowInstance = await workflowEngine.startWorkflow('provider_setup', [35mmockContext[36m);
+			
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:101:82
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'. 
+[36m		it('should cancel a workflow', async () => {
+			const workflowInstance = await workflowEngine.startWorkflow('provider_setup', [35mmockContext[36m);
+			
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:135:62
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'. 
+[36m		it('should get workflows for context', () => {
+			const workflows = workflowRegistry.getWorkflowsForContext([35mmockContext[36m);
+			
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:142:70
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'. 
+[36m		it('should get suggested workflows', () => {
+			const suggestedWorkflows = workflowRegistry.getSuggestedWorkflows([35mmockContext[36m);
+			
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:178:5
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'. 
+[36m				'provider_setup',
+				[35mmockContext[36m,
+				'test-user'
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:197:5
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'. 
+[36m				'provider_setup',
+				[35mmockContext[36m
+			);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:224:72
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'. 
+[36m			// Create a few workflows
+			await workflowStateManager.createWorkflowInstance('provider_setup', [35mmockContext[36m);
+			await workflowStateManager.createWorkflowInstance('deliverability_repair', mockContext);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:225:79
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'. 
+[36m			await workflowStateManager.createWorkflowInstance('provider_setup', mockContext);
+			await workflowStateManager.createWorkflowInstance('deliverability_repair', [35mmockContext[36m);
+			
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:293:44
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'. 
+[36m		it('should load suggested workflows through UI', async () => {
+			await workflowUI.loadSuggestedWorkflows([35mmockContext[36m);
+			
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\copilot\workflows\__tests__\workflowIntegration.test.ts[39m:353:70
+[31mError[39m: Argument of type '{ ui: { currentScreen: string; contextPanelOpen: boolean; assistLayerOpen: boolean; smartShareActive: boolean; isComposing: boolean; isViewingCampaign: boolean; deliverabilityWarningsVisible: boolean; lastUpdated: Date; }; navigationHistory: string[]; hintPreferences: { ...; }; }' is not assignable to parameter of type 'CopilotContext'. 
+[36m			// 1. Get suggested workflows
+			const suggestedWorkflows = workflowRegistry.getSuggestedWorkflows([35mmockContext[36m);
+			expect(suggestedWorkflows.length).toBeGreaterThan(0);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\email\metadata\appFlowyIntegration.ts[39m:250:40
+[31mError[39m: Property 'lastSync' does not exist on type 'ImapSyncState'. 
+[36m	console.log(`[AppFlowy] Storing sync state for connection ${options.connectionId}`);
+	console.log(`  Last sync: ${syncState.[35mlastSync[36m}, Provider: ${options.providerId}`);
+	
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\email\metadata\appFlowyIntegration.ts[39m:259:24
+[31mError[39m: Property 'lastSync' does not exist on type 'ImapSyncState'. 
+[36m		provider_id: options.providerId,
+		last_sync: syncState.[35mlastSync[36m.toISOString(),
+		last_uid: syncState.lastUid,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\email\metadata\appFlowyIntegration.ts[39m:260:23
+[31mError[39m: Property 'lastUid' does not exist on type 'ImapSyncState'. 
+[36m		last_sync: syncState.lastSync.toISOString(),
+		last_uid: syncState.[35mlastUid[36m,
+		highest_mod_seq: syncState.highestModSeq,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\email\metadata\appFlowyIntegration.ts[39m:261:30
+[31mError[39m: Property 'highestModSeq' does not exist on type 'ImapSyncState'. 
+[36m		last_uid: syncState.lastUid,
+		highest_mod_seq: syncState.[35mhighestModSeq[36m,
+		folder_states: JSON.stringify(syncState.folderStates),
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\services\notesService.ts[39m:120:12
+[31mError[39m: Argument of type 'any' is not assignable to parameter of type 'never'. 
+[36m			.from('notes')
+			.update([35msupabaseUpdates[36m)
+			.eq('id', noteId);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\services\pdfParsingService.ts[39m:15:42
+[31mError[39m: Cannot find module '../../report-intelligence/pdf-parsing/PDFParser' or its corresponding type declarations. 
+[36m      // Dynamic import to avoid TypeScript compilation issues
+      const { PDFParser } = await import([35m'../../report-intelligence/pdf-parsing/PDFParser'[36m);
+      pdfParserInstance = new PDFParser();
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\services\reportsService.ts[39m:111:12
+[31mError[39m: Argument of type 'any' is not assignable to parameter of type 'never'. 
+[36m			.from('reports')
+			.update([35msupabaseUpdates[36m)
+			.eq('id', reportId);
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\style-learner\ReportStyleLearner.ts[39m:13:3
+[31mError[39m: 'StyleProfile' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled. 
+[36mimport {
+  [35mStyleProfile[36m,
+  createStyleProfile,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\services\treesService.ts[39m:121:12
+[31mError[39m: Argument of type 'any' is not assignable to parameter of type 'never'. 
+[36m			.from('trees')
+			.update([35msupabaseUpdates[36m)
+			.eq('id', treeId);
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\ImageEmbeddingPipeline.ts[39m:405:11
+[31mError[39m: Property 'url' is missing in type '{ dataUrl: string; alt: string; caption: string | undefined; }' but required in type 'ImageSource'. 
+[36m        if (result.dataUrl) {
+          [35mprocessedSource[36m = {
+            dataUrl: result.dataUrl,
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:268:29
+[31mError[39m: Property 'documentId' does not exist on type 'RenderingResult'. 
+[36m      metadata: {
+        documentId: content.[35mdocumentId[36m,
+        timestamp: Date.now(),
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:270:15
+[31mError[39m: 'content.html' is possibly 'undefined'. 
+[36m        timestamp: Date.now(),
+        size: [35mcontent.html[36m.length + content.css.length,
+        format: 'html',
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:270:37
+[31mError[39m: 'content.css' is possibly 'undefined'. 
+[36m        timestamp: Date.now(),
+        size: content.html.length + [35mcontent.css[36m.length,
+        format: 'html',
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:295:9
+[31mError[39m: Object literal may only specify known properties, and 'timestamp' does not exist in type 'RenderingProgress'. 
+[36m        currentStep: step,
+        [35mtimestamp[36m: Date.now()
+      });
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:541:11
+[31mError[39m: Object literal may only specify known properties, and 'htmlSize' does not exist in type 'RenderingMetrics'. 
+[36m          duration: Date.now() - startTime,
+          [35mhtmlSize[36m: finalHTML.length,
+          cssSize: finalCSS.length,
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:561:9
+[31mError[39m: Type '{ id: string; timestamp: Date; format: "jpeg" | "png" | "webp"; pageNumber: number; dataUrl: string; width: number; height: number; metadata: { documentId: string; tags: string[]; }; }[]' is not assignable to type 'SnapshotResult[]'.
+  Type '{ id: string; timestamp: Date; format: "jpeg" | "png" | "webp"; pageNumber: number; dataUrl: string; width: number; height: number; metadata: { documentId: string; tags: string[]; }; }' is missing the following properties from type 'SnapshotResult': size, quality, captureTime 
+[36m        const snapshots = await this.snapshotSystem.captureDocumentSnapshot(document, ['rendered']);
+        [35mrenderingResult.snapshots[36m = snapshots.map(snapshot => {
+          const snapshotEntry = this.snapshotSystem.getSnapshot(snapshot.id);
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:588:13
+[31mError[39m: Object literal may only specify known properties, and 'html' does not exist in type 'DocumentContent'. 
+[36m          const pdfResult = await this.pdfExporter.exportToPDF({
+            [35mhtml[36m: finalHTML,
+            css: finalCSS,
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:597:11
+[31mError[39m: Type 'PDFExportResult' is missing the following properties from type 'PDFExportResult': id, fileName, quality, generationTime 
+[36m          
+          [35mrenderingResult.pdfExport[36m = pdfResult;
+        } catch (pdfError) {
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:723:11
+[31mError[39m: Object literal may only specify known properties, and 'htmlSize' does not exist in type 'RenderingMetrics'. 
+[36m          duration: Date.now() - startTime,
+          [35mhtmlSize[36m: pageHTML.html.length,
+          cssSize: css.length + (pageHTML.css?.length || 0),
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:755:13
+[31mError[39m: Object literal may only specify known properties, and 'timestamp' does not exist in type 'SnapshotResult'. 
+[36m            id: snapshot.id,
+            [35mtimestamp[36m: new Date(snapshot.timestamp),
+            format: snapshot.format as 'png' | 'jpeg' | 'webp',
+[39m
+
+d:\PROJECTS\oscar-ai\[32mreport-intelligence\visual-rendering\engines\VisualRenderingEngine.ts[39m:818:7
+[31mError[39m: Object literal may only specify known properties, and 'html' does not exist in type 'DocumentContent'. 
+[36m    const pdfResult = await this.pdfExporter.exportToPDF({
+      [35mhtml[36m: renderResult.html,
+      css: renderResult.css,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Shared\NewWorkspaceModal.svelte[39m:51:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div>
+					[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+						Workspace Name *
+					</label>[36m
+					<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Shared\NewWorkspaceModal.svelte[39m:63:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div>
+					[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+						Description
+					</label>[36m
+					<textarea
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Shared\NewDocumentModal.svelte[39m:60:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div>
+					[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+						Document Title *
+					</label>[36m
+					<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Shared\NewDocumentModal.svelte[39m:72:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div>
+					[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+						Document Type
+					</label>[36m
+					<select
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Shared\NewDocumentModal.svelte[39m:86:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div>
+					[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+						Workspace *
+					</label>[36m
+					<select
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\AppFlowyDocuments.svelte[39m:163:5
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m			{#each $workspaces as workspace (workspace.id)}
+				[35m<div
+					on:click={() => selectWorkspace(workspace.id)}
+					class={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+						selectedWorkspaceId === workspace.id
+							? 'border-blue-500 bg-blue-50'
+							: 'border-gray-200 hover:border-gray-300'
+					}`}
+				>
+					<div class="flex items-start justify-between">
+						<div>
+							<h4 class="font-medium text-gray-900">{workspace.name}</h4>
+							<p class="text-sm text-gray-600 mt-1">{workspace.description}</p>
+						</div>
+						<div class="text-xs text-gray-500">
+							{workspace.documents.length} docs
+						</div>
+					</div>
+					<div class="mt-3 flex items-center justify-between text-sm">
+						<span class="text-gray-500">
+							{workspace.members.length} members
+						</span>
+						<span class="text-gray-500">
+							Updated {formatDate(workspace.updatedAt)}
+						</span>
+					</div>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\AppFlowyDocuments.svelte[39m:163:5
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m			{#each $workspaces as workspace (workspace.id)}
+				[35m<div
+					on:click={() => selectWorkspace(workspace.id)}
+					class={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+						selectedWorkspaceId === workspace.id
+							? 'border-blue-500 bg-blue-50'
+							: 'border-gray-200 hover:border-gray-300'
+					}`}
+				>
+					<div class="flex items-start justify-between">
+						<div>
+							<h4 class="font-medium text-gray-900">{workspace.name}</h4>
+							<p class="text-sm text-gray-600 mt-1">{workspace.description}</p>
+						</div>
+						<div class="text-xs text-gray-500">
+							{workspace.documents.length} docs
+						</div>
+					</div>
+					<div class="mt-3 flex items-center justify-between text-sm">
+						<span class="text-gray-500">
+							{workspace.members.length} members
+						</span>
+						<span class="text-gray-500">
+							Updated {formatDate(workspace.updatedAt)}
+						</span>
+					</div>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\AppFlowyDocuments.svelte[39m:223:7
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m					{#each $documents as document (document.id)}
+						[35m<div
+							on:click={() => selectDocument(document)}
+							class="p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md cursor-pointer transition-all"
+						>
+							<div class="flex items-start justify-between">
+								<div class="flex items-start space-x-3">
+									<span class="text-xl">{getDocumentTypeIcon(document.type)}</span>
+									<div>
+										<h4 class="font-medium text-gray-900">{document.title}</h4>
+										<p class="text-sm text-gray-600 mt-1 capitalize">
+											{document.type} • v{document.version}
+										</p>
+									</div>
+								</div>
+								<div class="text-xs text-gray-500">
+									{document.collaborators.length} collab
+								</div>
+							</div>
+							<div class="mt-3 flex items-center justify-between text-sm">
+								<span class="text-gray-500">
+									Modified {formatDate(document.lastModified)}
+								</span>
+								<span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+									{document.type}
+								</span>
+							</div>
+						</div>[36m
+					{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\AppFlowyDocuments.svelte[39m:223:7
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m					{#each $documents as document (document.id)}
+						[35m<div
+							on:click={() => selectDocument(document)}
+							class="p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md cursor-pointer transition-all"
+						>
+							<div class="flex items-start justify-between">
+								<div class="flex items-start space-x-3">
+									<span class="text-xl">{getDocumentTypeIcon(document.type)}</span>
+									<div>
+										<h4 class="font-medium text-gray-900">{document.title}</h4>
+										<p class="text-sm text-gray-600 mt-1 capitalize">
+											{document.type} • v{document.version}
+										</p>
+									</div>
+								</div>
+								<div class="text-xs text-gray-500">
+									{document.collaborators.length} collab
+								</div>
+							</div>
+							<div class="mt-3 flex items-center justify-between text-sm">
+								<span class="text-gray-500">
+									Modified {formatDate(document.lastModified)}
+								</span>
+								<span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+									{document.type}
+								</span>
+							</div>
+						</div>[36m
+					{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Calendar\CalendarEventForm.svelte[39m:148:4
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m		<div>
+			[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+				Event Title <span class="text-red-500">*</span>
+			</label>[36m
+			<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Calendar\CalendarEventForm.svelte[39m:162:4
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m		<div>
+			[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+				Description
+			</label>[36m
+			<textarea
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Calendar\CalendarEventForm.svelte[39m:177:5
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m			<div>
+				[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+					Start Time <span class="text-red-500">*</span>
+				</label>[36m
+				<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Calendar\CalendarEventForm.svelte[39m:190:5
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m			<div>
+				[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+					End Time <span class="text-red-500">*</span>
+				</label>[36m
+				<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Calendar\CalendarEventForm.svelte[39m:205:5
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m			<div>
+				[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+					Event Type
+				</label>[36m
+				<select
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Calendar\CalendarEventForm.svelte[39m:222:5
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m			<div>
+				[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+					Color
+				</label>[36m
+				<div class="flex gap-2">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Calendar\CalendarEventForm.svelte[39m:249:5
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m			<div>
+				[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+					Project ID (Optional)
+				</label>[36m
+				<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\components\Calendar\CalendarEventForm.svelte[39m:262:5
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m			<div>
+				[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+					Client ID (Optional)
+				</label>[36m
+				<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\dashboard\components\QuickActions.svelte[39m:79:2
+[33mWarn[39m: Do not use empty rulesets (css)
+[36m<style>
+	[35m.quick-actions[36m {
+		/* Component styles */
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\dashboard\components\NotificationsWidget.svelte[39m:72:5
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m			{#each recentNotifications as notification}
+				[35m<div 
+					class="flex items-center justify-between p-2 {notification.read ? 'bg-gray-50' : 'bg-blue-50'} rounded"
+					on:click|stopPropagation={() => markAsRead(notification.id)}
+				>
+					<div class="flex items-center gap-2">
+						{#if !notification.read}
+							<div class="w-2 h-2 rounded-full bg-blue-500"></div>
+						{/if}
+						<span class="text-sm {notification.read ? 'text-gray-600' : 'text-gray-800 font-medium'}">{notification.text}</span>
+					</div>
+					<span class="text-xs text-gray-500">{notification.time}</span>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\dashboard\components\NotificationsWidget.svelte[39m:72:5
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m			{#each recentNotifications as notification}
+				[35m<div 
+					class="flex items-center justify-between p-2 {notification.read ? 'bg-gray-50' : 'bg-blue-50'} rounded"
+					on:click|stopPropagation={() => markAsRead(notification.id)}
+				>
+					<div class="flex items-center gap-2">
+						{#if !notification.read}
+							<div class="w-2 h-2 rounded-full bg-blue-500"></div>
+						{/if}
+						<span class="text-sm {notification.read ? 'text-gray-600' : 'text-gray-800 font-medium'}">{notification.text}</span>
+					</div>
+					<span class="text-xs text-gray-500">{notification.time}</span>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\email\components\EmailSidebar.svelte[39m:62:2
+[33mWarn[39m: Do not use empty rulesets (css)
+[36m<style>
+	[35m.email-sidebar[36m {
+		/* Component styles */
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\email\components\EmailList.svelte[39m:110:2
+[33mWarn[39m: Do not use empty rulesets (css)
+[36m<style>
+	[35m.email-list[36m {
+		/* Component styles */
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\email\components\EmailViewer.svelte[39m:109:2
+[33mWarn[39m: Do not use empty rulesets (css)
+[36m<style>
+	[35m.email-viewer[36m {
+		/* Component styles */
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\email\components\EmailComposer.svelte[39m:15:4
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m		<div>
+			[35m<label class="block text-sm font-medium text-gray-700 mb-1">To</label>[36m
+			<input 
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\email\components\EmailComposer.svelte[39m:31:4
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m		<div>
+			[35m<label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>[36m
+			<input 
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\email\components\EmailComposer.svelte[39m:41:4
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m		<div class="flex-1">
+			[35m<label class="block text-sm font-medium text-gray-700 mb-1">Message</label>[36m
+			<div class="border border-gray-300 rounded h-64 overflow-hidden">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\email\components\EmailComposer.svelte[39m:80:4
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m		<div>
+			[35m<label class="block text-sm font-medium text-gray-700 mb-1">Attachments</label>[36m
+			<div class="border border-dashed border-gray-300 rounded p-4 text-center">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\communication\email\components\EmailComposer.svelte[39m:112:2
+[33mWarn[39m: Do not use empty rulesets (css)
+[36m<style>
+	[35m.email-composer[36m {
+		/* Component styles */
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\MobileBottomBar.svelte[39m:55:20
+[31mError[39m: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'. (ts)
+[36m					class="flex flex-col items-center justify-center flex-1 h-full px-1 py-1 transition-colors relative
+						   {isActive([35mitem.href[36m) ? 'text-forest-600' : 'text-gray-500 hover:text-gray-700'}"
+					title={item.label}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\PDFGenerator.svelte[39m:2:65
+[31mError[39m: Cannot find module 'pdf-lib' or its corresponding type declarations. (ts)
+[36m<script lang="ts">
+	import { PDFDocument, rgb, StandardFonts, GrayscaleLogo } from [35m'pdf-lib'[36m;
+	import { onMount } from 'svelte';
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\PDFGenerator.svelte[39m:377:17
+[31mError[39m: Argument of type 'Uint8Array | null' is not assignable to parameter of type 'Uint8Array'.
+  Type 'null' is not assignable to type 'Uint8Array'. (ts)
+[36m			if (onGenerated) {
+				onGenerated([35mpdfBytes[36m);
+			}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\PhotoUploader.svelte[39m:143:13
+[31mError[39m: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: string; }, never, never, null, "photo_references", never, "POST">', gave the following error.
+    Argument of type '{ project_id: string; tree_id: string | null; note_id: string | null; storage_path: string; filename: string; mime_type: string; size: number; public_url: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: string; }, never, never, null, "photo_references", never, "POST">', gave the following error.
+    Argument of type '{ project_id: string; tree_id: string | null; note_id: string | null; storage_path: string; filename: string; mime_type: string; size: number; public_url: string; }' is not assignable to parameter of type 'never[]'.
+      Type '{ project_id: string; tree_id: string | null; note_id: string | null; storage_path: string; filename: string; mime_type: string; size: number; public_url: string; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 35 more. (ts)
+[36m				.from('photo_references')
+				.insert([35mphotoRef[36m);
+			
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content h1" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content h2" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content h3" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content ul" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content ol" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content ul" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content ol" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content img" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content a" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content a:hover" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\RichTextEditor.svelte[39m:427:8
+[33mWarn[39m: Unused CSS selector ".editor-content hr" (svelte)
+[36m
+<style>[35m[36m
+	.rich-text-editor {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\VoiceRecorder.svelte[39m:56:4
+[31mError[39m: Type 'Timeout' is not assignable to type 'number'. (ts)
+[36m			// Start timer
+			[35mtimerInterval[36m = setInterval(() => {
+				recordingTime++;
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\ai\UnifiedAIPrompt.svelte[39m:348:2
+[33mWarn[39m: A11y: noninteractive element cannot have nonnegative tabIndex value (svelte)
+[36m{#if isOpen}
+	[35m<div
+		class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
+		on:keydown={handleKeydown}
+		tabindex="0"
+	>
+		<div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+			<!-- Header -->
+			<div class="px-6 py-4 border-b flex items-center justify-between">
+				<div>
+					<h2 class="text-lg font-semibold text-gray-900">AI Assistant</h2>
+					<p class="text-sm text-gray-600">
+						{#if project}
+							{project.name}
+						{:else}
+							Project Assistant
+						{/if}
+					</p>
+				</div>
+				<button
+					on:click={() => isOpen = false}
+					class="text-gray-400 hover:text-gray-600"
+				>
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+
+			<!-- Main Content -->
+			<div class="flex-1 flex overflow-hidden">
+				<!-- Actions Sidebar -->
+				<div class="w-1/3 border-r bg-gray-50 overflow-y-auto p-4">
+					<h3 class="font-medium text-gray-900 mb-3">Quick Actions</h3>
+					<div class="space-y-2">
+						{#each availableActions as action}
+							<button
+								on:click={() => handleAction(action.id)}
+								disabled={processing}
+								class="w-full text-left p-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+							>
+								<div class="flex items-center gap-3">
+									<div class="p-2 bg-forest-50 rounded-lg">
+										<svg class="w-5 h-5 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={action.icon} />
+										</svg>
+									</div>
+									<div class="flex-1">
+										<p class="font-medium text-gray-900">{action.label}</p>
+										<p class="text-xs text-gray-600 mt-1">{action.description}</p>
+									</div>
+								</div>
+							</button>
+						{/each}
+					</div>
+
+					<div class="mt-6 pt-4 border-t border-gray-200">
+						<h4 class="font-medium text-gray-900 mb-2">Tips</h4>
+						<ul class="text-xs text-gray-600 space-y-1">
+							<li>• Ask about trees, notes, or photos</li>
+							<li>• Request project review</li>
+							<li>• Get suggestions for improvements</li>
+							<li>• Analyze your data</li>
+							<li>• Press Esc to close</li>
+						</ul>
+					</div>
+				</div>
+
+				<!-- Chat Area -->
+				<div class="flex-1 flex flex-col">
+					<!-- Conversation -->
+					<div class="flex-1 overflow-y-auto p-4 space-y-4">
+						{#each conversation as message, index (index)}
+							{#if message.role !== 'system'}
+								<div class={`flex ${message.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
+									<div class={`max-w-[80%] rounded-lg p-3 ${message.role === 'ai' ? 'bg-gray-100 text-gray-800' : 'bg-forest-600 text-white'}`}>
+										{#if message.role === 'ai'}
+											<div class="prose prose-sm max-w-none">
+												{@html message.content.replace(/\n/g, '<br>').replace(/## (.*?)\n/g, '<h3 class="text-lg font-semibold mb-2">$1</h3>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\* (.*?)\n/g, '<li>$1</li>')}
+											</div>
+										{:else}
+											<p class="whitespace-pre-wrap">{message.content}</p>
+										{/if}
+									</div>
+								</div>
+							{/if}
+						{/each}
+
+						{#if processing}
+							<div class="flex justify-start">
+								<div class="bg-gray-100 rounded-lg p-3">
+									<div class="flex items-center gap-2">
+										<svg class="w-4 h-4 animate-spin text-gray-500" fill="none" viewBox="0 0 24 24">
+											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+											<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+										</svg>
+										<span class="text-sm text-gray-600">AI is thinking...</span>
+									</div>
+								</div>
+							</div>
+						{/if}
+					</div>
+
+					<!-- Input Area -->
+					<div class="border-t p-4">
+						<div class="flex gap-2">
+							<input
+								type="text"
+								bind:value={userInput}
+								placeholder="Ask me anything about your project..."
+								class="input flex-1"
+								on:keydown={(e) => e.key === 'Enter' && handleSendMessage()}
+								disabled={processing}
+							/>
+							<button
+								on:click={handleSendMessage}
+								class="btn btn-primary"
+								disabled={processing || !userInput.trim()}
+							>
+								Send
+							</button>
+						</div>
+						<p class="text-xs text-gray-500 mt-2">
+							Press Enter to send, Esc to close
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>[36m
+{/if}[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\ai\UnifiedAIPrompt.svelte[39m:348:2
+[33mWarn[39m: A11y: <div> with keydown handler must have an ARIA role (svelte)
+[36m{#if isOpen}
+	[35m<div
+		class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
+		on:keydown={handleKeydown}
+		tabindex="0"
+	>
+		<div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+			<!-- Header -->
+			<div class="px-6 py-4 border-b flex items-center justify-between">
+				<div>
+					<h2 class="text-lg font-semibold text-gray-900">AI Assistant</h2>
+					<p class="text-sm text-gray-600">
+						{#if project}
+							{project.name}
+						{:else}
+							Project Assistant
+						{/if}
+					</p>
+				</div>
+				<button
+					on:click={() => isOpen = false}
+					class="text-gray-400 hover:text-gray-600"
+				>
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+
+			<!-- Main Content -->
+			<div class="flex-1 flex overflow-hidden">
+				<!-- Actions Sidebar -->
+				<div class="w-1/3 border-r bg-gray-50 overflow-y-auto p-4">
+					<h3 class="font-medium text-gray-900 mb-3">Quick Actions</h3>
+					<div class="space-y-2">
+						{#each availableActions as action}
+							<button
+								on:click={() => handleAction(action.id)}
+								disabled={processing}
+								class="w-full text-left p-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+							>
+								<div class="flex items-center gap-3">
+									<div class="p-2 bg-forest-50 rounded-lg">
+										<svg class="w-5 h-5 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={action.icon} />
+										</svg>
+									</div>
+									<div class="flex-1">
+										<p class="font-medium text-gray-900">{action.label}</p>
+										<p class="text-xs text-gray-600 mt-1">{action.description}</p>
+									</div>
+								</div>
+							</button>
+						{/each}
+					</div>
+
+					<div class="mt-6 pt-4 border-t border-gray-200">
+						<h4 class="font-medium text-gray-900 mb-2">Tips</h4>
+						<ul class="text-xs text-gray-600 space-y-1">
+							<li>• Ask about trees, notes, or photos</li>
+							<li>• Request project review</li>
+							<li>• Get suggestions for improvements</li>
+							<li>• Analyze your data</li>
+							<li>• Press Esc to close</li>
+						</ul>
+					</div>
+				</div>
+
+				<!-- Chat Area -->
+				<div class="flex-1 flex flex-col">
+					<!-- Conversation -->
+					<div class="flex-1 overflow-y-auto p-4 space-y-4">
+						{#each conversation as message, index (index)}
+							{#if message.role !== 'system'}
+								<div class={`flex ${message.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
+									<div class={`max-w-[80%] rounded-lg p-3 ${message.role === 'ai' ? 'bg-gray-100 text-gray-800' : 'bg-forest-600 text-white'}`}>
+										{#if message.role === 'ai'}
+											<div class="prose prose-sm max-w-none">
+												{@html message.content.replace(/\n/g, '<br>').replace(/## (.*?)\n/g, '<h3 class="text-lg font-semibold mb-2">$1</h3>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\* (.*?)\n/g, '<li>$1</li>')}
+											</div>
+										{:else}
+											<p class="whitespace-pre-wrap">{message.content}</p>
+										{/if}
+									</div>
+								</div>
+							{/if}
+						{/each}
+
+						{#if processing}
+							<div class="flex justify-start">
+								<div class="bg-gray-100 rounded-lg p-3">
+									<div class="flex items-center gap-2">
+										<svg class="w-4 h-4 animate-spin text-gray-500" fill="none" viewBox="0 0 24 24">
+											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+											<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+										</svg>
+										<span class="text-sm text-gray-600">AI is thinking...</span>
+									</div>
+								</div>
+							</div>
+						{/if}
+					</div>
+
+					<!-- Input Area -->
+					<div class="border-t p-4">
+						<div class="flex gap-2">
+							<input
+								type="text"
+								bind:value={userInput}
+								placeholder="Ask me anything about your project..."
+								class="input flex-1"
+								on:keydown={(e) => e.key === 'Enter' && handleSendMessage()}
+								disabled={processing}
+							/>
+							<button
+								on:click={handleSendMessage}
+								class="btn btn-primary"
+								disabled={processing || !userInput.trim()}
+							>
+								Send
+							</button>
+						</div>
+						<p class="text-xs text-gray-500 mt-2">
+							Press Enter to send, Esc to close
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>[36m
+{/if}[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\assist-layer\AssistLayer.svelte[39m:168:2
+[33mWarn[39m: A11y: <div> with mousedown handler must have an ARIA role (svelte)
+[36m	<!-- Drag Handle -->
+	[35m<div
+		class="assist-drag-handle"
+		on:mousedown={handleDragStart}
+		on:touchstart={handleDragStart}
+		aria-label="Drag to resize"
+	>
+		<div class="drag-indicator" />
+	</div>[36m
+	
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\assist-layer\AssistLayer.svelte[39m:20:27
+[31mError[39m: Cannot find module './AssistTabBar.svelte' or its corresponding type declarations. (ts)
+[36m	import AssistActionButton from './AssistActionButton.svelte';
+	import AssistTabBar from [35m'./AssistTabBar.svelte'[36m;
+	import AssistVoiceInput from './AssistVoiceInput.svelte';
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\assist-layer\AssistLayer.svelte[39m:21:31
+[31mError[39m: Cannot find module './AssistVoiceInput.svelte' or its corresponding type declarations. (ts)
+[36m	import AssistTabBar from './AssistTabBar.svelte';
+	import AssistVoiceInput from [35m'./AssistVoiceInput.svelte'[36m;
+	
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\calendar\Calendar.svelte[39m:98:5
+[31mError[39m: Unexpected token (svelte)
+[36m		{#each Array(daysInMonth).fill(0) as _, i}
+			{[35m[36mconst day = i + 1}
+			{const date = new Date(year, month, day)}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\calendar\Calendar.svelte[39m:98:5
+[31mError[39m: Unexpected token (ts)
+[36m		{#each Array(daysInMonth).fill(0) as _, i}
+			{[35m[36mconst day = i + 1}
+			{const date = new Date(year, month, day)}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\camera\CameraCapture.svelte[39m:246:4
+[33mWarn[39m: A11y: Screenreaders already announce <img> elements as an image. (svelte)
+[36m		<div class="photo-preview" transition:fade>
+			[35m<img src={capturedPhoto} alt="Captured photo" class="preview-image" />[36m
+			
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanelHint.svelte[39m:34:79
+[31mError[39m: Property 'actionable' does not exist on type 'ContextHint'. (ts)
+[36m
+<div class="context-panel-hint" class:seen={hint.seen} class:actionable={hint.[35mactionable[36m}>
+	<div class="hint-header">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanelHint.svelte[39m:48:13
+[31mError[39m: Property 'timestamp' does not exist on type 'ContextHint'. (ts)
+[36m		
+		{#if hint.[35mtimestamp[36m}
+			<span class="hint-timestamp" title={new Date(hint.timestamp).toLocaleString()}>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanelHint.svelte[39m:49:54
+[31mError[39m: Property 'timestamp' does not exist on type 'ContextHint'. (ts)
+[36m		{#if hint.timestamp}
+			<span class="hint-timestamp" title={new Date(hint.[35mtimestamp[36m).toLocaleString()}>
+				{formatTime(hint.timestamp)}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanelHint.svelte[39m:50:22
+[31mError[39m: Property 'timestamp' does not exist on type 'ContextHint'. (ts)
+[36m			<span class="hint-timestamp" title={new Date(hint.timestamp).toLocaleString()}>
+				{formatTime(hint.[35mtimestamp[36m)}
+			</span>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanelHint.svelte[39m:59:12
+[31mError[39m: Property 'actionable' does not exist on type 'ContextHint'. (ts)
+[36m	
+	{#if hint.[35mactionable[36m && hint.actionLabel}
+		<div class="hint-actions">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanelHint.svelte[39m:59:31
+[31mError[39m: Property 'actionLabel' does not exist on type 'ContextHint'. (ts)
+[36m	
+	{#if hint.actionable && hint.[35mactionLabel[36m}
+		<div class="hint-actions">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanelHint.svelte[39m:64:22
+[31mError[39m: Property 'actionLabel' does not exist on type 'ContextHint'. (ts)
+[36m				on:click
+				aria-label={hint.[35mactionLabel[36m}
+			>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanelHint.svelte[39m:66:11
+[31mError[39m: Property 'actionLabel' does not exist on type 'ContextHint'. (ts)
+[36m			>
+				{hint.[35mactionLabel[36m}
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanelHint.svelte[39m:75:13
+[31mError[39m: Property 'source' does not exist on type 'ContextHint'. (ts)
+[36m	<div class="hint-footer">
+		{#if hint.[35msource[36m}
+			<span class="hint-source">From: {hint.source}</span>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanelHint.svelte[39m:76:42
+[31mError[39m: Property 'source' does not exist on type 'ContextHint'. (ts)
+[36m		{#if hint.source}
+			<span class="hint-source">From: {hint.[35msource[36m}</span>
+		{/if}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\context-panel\ContextPanel.svelte[39m:100:2
+[33mWarn[39m: A11y: Redundant role 'complementary' (svelte)
+[36m	style={panelStyle}
+	[35mrole="complementary"[36m
+	aria-label="Context Panel"
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\editor\MarkdownPreview.svelte[39m:3:25
+[31mError[39m: Could not find a declaration file for module 'markdown-it'. 'd:/PROJECTS/oscar-ai/node_modules/markdown-it/index.mjs' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/markdown-it` if it exists or add a new declaration (.d.ts) file containing `declare module 'markdown-it';` (ts)
+[36m	import { onMount } from 'svelte';
+	import MarkdownIt from [35m'markdown-it'[36m;
+	
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\editor\MarkdownPreview.svelte[39m:38:43
+[31mError[39m: Parameter 'tokens' implicitly has an 'any' type. (ts)
+[36m		// Add target="_blank" to all links
+		md.renderer.rules.link_open = function ([35mtokens[36m, idx, options, env, self) {
+			const aIndex = tokens[idx].attrIndex('target');
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\editor\MarkdownPreview.svelte[39m:38:51
+[31mError[39m: Parameter 'idx' implicitly has an 'any' type. (ts)
+[36m		// Add target="_blank" to all links
+		md.renderer.rules.link_open = function (tokens, [35midx[36m, options, env, self) {
+			const aIndex = tokens[idx].attrIndex('target');
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\editor\MarkdownPreview.svelte[39m:38:56
+[31mError[39m: Parameter 'options' implicitly has an 'any' type. (ts)
+[36m		// Add target="_blank" to all links
+		md.renderer.rules.link_open = function (tokens, idx, [35moptions[36m, env, self) {
+			const aIndex = tokens[idx].attrIndex('target');
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\editor\MarkdownPreview.svelte[39m:38:65
+[31mError[39m: Parameter 'env' implicitly has an 'any' type. (ts)
+[36m		// Add target="_blank" to all links
+		md.renderer.rules.link_open = function (tokens, idx, options, [35menv[36m, self) {
+			const aIndex = tokens[idx].attrIndex('target');
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\editor\MarkdownPreview.svelte[39m:38:70
+[31mError[39m: Parameter 'self' implicitly has an 'any' type. (ts)
+[36m		// Add target="_blank" to all links
+		md.renderer.rules.link_open = function (tokens, idx, options, env, [35mself[36m) {
+			const aIndex = tokens[idx].attrIndex('target');
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\files\Files.svelte[39m:103:2
+[33mWarn[39m: A11y: <div> with dragover, dragleave, drop handlers must have an ARIA role (svelte)
+[36m	<!-- Drop zone -->
+	[35m<div
+		class="w-full max-w-2xl border-2 border-dashed rounded-2xl p-8 mb-8 text-center transition-colors
+			{isDragging ? 'border-forest-500 bg-forest-50' : 'border-gray-300 hover:border-gray-400'}"
+		on:dragover={handleDragOver}
+		on:dragleave={handleDragLeave}
+		on:drop={handleDrop}
+	>
+		<svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+		</svg>
+		<p class="text-lg font-medium text-gray-700 mb-2">Drop files here</p>
+		<p class="text-gray-500 mb-4">or</p>
+		<label for="file-input" class="cursor-pointer">
+			<span class="px-6 py-3 bg-forest-600 text-white font-medium rounded-lg hover:bg-forest-700 transition-colors">
+				Choose Files
+			</span>
+			<input
+				id="file-input"
+				type="file"
+				multiple
+				accept=".txt,.json,.pdf,.jpg,.jpeg,.png,.gif,.webp"
+				class="hidden"
+				on:change={handleFileSelect}
+			/>
+		</label>
+		<p class="text-sm text-gray-500 mt-4">Supports images, PDFs, text files (max 10MB each)</p>
+	</div>[36m
+
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\notifications\Notifications.svelte[39m:3:31
+[31mError[39m: Module '"$lib/stores/notifications"' has no exported member 'markAsRead'. (ts)
+[36m	import { onMount } from 'svelte';
+	import { notificationsStore, [35mmarkAsRead[36m, clearAll } from '$lib/stores/notifications';
+
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\notifications\Notifications.svelte[39m:3:43
+[31mError[39m: Module '"$lib/stores/notifications"' has no exported member 'clearAll'. (ts)
+[36m	import { onMount } from 'svelte';
+	import { notificationsStore, markAsRead, [35mclearAll[36m } from '$lib/stores/notifications';
+
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\DiagramGenerator.svelte[39m:20:14
+[33mWarn[39m: Component has unused export property 'activeProject'. If it is for external reference only, please consider using `export const activeProject` (svelte)
+[36m  export let projectName: string = '';
+  export let [35mactiveProject: any = [36mnull;
+  
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\MapGenerator.svelte[39m:182:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div>
+					[35m<label class="block text-sm font-medium text-gray-700 mb-1">Location</label>[36m
+					<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\MapGenerator.svelte[39m:194:7
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m					<div>
+						[35m<label class="block text-sm font-medium text-gray-700 mb-1">Zoom Level</label>[36m
+						<select
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\MapGenerator.svelte[39m:208:7
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m					<div>
+						[35m<label class="block text-sm font-medium text-gray-700 mb-1">Map Type</label>[36m
+						<select
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\MapGenerator.svelte[39m:224:7
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m					<div>
+						[35m<label class="block text-sm font-medium text-gray-700 mb-1">Width (px)</label>[36m
+						<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\MapGenerator.svelte[39m:235:7
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m					<div>
+						[35m<label class="block text-sm font-medium text-gray-700 mb-1">Height (px)</label>[36m
+						<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\MapGenerator.svelte[39m:249:7
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m					<div class="flex items-center justify-between mb-2">
+						[35m<label class="block text-sm font-medium text-gray-700">Tree Markers</label>[36m
+						<button 
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\MobileMapCapture.svelte[39m:239:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div class="option-group">
+					[35m<label>Map Type</label>[36m
+					<div class="button-group">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\MobileMapCapture.svelte[39m:263:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div class="option-group">
+					[35m<label>Zoom Level: {zoom}</label>[36m
+					<input 
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\PreviewMode.svelte[39m:169:8
+[33mWarn[39m: Unused CSS selector ".page-landscape" (svelte)
+[36m
+<style>[35m[36m
+	/* A4 Page Settings */
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\PreviewMode.svelte[39m:379:4
+[33mWarn[39m: Unknown property: 'page-orientation' (css)
+[36m		.page-landscape {
+			[35mpage-orientation[36m: landscape;
+		}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\PreviewMode.svelte[39m:4:25
+[31mError[39m: Could not find a declaration file for module 'markdown-it'. 'd:/PROJECTS/oscar-ai/node_modules/markdown-it/index.mjs' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/markdown-it` if it exists or add a new declaration (.d.ts) file containing `declare module 'markdown-it';` (ts)
+[36m	import { projectComponents, currentProject } from '$lib/stores/appStore';
+	import MarkdownIt from [35m'markdown-it'[36m;
+	
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\PreviewMode.svelte[39m:154:21
+[31mError[39m: 'input' is possibly 'null'. (ts)
+[36m						const input = e.target;
+						const value = [35minput[36m.value;
+						dispatch('revise', { prompt: value });
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\PreviewMode.svelte[39m:154:27
+[31mError[39m: Property 'value' does not exist on type 'EventTarget'. (ts)
+[36m						const input = e.target;
+						const value = input.[35mvalue[36m;
+						dispatch('revise', { prompt: value });
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\PreviewMode.svelte[39m:156:7
+[31mError[39m: 'input' is possibly 'null'. (ts)
+[36m						dispatch('revise', { prompt: value });
+						[35minput[36m.value = '';
+					}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\PreviewMode.svelte[39m:156:13
+[31mError[39m: Property 'value' does not exist on type 'EventTarget'. (ts)
+[36m						dispatch('revise', { prompt: value });
+						input.[35mvalue[36m = '';
+					}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\TreeModal.svelte[39m:54:2
+[33mWarn[39m: A11y: noninteractive element cannot have nonnegative tabIndex value (svelte)
+[36m{#if isOpen}
+	[35m<div
+		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+		on:keydown={handleKeydown}
+		tabindex="0"
+		role="dialog"
+		aria-label="Add New Tree"
+		aria-modal="true"
+	>
+		<div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+			<div class="p-4 border-b border-gray-200 flex items-center justify-between">
+				<h2 class="text-xl font-semibold text-gray-900">Add New Tree</h2>
+				<button
+					on:click={onClose}
+					class="text-gray-400 hover:text-gray-600"
+				>
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+
+			<div class="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+				<form on:submit|preventDefault={handleSubmit} class="space-y-6">
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						<div>
+							<label for="treeNumber" class="block text-sm font-medium text-gray-700 mb-1">
+								Tree Number *
+							</label>
+							<input
+								id="treeNumber"
+								type="text"
+								bind:value={newTree.number}
+								placeholder="e.g., T1"
+								class="input w-full"
+								required
+							/>
+						</div>
+
+						<div>
+							<label for="species" class="block text-sm font-medium text-gray-700 mb-1">
+								Species *
+							</label>
+							<input
+								id="species"
+								type="text"
+								bind:value={newTree.species}
+								placeholder="e.g., English Oak"
+								class="input w-full"
+								required
+							/>
+						</div>
+
+						<div>
+							<label for="scientificName" class="block text-sm font-medium text-gray-700 mb-1">
+								Scientific Name
+							</label>
+							<input
+								id="scientificName"
+								type="text"
+								bind:value={newTree.scientificName}
+								placeholder="e.g., Quercus robur"
+								class="input w-full"
+							/>
+						</div>
+
+						<div>
+							<label for="DBH" class="block text-sm font-medium text-gray-700 mb-1">
+								DBH (mm)
+							</label>
+							<input
+								id="DBH"
+								type="number"
+								bind:value={newTree.DBH}
+								placeholder="e.g., 450"
+								class="input w-full"
+								min="0"
+								step="1"
+							/>
+						</div>
+
+						<div>
+							<label for="height" class="block text-sm font-medium text-gray-700 mb-1">
+								Height (m)
+							</label>
+							<input
+								id="height"
+								type="number"
+								bind:value={newTree.height}
+								placeholder="e.g., 12"
+								class="input w-full"
+								min="0"
+								step="0.1"
+							/>
+						</div>
+
+						<div>
+							<label for="age" class="block text-sm font-medium text-gray-700 mb-1">
+								Age Class
+							</label>
+							<select id="age" bind:value={newTree.age} class="input w-full">
+								<option value="">Select...</option>
+								<option value="Young">Young</option>
+								<option value="Semi-mature">Semi-mature</option>
+								<option value="Mature">Mature</option>
+								<option value="Over-mature">Over-mature</option>
+								<option value="Ancient">Ancient</option>
+							</select>
+						</div>
+
+						<div>
+							<label for="category" class="block text-sm font-medium text-gray-700 mb-1">
+								Category
+							</label>
+							<select id="category" bind:value={newTree.category} class="input w-full">
+								<option value="">Select...</option>
+								<option value="A">A - High Quality</option>
+								<option value="B">B - Moderate Quality</option>
+								<option value="C">C - Low Quality</option>
+								<option value="U">U - Unsuitable</option>
+							</select>
+						</div>
+
+						<div>
+							<label for="condition" class="block text-sm font-medium text-gray-700 mb-1">
+								Condition
+							</label>
+							<input
+								id="condition"
+								type="text"
+								bind:value={newTree.condition}
+								placeholder="e.g., Good"
+								class="input w-full"
+							/>
+						</div>
+					</div>
+
+					<div>
+						<label for="treeNotes" class="block text-sm font-medium text-gray-700 mb-1">
+							Notes
+						</label>
+						<textarea
+							id="treeNotes"
+							bind:value={newTree.notes}
+							placeholder="Additional observations..."
+							rows="3"
+							class="input w-full"
+						></textarea>
+					</div>
+
+					<div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+						<button
+							type="button"
+							on:click={onClose}
+							class="btn btn-secondary"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							class="btn btn-primary"
+						>
+							Add Tree
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>[36m
+{/if}[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\project\TreeModal.svelte[39m:54:2
+[33mWarn[39m: A11y: Non-interactive element <div> should not be assigned mouse or keyboard event listeners. (svelte)
+[36m{#if isOpen}
+	[35m<div
+		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+		on:keydown={handleKeydown}
+		tabindex="0"
+		role="dialog"
+		aria-label="Add New Tree"
+		aria-modal="true"
+	>
+		<div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+			<div class="p-4 border-b border-gray-200 flex items-center justify-between">
+				<h2 class="text-xl font-semibold text-gray-900">Add New Tree</h2>
+				<button
+					on:click={onClose}
+					class="text-gray-400 hover:text-gray-600"
+				>
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+
+			<div class="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+				<form on:submit|preventDefault={handleSubmit} class="space-y-6">
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						<div>
+							<label for="treeNumber" class="block text-sm font-medium text-gray-700 mb-1">
+								Tree Number *
+							</label>
+							<input
+								id="treeNumber"
+								type="text"
+								bind:value={newTree.number}
+								placeholder="e.g., T1"
+								class="input w-full"
+								required
+							/>
+						</div>
+
+						<div>
+							<label for="species" class="block text-sm font-medium text-gray-700 mb-1">
+								Species *
+							</label>
+							<input
+								id="species"
+								type="text"
+								bind:value={newTree.species}
+								placeholder="e.g., English Oak"
+								class="input w-full"
+								required
+							/>
+						</div>
+
+						<div>
+							<label for="scientificName" class="block text-sm font-medium text-gray-700 mb-1">
+								Scientific Name
+							</label>
+							<input
+								id="scientificName"
+								type="text"
+								bind:value={newTree.scientificName}
+								placeholder="e.g., Quercus robur"
+								class="input w-full"
+							/>
+						</div>
+
+						<div>
+							<label for="DBH" class="block text-sm font-medium text-gray-700 mb-1">
+								DBH (mm)
+							</label>
+							<input
+								id="DBH"
+								type="number"
+								bind:value={newTree.DBH}
+								placeholder="e.g., 450"
+								class="input w-full"
+								min="0"
+								step="1"
+							/>
+						</div>
+
+						<div>
+							<label for="height" class="block text-sm font-medium text-gray-700 mb-1">
+								Height (m)
+							</label>
+							<input
+								id="height"
+								type="number"
+								bind:value={newTree.height}
+								placeholder="e.g., 12"
+								class="input w-full"
+								min="0"
+								step="0.1"
+							/>
+						</div>
+
+						<div>
+							<label for="age" class="block text-sm font-medium text-gray-700 mb-1">
+								Age Class
+							</label>
+							<select id="age" bind:value={newTree.age} class="input w-full">
+								<option value="">Select...</option>
+								<option value="Young">Young</option>
+								<option value="Semi-mature">Semi-mature</option>
+								<option value="Mature">Mature</option>
+								<option value="Over-mature">Over-mature</option>
+								<option value="Ancient">Ancient</option>
+							</select>
+						</div>
+
+						<div>
+							<label for="category" class="block text-sm font-medium text-gray-700 mb-1">
+								Category
+							</label>
+							<select id="category" bind:value={newTree.category} class="input w-full">
+								<option value="">Select...</option>
+								<option value="A">A - High Quality</option>
+								<option value="B">B - Moderate Quality</option>
+								<option value="C">C - Low Quality</option>
+								<option value="U">U - Unsuitable</option>
+							</select>
+						</div>
+
+						<div>
+							<label for="condition" class="block text-sm font-medium text-gray-700 mb-1">
+								Condition
+							</label>
+							<input
+								id="condition"
+								type="text"
+								bind:value={newTree.condition}
+								placeholder="e.g., Good"
+								class="input w-full"
+							/>
+						</div>
+					</div>
+
+					<div>
+						<label for="treeNotes" class="block text-sm font-medium text-gray-700 mb-1">
+							Notes
+						</label>
+						<textarea
+							id="treeNotes"
+							bind:value={newTree.notes}
+							placeholder="Additional observations..."
+							rows="3"
+							class="input w-full"
+						></textarea>
+					</div>
+
+					<div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+						<button
+							type="button"
+							on:click={onClose}
+							class="btn btn-secondary"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							class="btn btn-primary"
+						>
+							Add Tree
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>[36m
+{/if}[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\AiInsights.svelte[39m:9:13
+[33mWarn[39m: Component has unused export property 'projectId'. If it is for external reference only, please consider using `export const projectId` (svelte)
+[36m	export let photos: Photo[] = [];
+	export let [35mprojectId: string = [36m'';
+
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\RecentNotes.svelte[39m:57:5
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m			{#each recentNotes as note (note.id)}
+				[35m<div
+					on:click={() => handleViewNote(note.id)}
+					class="border border-gray-100 rounded p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+				>
+					<div class="flex justify-between items-start mb-1">
+						<h4 class="font-medium text-gray-800 text-sm truncate">{note.title}</h4>
+						<span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+							{formatDate(note.createdAt)}
+						</span>
+					</div>
+					<p class="text-xs text-gray-600 line-clamp-2">
+						{truncateText(stripHtml(note.content || ''))}
+					</p>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\RecentNotes.svelte[39m:57:5
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m			{#each recentNotes as note (note.id)}
+				[35m<div
+					on:click={() => handleViewNote(note.id)}
+					class="border border-gray-100 rounded p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+				>
+					<div class="flex justify-between items-start mb-1">
+						<h4 class="font-medium text-gray-800 text-sm truncate">{note.title}</h4>
+						<span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+							{formatDate(note.createdAt)}
+						</span>
+					</div>
+					<p class="text-xs text-gray-600 line-clamp-2">
+						{truncateText(stripHtml(note.content || ''))}
+					</p>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\RecentNotes.svelte[39m:58:37
+[31mError[39m: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'. (ts)
+[36m				<div
+					on:click={() => handleViewNote([35mnote.id[36m)}
+					class="border border-gray-100 rounded p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\RecentNotes.svelte[39m:64:20
+[31mError[39m: Argument of type 'Date' is not assignable to parameter of type 'string'. (ts)
+[36m						<span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+							{formatDate([35mnote.createdAt[36m)}
+						</span>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\RecentPhotos.svelte[39m:48:5
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m			{#each recentPhotos as photo (photo.id)}
+				[35m<div
+					on:click={() => handleViewPhoto(photo.id)}
+					class="aspect-square border border-gray-100 rounded overflow-hidden hover:opacity-90 cursor-pointer transition-opacity relative group"
+				>
+					{#if photo.blob}
+						<img
+							src={URL.createObjectURL(photo.blob)}
+							alt={photo.filename || 'Photo'}
+							class="w-full h-full object-cover"
+						/>
+					{:else}
+						<div class="w-full h-full bg-gray-100 flex items-center justify-center">
+							<span class="text-gray-400 text-xs">No image</span>
+						</div>
+					{/if}
+					<div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all"></div>
+					<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+						<p class="text-white text-xs truncate">{photo.filename}</p>
+						<p class="text-white text-xs opacity-75">{formatDate(photo.createdAt)}</p>
+					</div>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\RecentPhotos.svelte[39m:48:5
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m			{#each recentPhotos as photo (photo.id)}
+				[35m<div
+					on:click={() => handleViewPhoto(photo.id)}
+					class="aspect-square border border-gray-100 rounded overflow-hidden hover:opacity-90 cursor-pointer transition-opacity relative group"
+				>
+					{#if photo.blob}
+						<img
+							src={URL.createObjectURL(photo.blob)}
+							alt={photo.filename || 'Photo'}
+							class="w-full h-full object-cover"
+						/>
+					{:else}
+						<div class="w-full h-full bg-gray-100 flex items-center justify-center">
+							<span class="text-gray-400 text-xs">No image</span>
+						</div>
+					{/if}
+					<div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all"></div>
+					<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+						<p class="text-white text-xs truncate">{photo.filename}</p>
+						<p class="text-white text-xs opacity-75">{formatDate(photo.createdAt)}</p>
+					</div>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\RecentReports.svelte[39m:65:5
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m			{#each recentReports as report (report.id)}
+				[35m<div
+					on:click={() => handleViewReport(report.id)}
+					class="border border-gray-100 rounded p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+				>
+					<div class="flex justify-between items-start mb-1">
+						<h4 class="font-medium text-gray-800 text-sm truncate">{report.title}</h4>
+						<span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+							{formatDate(report.generatedAt)}
+						</span>
+					</div>
+					<div class="flex items-center justify-between">
+						<span class="text-xs px-2 py-1 rounded {getReportTypeColor(report.type)}">
+							{getReportTypeLabel(report.type)}
+						</span>
+						{#if report.isDummy}
+							<span class="text-xs text-gray-500">Draft</span>
+						{/if}
+					</div>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\RecentReports.svelte[39m:65:5
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m			{#each recentReports as report (report.id)}
+				[35m<div
+					on:click={() => handleViewReport(report.id)}
+					class="border border-gray-100 rounded p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+				>
+					<div class="flex justify-between items-start mb-1">
+						<h4 class="font-medium text-gray-800 text-sm truncate">{report.title}</h4>
+						<span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+							{formatDate(report.generatedAt)}
+						</span>
+					</div>
+					<div class="flex items-center justify-between">
+						<span class="text-xs px-2 py-1 rounded {getReportTypeColor(report.type)}">
+							{getReportTypeLabel(report.type)}
+						</span>
+						{#if report.isDummy}
+							<span class="text-xs text-gray-500">Draft</span>
+						{/if}
+					</div>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\RecentTrees.svelte[39m:68:5
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m			{#each recentTrees as tree (tree.id)}
+				[35m<div
+					on:click={() => handleViewTree(tree.id)}
+					class="border border-gray-100 rounded p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+				>
+					<div class="flex justify-between items-start mb-1">
+						<div class="flex items-center gap-2">
+							<h4 class="font-medium text-gray-800 text-sm">
+								{tree.number} - {tree.species}
+							</h4>
+							{#if tree.category}
+								<span class="text-xs px-1.5 py-0.5 rounded {getCategoryColor(tree.category)}">
+									{getCategoryLabel(tree.category)}
+								</span>
+							{/if}
+						</div>
+						<span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+							{formatDate(tree.createdAt)}
+						</span>
+					</div>
+					<div class="text-xs text-gray-600 space-y-1">
+						{#if tree.condition}
+							<p><span class="font-medium">Condition:</span> {tree.condition}</p>
+						{/if}
+						{#if tree.notes}
+							<p class="line-clamp-1 text-gray-500">
+								{tree.notes.replace(/<[^>]*>/g, '').substring(0, 60)}...
+							</p>
+						{/if}
+					</div>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\RecentTrees.svelte[39m:68:5
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m			{#each recentTrees as tree (tree.id)}
+				[35m<div
+					on:click={() => handleViewTree(tree.id)}
+					class="border border-gray-100 rounded p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+				>
+					<div class="flex justify-between items-start mb-1">
+						<div class="flex items-center gap-2">
+							<h4 class="font-medium text-gray-800 text-sm">
+								{tree.number} - {tree.species}
+							</h4>
+							{#if tree.category}
+								<span class="text-xs px-1.5 py-0.5 rounded {getCategoryColor(tree.category)}">
+									{getCategoryLabel(tree.category)}
+								</span>
+							{/if}
+						</div>
+						<span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+							{formatDate(tree.createdAt)}
+						</span>
+					</div>
+					<div class="text-xs text-gray-600 space-y-1">
+						{#if tree.condition}
+							<p><span class="font-medium">Condition:</span> {tree.condition}</p>
+						{/if}
+						{#if tree.notes}
+							<p class="line-clamp-1 text-gray-500">
+								{tree.notes.replace(/<[^>]*>/g, '').substring(0, 60)}...
+							</p>
+						{/if}
+					</div>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\TaskSummary.svelte[39m:120:5
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m			{#each recentTasks as task (task.id)}
+				[35m<div
+					on:click={() => handleViewTask(task.id)}
+					class="border border-gray-100 rounded p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+				>
+					<div class="flex justify-between items-start mb-1">
+						<h4 class="font-medium text-gray-800 text-sm truncate">{task.title}</h4>
+						<span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+							{formatDate(task.createdAt)}
+						</span>
+					</div>
+					<div class="flex items-center gap-2 mt-2">
+						<span class="text-xs px-2 py-1 rounded {getStatusColor(task.status)}">
+							{getStatusLabel(task.status)}
+						</span>
+						<span class="text-xs px-2 py-1 rounded {getPriorityColor(task.priority)}">
+							{getPriorityLabel(task.priority)}
+						</span>
+					</div>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\projectOverview\TaskSummary.svelte[39m:120:5
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m			{#each recentTasks as task (task.id)}
+				[35m<div
+					on:click={() => handleViewTask(task.id)}
+					class="border border-gray-100 rounded p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+				>
+					<div class="flex justify-between items-start mb-1">
+						<h4 class="font-medium text-gray-800 text-sm truncate">{task.title}</h4>
+						<span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+							{formatDate(task.createdAt)}
+						</span>
+					</div>
+					<div class="flex items-center gap-2 mt-2">
+						<span class="text-xs px-2 py-1 rounded {getStatusColor(task.status)}">
+							{getStatusLabel(task.status)}
+						</span>
+						<span class="text-xs px-2 py-1 rounded {getPriorityColor(task.priority)}">
+							{getPriorityLabel(task.priority)}
+						</span>
+					</div>
+				</div>[36m
+			{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportEditor.svelte[39m:1020:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div class="mb-4">
+					[35m<label class="block text-sm font-medium text-gray-700 mb-2">Active Section</label>[36m
+					<div class="flex flex-wrap gap-2">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportEditor.svelte[39m:1225:7
+[31mError[39m: Object literal may only specify known properties, and '"onUpload"' does not exist in type '{ projectId?: string | undefined; treeId?: string | null | undefined; noteId?: string | null | undefined; buttonText?: string | undefined; buttonVariant?: "primary" | "secondary" | "outline" | undefined; showPreview?: boolean | undefined; multiple?: boolean | undefined; }'. (ts)
+[36m						projectId={selectedProject?.id || ''}
+						[35monUpload[36m={handlePhotoUpload}
+						buttonText="Upload Photo"
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportPreview.svelte[39m:7:13
+[31mError[39m: Variable 'selectedTemplate' implicitly has type 'any' in some locations where its type cannot be determined. (ts)
+[36m	
+	export let [35mselectedTemplate[36m = null;
+	export let selectedProject = undefined;
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportPreview.svelte[39m:8:13
+[31mError[39m: Variable 'selectedProject' implicitly has type 'any' in some locations where its type cannot be determined. (ts)
+[36m	export let selectedTemplate = null;
+	export let [35mselectedProject[36m = undefined;
+	export let generatedReport = '';
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportPreview.svelte[39m:39:8
+[31mError[39m: Variable 'selectedTemplate' implicitly has an 'any' type. (ts)
+[36m	async function generatePrintPreview() {
+		if (![35mselectedTemplate[36m || !generatedReport) return;
+		
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportPreview.svelte[39m:49:8
+[31mError[39m: Variable 'selectedProject' implicitly has an 'any' type. (ts)
+[36m			
+			if ([35mselectedProject[36m?.id) {
+				// We have a project, prepare template data
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportPreview.svelte[39m:143:7
+[31mError[39m: Variable 'selectedTemplate' implicitly has an 'any' type. (ts)
+[36m						generatedReport,
+						[35mselectedTemplate[36m?.id
+					);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportPreview.svelte[39m:219:7
+[31mError[39m: Variable 'selectedTemplate' implicitly has an 'any' type. (ts)
+[36m				<p class="text-gray-600">
+					{[35mselectedTemplate[36m?.name || 'Report'} - {selectedProject?.name || 'Generic Report'}
+				</p>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportPreview.svelte[39m:219:46
+[31mError[39m: Variable 'selectedProject' implicitly has an 'any' type. (ts)
+[36m				<p class="text-gray-600">
+					{selectedTemplate?.name || 'Report'} - {[35mselectedProject[36m?.name || 'Generic Report'}
+				</p>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportWizard.svelte[39m:255:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div class="mb-2">
+					[35m<label class="block text-sm font-medium text-gray-700 mb-1">
+						{localGapFillQuestions[localCurrentGapIndex]?.question}
+					</label>[36m
+					<textarea
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportWizard.svelte[39m:21:13
+[33mWarn[39m: Component has unused export property 'apiKey'. If it is for external reference only, please consider using `export const apiKey` (svelte)
+[36m	export let generating = false;
+	export let [35mapiKey = [36m'';
+	
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportWizard.svelte[39m:260:68
+[31mError[39m: 'e.target' is possibly 'null'. (ts)
+[36m						value={localGapFillQuestions[localCurrentGapIndex]?.answer || ''}
+						on:input={(e) => handleGapAnswerChange(localCurrentGapIndex, [35me.target[36m.value)}
+						rows="3"
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportWizard.svelte[39m:260:77
+[31mError[39m: Property 'value' does not exist on type 'EventTarget'. (ts)
+[36m						value={localGapFillQuestions[localCurrentGapIndex]?.answer || ''}
+						on:input={(e) => handleGapAnswerChange(localCurrentGapIndex, e.target.[35mvalue[36m)}
+						rows="3"
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportWizard.svelte[39m:561:31
+[31mError[39m: 'e.target' is possibly 'null'. (ts)
+[36m						on:input={(e) => {
+							localAdditionalNotes = [35me.target[36m.value;
+							additionalNotes = localAdditionalNotes;
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\ReportWizard.svelte[39m:561:40
+[31mError[39m: Property 'value' does not exist on type 'EventTarget'. (ts)
+[36m						on:input={(e) => {
+							localAdditionalNotes = e.target.[35mvalue[36m;
+							additionalNotes = localAdditionalNotes;
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\reports\SectionEditor.svelte[39m:309:35
+[31mError[39m: Object literal may only specify known properties, and '"innerhtml"' does not exist in type 'HTMLProps<"div", HTMLAttributes<any>>'. (ts)
+[36m				<div class="section-title font-medium text-lg mb-3">{sections[currentSectionIndex]?.title || 'Untitled'}</div>
+				<div class="prose max-w-none" [35minnerHTML[36m={safeSectionContent}></div>
+			</div>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\search\GlobalSearch.svelte[39m:97:3
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m	<div class="search-modal fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50" on:click={close}>
+		[35m<div 
+			class="w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden" 
+			on:click|stopPropagation
+		>
+			<!-- Search Input -->
+			<div class="p-4 border-b border-gray-200">
+				<div class="flex gap-2 mb-3">
+					<button
+						class="px-3 py-1.5 text-sm rounded-lg transition-colors {searchType === 'content' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}"
+						on:click={() => searchType = 'content'}
+					>
+						By Content
+					</button>
+					<button
+						class="px-3 py-1.5 text-sm rounded-lg transition-colors {searchType === 'date' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}"
+						on:click={() => searchType = 'date'}
+					>
+						By Date
+					</button>
+				</div>
+				
+				{#if searchType === 'content'}
+					<div class="relative">
+						<svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+						</svg>
+						<input
+							type="text"
+							bind:value={query}
+							on:input={handleInput}
+							placeholder="Search your documents..."
+							class="search-input w-full pl-10 pr-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+					</div>
+				{:else}
+					<div class="flex gap-2">
+						<input
+							type="date"
+							bind:value={startDate}
+							class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+						<span class="self-center text-gray-500">to</span>
+						<input
+							type="date"
+							bind:value={endDate}
+							class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+						<button
+							class="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+							on:click={performSearch}
+						>
+							Search
+						</button>
+					</div>
+				{/if}
+			</div>
+			
+			<!-- Results -->
+			<div class="max-h-96 overflow-y-auto">
+				{#if $isSearching}
+					<div class="flex items-center justify-center p-8">
+						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+					</div>
+				{:else if $searchResults.length > 0}
+					<div class="divide-y divide-gray-100">
+						{#each $searchResults as result}
+							<button
+								class="w-full flex items-start gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
+								on:click={() => selectResult(result)}
+							>
+								<span class="mt-0.5">
+									{@html getFileIcon(result.mimeType)}
+								</span>
+								<div class="flex-1 min-w-0">
+									<p class="font-medium text-gray-800 truncate">{result.name}</p>
+									<p class="text-sm text-gray-500">{formatDate(result.modifiedTime)}</p>
+								</div>
+							</button>
+						{/each}
+					</div>
+				{:else if query || startDate}
+					<div class="p-8 text-center text-gray-500">
+						No documents found
+					</div>
+				{:else}
+					<div class="p-8 text-center text-gray-500">
+						<p>Search your documents by content or date</p>
+						<p class="text-sm mt-1">Try "oak tree" or "January 5th"</p>
+					</div>
+				{/if}
+			</div>
+			
+			<!-- Footer -->
+			<div class="p-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
+				<span>Press ESC to close</span>
+				<span>Search powered by Google Drive</span>
+			</div>
+		</div[36m>
+	</div>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\search\GlobalSearch.svelte[39m:97:3
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m	<div class="search-modal fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50" on:click={close}>
+		[35m<div 
+			class="w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden" 
+			on:click|stopPropagation
+		>
+			<!-- Search Input -->
+			<div class="p-4 border-b border-gray-200">
+				<div class="flex gap-2 mb-3">
+					<button
+						class="px-3 py-1.5 text-sm rounded-lg transition-colors {searchType === 'content' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}"
+						on:click={() => searchType = 'content'}
+					>
+						By Content
+					</button>
+					<button
+						class="px-3 py-1.5 text-sm rounded-lg transition-colors {searchType === 'date' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}"
+						on:click={() => searchType = 'date'}
+					>
+						By Date
+					</button>
+				</div>
+				
+				{#if searchType === 'content'}
+					<div class="relative">
+						<svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+						</svg>
+						<input
+							type="text"
+							bind:value={query}
+							on:input={handleInput}
+							placeholder="Search your documents..."
+							class="search-input w-full pl-10 pr-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+					</div>
+				{:else}
+					<div class="flex gap-2">
+						<input
+							type="date"
+							bind:value={startDate}
+							class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+						<span class="self-center text-gray-500">to</span>
+						<input
+							type="date"
+							bind:value={endDate}
+							class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+						<button
+							class="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+							on:click={performSearch}
+						>
+							Search
+						</button>
+					</div>
+				{/if}
+			</div>
+			
+			<!-- Results -->
+			<div class="max-h-96 overflow-y-auto">
+				{#if $isSearching}
+					<div class="flex items-center justify-center p-8">
+						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+					</div>
+				{:else if $searchResults.length > 0}
+					<div class="divide-y divide-gray-100">
+						{#each $searchResults as result}
+							<button
+								class="w-full flex items-start gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
+								on:click={() => selectResult(result)}
+							>
+								<span class="mt-0.5">
+									{@html getFileIcon(result.mimeType)}
+								</span>
+								<div class="flex-1 min-w-0">
+									<p class="font-medium text-gray-800 truncate">{result.name}</p>
+									<p class="text-sm text-gray-500">{formatDate(result.modifiedTime)}</p>
+								</div>
+							</button>
+						{/each}
+					</div>
+				{:else if query || startDate}
+					<div class="p-8 text-center text-gray-500">
+						No documents found
+					</div>
+				{:else}
+					<div class="p-8 text-center text-gray-500">
+						<p>Search your documents by content or date</p>
+						<p class="text-sm mt-1">Try "oak tree" or "January 5th"</p>
+					</div>
+				{/if}
+			</div>
+			
+			<!-- Footer -->
+			<div class="p-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
+				<span>Press ESC to close</span>
+				<span>Search powered by Google Drive</span>
+			</div>
+		</div[36m>
+	</div>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\search\GlobalSearch.svelte[39m:96:2
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m{#if isOpen}
+	[35m<div class="search-modal fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50" on:click={close}>
+		<div 
+			class="w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden" 
+			on:click|stopPropagation
+		>
+			<!-- Search Input -->
+			<div class="p-4 border-b border-gray-200">
+				<div class="flex gap-2 mb-3">
+					<button
+						class="px-3 py-1.5 text-sm rounded-lg transition-colors {searchType === 'content' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}"
+						on:click={() => searchType = 'content'}
+					>
+						By Content
+					</button>
+					<button
+						class="px-3 py-1.5 text-sm rounded-lg transition-colors {searchType === 'date' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}"
+						on:click={() => searchType = 'date'}
+					>
+						By Date
+					</button>
+				</div>
+				
+				{#if searchType === 'content'}
+					<div class="relative">
+						<svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+						</svg>
+						<input
+							type="text"
+							bind:value={query}
+							on:input={handleInput}
+							placeholder="Search your documents..."
+							class="search-input w-full pl-10 pr-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+					</div>
+				{:else}
+					<div class="flex gap-2">
+						<input
+							type="date"
+							bind:value={startDate}
+							class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+						<span class="self-center text-gray-500">to</span>
+						<input
+							type="date"
+							bind:value={endDate}
+							class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+						<button
+							class="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+							on:click={performSearch}
+						>
+							Search
+						</button>
+					</div>
+				{/if}
+			</div>
+			
+			<!-- Results -->
+			<div class="max-h-96 overflow-y-auto">
+				{#if $isSearching}
+					<div class="flex items-center justify-center p-8">
+						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+					</div>
+				{:else if $searchResults.length > 0}
+					<div class="divide-y divide-gray-100">
+						{#each $searchResults as result}
+							<button
+								class="w-full flex items-start gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
+								on:click={() => selectResult(result)}
+							>
+								<span class="mt-0.5">
+									{@html getFileIcon(result.mimeType)}
+								</span>
+								<div class="flex-1 min-w-0">
+									<p class="font-medium text-gray-800 truncate">{result.name}</p>
+									<p class="text-sm text-gray-500">{formatDate(result.modifiedTime)}</p>
+								</div>
+							</button>
+						{/each}
+					</div>
+				{:else if query || startDate}
+					<div class="p-8 text-center text-gray-500">
+						No documents found
+					</div>
+				{:else}
+					<div class="p-8 text-center text-gray-500">
+						<p>Search your documents by content or date</p>
+						<p class="text-sm mt-1">Try "oak tree" or "January 5th"</p>
+					</div>
+				{/if}
+			</div>
+			
+			<!-- Footer -->
+			<div class="p-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
+				<span>Press ESC to close</span>
+				<span>Search powered by Google Drive</span>
+			</div>
+		</div>
+	</div[36m>
+{/if}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\search\GlobalSearch.svelte[39m:96:2
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m{#if isOpen}
+	[35m<div class="search-modal fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50" on:click={close}>
+		<div 
+			class="w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden" 
+			on:click|stopPropagation
+		>
+			<!-- Search Input -->
+			<div class="p-4 border-b border-gray-200">
+				<div class="flex gap-2 mb-3">
+					<button
+						class="px-3 py-1.5 text-sm rounded-lg transition-colors {searchType === 'content' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}"
+						on:click={() => searchType = 'content'}
+					>
+						By Content
+					</button>
+					<button
+						class="px-3 py-1.5 text-sm rounded-lg transition-colors {searchType === 'date' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}"
+						on:click={() => searchType = 'date'}
+					>
+						By Date
+					</button>
+				</div>
+				
+				{#if searchType === 'content'}
+					<div class="relative">
+						<svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+						</svg>
+						<input
+							type="text"
+							bind:value={query}
+							on:input={handleInput}
+							placeholder="Search your documents..."
+							class="search-input w-full pl-10 pr-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+					</div>
+				{:else}
+					<div class="flex gap-2">
+						<input
+							type="date"
+							bind:value={startDate}
+							class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+						<span class="self-center text-gray-500">to</span>
+						<input
+							type="date"
+							bind:value={endDate}
+							class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+						<button
+							class="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+							on:click={performSearch}
+						>
+							Search
+						</button>
+					</div>
+				{/if}
+			</div>
+			
+			<!-- Results -->
+			<div class="max-h-96 overflow-y-auto">
+				{#if $isSearching}
+					<div class="flex items-center justify-center p-8">
+						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+					</div>
+				{:else if $searchResults.length > 0}
+					<div class="divide-y divide-gray-100">
+						{#each $searchResults as result}
+							<button
+								class="w-full flex items-start gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
+								on:click={() => selectResult(result)}
+							>
+								<span class="mt-0.5">
+									{@html getFileIcon(result.mimeType)}
+								</span>
+								<div class="flex-1 min-w-0">
+									<p class="font-medium text-gray-800 truncate">{result.name}</p>
+									<p class="text-sm text-gray-500">{formatDate(result.modifiedTime)}</p>
+								</div>
+							</button>
+						{/each}
+					</div>
+				{:else if query || startDate}
+					<div class="p-8 text-center text-gray-500">
+						No documents found
+					</div>
+				{:else}
+					<div class="p-8 text-center text-gray-500">
+						<p>Search your documents by content or date</p>
+						<p class="text-sm mt-1">Try "oak tree" or "January 5th"</p>
+					</div>
+				{/if}
+			</div>
+			
+			<!-- Footer -->
+			<div class="p-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
+				<span>Press ESC to close</span>
+				<span>Search powered by Google Drive</span>
+			</div>
+		</div>
+	</div[36m>
+{/if}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\search\GlobalSearch.svelte[39m:168:36
+[31mError[39m: Property 'mimeType' does not exist on type 'SearchResult'. (ts)
+[36m								<span class="mt-0.5">
+									{@html getFileIcon(result.[35mmimeType[36m)}
+								</span>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\semantic\SemanticTimeline.svelte[39m:102:8
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m						{#each group.events as event}
+							[35m<div class="event-item" on:click={() => handleEventClick(event)}>
+								<div class="event-icon">
+									{getEventIcon(event.type)}
+								</div>
+								<div class="event-details">
+									<div class="event-header">
+										<span class="event-type">{event.type.replace('_', ' ')}</span>
+										<span class="event-time">{formatTime(event.timestamp)}</span>
+									</div>
+									<p class="event-summary">{event.summary}</p>
+									{#if event.target}
+										<div class="event-target">
+											<svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+											</svg>
+											<span class="text-xs text-gray-500">Target: {event.target}</span>
+										</div>
+									{/if}
+								</div>
+							</div>[36m
+						{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\semantic\SemanticTimeline.svelte[39m:102:8
+[33mWarn[39m: A11y: <div> with click handler must have an ARIA role (svelte)
+[36m						{#each group.events as event}
+							[35m<div class="event-item" on:click={() => handleEventClick(event)}>
+								<div class="event-icon">
+									{getEventIcon(event.type)}
+								</div>
+								<div class="event-details">
+									<div class="event-header">
+										<span class="event-type">{event.type.replace('_', ' ')}</span>
+										<span class="event-time">{formatTime(event.timestamp)}</span>
+									</div>
+									<p class="event-summary">{event.summary}</p>
+									{#if event.target}
+										<div class="event-target">
+											<svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+											</svg>
+											<span class="text-xs text-gray-500">Target: {event.target}</span>
+										</div>
+									{/if}
+								</div>
+							</div>[36m
+						{/each}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\viewer\PDFViewer.svelte[39m:6:13
+[33mWarn[39m: Component has unused export property 'fileId'. If it is for external reference only, please consider using `export const fileId` (svelte)
+[36m	export let src: string | null = null;
+	export let [35mfileId: string | null = [36mnull;
+	
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\voice\VoiceInput.svelte[39m:9:13
+[33mWarn[39m: Component has unused export property 'accessToken'. If it is for external reference only, please consider using `export const accessToken` (svelte)
+[36m	
+	export let [35maccessToken: string = [36m'';
+	export let projectFolderId: string = '';
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\voice\VoiceInput.svelte[39m:10:13
+[33mWarn[39m: Component has unused export property 'projectFolderId'. If it is for external reference only, please consider using `export const projectFolderId` (svelte)
+[36m	export let accessToken: string = '';
+	export let [35mprojectFolderId: string = [36m'';
+	export let projectName: string = '';
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\voice\VoiceInput.svelte[39m:11:13
+[33mWarn[39m: Component has unused export property 'projectName'. If it is for external reference only, please consider using `export const projectName` (svelte)
+[36m	export let projectFolderId: string = '';
+	export let [35mprojectName: string = [36m'';
+	
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\voice\VoiceInput.svelte[39m:519:8
+[33mWarn[39m: Unused CSS selector ".transcribe-btn" (svelte)
+[36m
+<style>[35m[36m
+	.voice-input-container {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\voice\VoiceInput.svelte[39m:519:8
+[33mWarn[39m: Unused CSS selector ".summarize-btn" (svelte)
+[36m
+<style>[35m[36m
+	.voice-input-container {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\voice\VoiceInput.svelte[39m:519:8
+[33mWarn[39m: Unused CSS selector ".transcribe-btn:hover" (svelte)
+[36m
+<style>[35m[36m
+	.voice-input-container {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\voice\VoiceInput.svelte[39m:519:8
+[33mWarn[39m: Unused CSS selector ".summarize-btn:hover" (svelte)
+[36m
+<style>[35m[36m
+	.voice-input-container {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\voice\VoiceInput.svelte[39m:519:8
+[33mWarn[39m: Unused CSS selector ".record-prompt" (svelte)
+[36m
+<style>[35m[36m
+	.voice-input-container {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\voice\VoiceInput.svelte[39m:141:45
+[31mError[39m: Property 'currentProjectId' does not exist on type '{ subscribe: (this: void, run: Subscriber<ProjectContext>, invalidate?: Invalidator<ProjectContext> | undefined) => Unsubscriber; ... 8 more ...; reset(): void; }'. Did you mean 'setCurrentProject'? (ts)
+[36m				const projectContext = projectContextStore;
+				const currentProjectId = projectContext.[35mcurrentProjectId[36m;
+				
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\lib\components\voice\VoiceInput.svelte[39m:199:28
+[31mError[39m: Property 'entities' does not exist on type 'IntentResult'. (ts)
+[36m				confidence: intentResult.confidence,
+				entities: intentResult.[35mentities[36m,
+				feedback: feedback.message
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\blog\+page.svelte[39m:90:6
+[31mError[39m: Property 'attachProject' is missing in type '{ title: string; subtitle: string; tags: string; prompt: any; includePhotos: true; styleProfile: string; }' but required in type '{ title: string; subtitle: string; tags: string; prompt: string; includePhotos: boolean; styleProfile: string; attachProject: boolean; }'. (ts)
+[36m					selectedPost = post;
+					[35mnewPost[36m = {
+						title: post.title,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\blog\+page.svelte[39m:94:20
+[31mError[39m: Property 'bodyContent' does not exist on type 'BlogPost'. (ts)
+[36m						tags: post.tags ? post.tags.join(', ') : '',
+						prompt: post.[35mbodyContent[36m || '',
+						includePhotos: true,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\blog\+page.svelte[39m:161:36
+[31mError[39m: Property 'get' does not exist on type 'Writable<Settings>'. (ts)
+[36m
+		const currentSettings = settings.[35mget[36m();
+		if (!currentSettings.groqApiKey) {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\blog\+page.svelte[39m:177:17
+[31mError[39m: Property 'clientName' does not exist on type 'Project'. (ts)
+[36m				context += `PROJECT: ${project.name}\n`;
+				if (project.[35mclientName[36m) context += `Client: ${project.clientName}\n`;
+				if (project.siteAddress) context += `Location: ${project.siteAddress}\n\n`;
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\blog\+page.svelte[39m:177:59
+[31mError[39m: Property 'clientName' does not exist on type 'Project'. (ts)
+[36m				context += `PROJECT: ${project.name}\n`;
+				if (project.clientName) context += `Client: ${project.[35mclientName[36m}\n`;
+				if (project.siteAddress) context += `Location: ${project.siteAddress}\n\n`;
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\blog\+page.svelte[39m:178:17
+[31mError[39m: Property 'siteAddress' does not exist on type 'Project'. (ts)
+[36m				if (project.clientName) context += `Client: ${project.clientName}\n`;
+				if (project.[35msiteAddress[36m) context += `Location: ${project.siteAddress}\n\n`;
+			}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\blog\+page.svelte[39m:178:62
+[31mError[39m: Property 'siteAddress' does not exist on type 'Project'. (ts)
+[36m				if (project.clientName) context += `Client: ${project.clientName}\n`;
+				if (project.siteAddress) context += `Location: ${project.[35msiteAddress[36m}\n\n`;
+			}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\blog\+page.svelte[39m:596:35
+[31mError[39m: Argument of type 'BlogPost | null' is not assignable to parameter of type 'BlogPost'.
+  Type 'null' is not assignable to type 'BlogPost'. (ts)
+[36m						<button
+							on:click={() => exportPost([35mselectedPost[36m)}
+							class="btn btn-secondary text-sm"
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\calendar\+page.svelte[39m:2:9
+[31mError[39m: Module '"d:/PROJECTS/oscar-ai/src/lib/components/calendar/Calendar.svelte"' has no default export. (ts)
+[36m<script lang="ts">
+	import [35mCalendar[36m from '$lib/components/calendar/Calendar.svelte';
+</script>
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\camera\+page.svelte[39m:19:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-success {
+		[35m@apply[36m bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\camera\+page.svelte[39m:22:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-error {
+		[35m@apply[36m bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\camera\+page.svelte[39m:25:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-info {
+		[35m@apply[36m bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\camera\+page.svelte[39m:28:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-warning {
+		[35m@apply[36m bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\files\+page.svelte[39m:19:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-success {
+		[35m@apply[36m bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\files\+page.svelte[39m:22:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-error {
+		[35m@apply[36m bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\files\+page.svelte[39m:25:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-info {
+		[35m@apply[36m bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\files\+page.svelte[39m:28:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-warning {
+		[35m@apply[36m bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\learn\+page.svelte[39m:78:36
+[31mError[39m: Property 'get' does not exist on type 'Writable<Settings>'. (ts)
+[36m
+		const currentSettings = settings.[35mget[36m();
+		if (!currentSettings.groqApiKey) {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:1328:9
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m							<div class="flex items-start justify-between">
+								[35m<h3 class="font-semibold text-gray-900 truncate flex-1 cursor-pointer" on:click={() => openEditForm(note)}>{note.title}</h3>[36m
+								<div class="flex gap-1">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:1328:9
+[33mWarn[39m: A11y: Non-interactive element <h3> should not be assigned mouse or keyboard event listeners. (svelte)
+[36m							<div class="flex items-start justify-between">
+								[35m<h3 class="font-semibold text-gray-900 truncate flex-1 cursor-pointer" on:click={() => openEditForm(note)}>{note.title}</h3>[36m
+								<div class="flex gap-1">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:1351:8
+[33mWarn[39m: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+[36m							
+							[35m<p class="text-gray-600 text-sm line-clamp-3 mb-3 cursor-pointer" on:click={() => openEditForm(note)}>{note.content}</p>[36m
+							
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:1351:8
+[33mWarn[39m: A11y: Non-interactive element <p> should not be assigned mouse or keyboard event listeners. (svelte)
+[36m							
+							[35m<p class="text-gray-600 text-sm line-clamp-3 mb-3 cursor-pointer" on:click={() => openEditForm(note)}>{note.content}</p>[36m
+							
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:1506:6
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m				<div>
+					[35m<label class="block text-sm font-medium text-gray-700 mb-1">Attachments</label>[36m
+					<div class="mb-4">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:301:7
+[31mError[39m: Property 'append' does not exist on type 'void'. (ts)
+[36m					.append('file', audioBlob, 'audio.webm')
+					.[35mappend[36m('model', 'whisper-large-v3')
+			});
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:390:22
+[31mError[39m: Property 'id' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m				showContextSwitchPromptFn(
+					inferredProject.[35mid[36m,
+					inferredProject.name,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:391:22
+[31mError[39m: Property 'name' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m					inferredProject.id,
+					inferredProject.[35mname[36m,
+					`This note mentions "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:392:45
+[31mError[39m: Property 'name' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m					inferredProject.name,
+					`This note mentions "${inferredProject.[35mname[36m}". Would you like to switch to Project Mode for this action?`
+				);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:460:22
+[31mError[39m: Property 'id' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m				showContextSwitchPromptFn(
+					inferredProject.[35mid[36m,
+					inferredProject.name,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:461:22
+[31mError[39m: Property 'name' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m					inferredProject.id,
+					inferredProject.[35mname[36m,
+					`This note mentions "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:462:45
+[31mError[39m: Property 'name' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m					inferredProject.name,
+					`This note mentions "${inferredProject.[35mname[36m}". Would you like to switch to Project Mode for this action?`
+				);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:555:22
+[31mError[39m: Property 'id' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m				showContextSwitchPromptFn(
+					inferredProject.[35mid[36m,
+					inferredProject.name,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:556:22
+[31mError[39m: Property 'name' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m					inferredProject.id,
+					inferredProject.[35mname[36m,
+					`This note mentions "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:557:45
+[31mError[39m: Property 'name' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m					inferredProject.name,
+					`This note mentions "${inferredProject.[35mname[36m}". Would you like to switch to Project Mode for this action?`
+				);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:706:22
+[31mError[39m: Property 'id' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m				showContextSwitchPromptFn(
+					inferredProject.[35mid[36m,
+					inferredProject.name,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:707:22
+[31mError[39m: Property 'name' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m					inferredProject.id,
+					inferredProject.[35mname[36m,
+					`This request mentions "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:708:48
+[31mError[39m: Property 'name' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m					inferredProject.name,
+					`This request mentions "${inferredProject.[35mname[36m}". Would you like to switch to Project Mode for this action?`
+				);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:891:22
+[31mError[39m: Property 'id' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m				showContextSwitchPromptFn(
+					inferredProject.[35mid[36m,
+					inferredProject.name,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:892:22
+[31mError[39m: Property 'name' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m					inferredProject.id,
+					inferredProject.[35mname[36m,
+					`These notes mention "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:893:46
+[31mError[39m: Property 'name' does not exist on type 'Promise<{ shouldSwitch: boolean; projectId?: string | undefined; projectName?: string | undefined; reason: string; confidence?: number | undefined; multipleMatches?: { id: string; name: string; }[] | undefined; }>'. (ts)
+[36m					inferredProject.name,
+					`These notes mention "${inferredProject.[35mname[36m}". Would you like to switch to Project Mode for this action?`
+				);
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:1316:79
+[31mError[39m: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'. (ts)
+[36m			{#each notes as note (note.id)}
+				<div class="card p-4 hover:shadow-md transition-shadow {selectedNotes.has([35mnote.id[36m) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}">
+					<div class="flex items-start gap-3 mb-2">
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\notes\+page.svelte[39m:1321:35
+[31mError[39m: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'. (ts)
+[36m							type="checkbox"
+							checked={selectedNotes.has([35mnote.id[36m)}
+							on:change={() => note.id && toggleNoteSelection(note.id)}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\oscar\+page.svelte[39m:321:5
+[31mError[39m: Type 'string | undefined' is not assignable to type 'IntentType | undefined'.
+  Type 'string' is not assignable to type 'IntentType | undefined'. (ts)
+[36m				actionUrl: actionResult?.success ? actionResult.redirectUrl : undefined,
+				[35mactionType[36m: actionResult?.intentType,
+				actionResult: actionResult || undefined,
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\oscar\+page.svelte[39m:323:28
+[31mError[39m: Property 'objects' does not exist on type 'ActionResult'. (ts)
+[36m				actionResult: actionResult || undefined,
+				objects: actionResult?.[35mobjects[36m
+			};
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\oscar\+page.svelte[39m:952:47
+[31mError[39m: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'. (ts)
+[36m											<button
+												on:click={() => handleActionClick([35mmessage.actionUrl[36m)}
+												class="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors text-sm"
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\project\[id]\+page.svelte[39m:850:8
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m						<div>
+							[35m<label class="block text-sm font-medium text-gray-700 mb-1">Title</label>[36m
+							<input
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\project\[id]\+page.svelte[39m:859:8
+[33mWarn[39m: A11y: A form label must be associated with a control. (svelte)
+[36m						<div>
+							[35m<label class="block text-sm font-medium text-gray-700 mb-1">Content</label>[36m
+							<RichTextEditor
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\reports\+page.svelte[39m:1995:8
+[33mWarn[39m: Unused CSS selector ".input" (svelte)
+[36m
+<style>[35m[36m
+	.card {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\reports\+page.svelte[39m:1995:8
+[33mWarn[39m: Unused CSS selector ".input:focus" (svelte)
+[36m
+<style>[35m[36m
+	.card {
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\reports\+page.svelte[39m:988:48
+[31mError[39m: Argument of type '{ projectId: string; title: string; type: "bs5837" | "impact" | "method"; htmlContent: string; isDummy: false; }' is not assignable to parameter of type 'Omit<Report, "id" | "generatedAt"> & { htmlContent: string; }'.
+  Property 'pdfBlob' is missing in type '{ projectId: string; title: string; type: "bs5837" | "impact" | "method"; htmlContent: string; isDummy: false; }' but required in type 'Omit<Report, "id" | "generatedAt">'. (ts)
+[36m			// Save to Supabase
+			const reportId = await saveReportToSupabase([35m{
+				projectId: projectIdForSave,
+				title: reportTitle,
+				type: reportType,
+				htmlContent: generatedReport,
+				isDummy: false
+			}[36m);
+
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\reports\+page.svelte[39m:1919:16
+[31mError[39m: Type '{ selectedTemplate: Template; selectedProject: Project | undefined; trees: Tree[]; notes: Note[]; tasks: Task[]; missingData: string[]; showMissingDataWarning: boolean; ... 7 more ...; generating: boolean; }' is missing the following properties from type '{ selectedTemplate: any; selectedProject: any; trees?: any[] | undefined; notes?: any[] | undefined; tasks?: any[] | undefined; missingData?: string[] | undefined; showMissingDataWarning?: boolean | undefined; ... 15 more ...; generateFollowUpForGap: () => Promise<...>; }': goBack, continueAIFlow, generateReport, suggestClientNameForGap, and 3 more. (ts)
+[36m		{#if currentStep === 'ai-guided' && selectedTemplate}
+			<ReportWizar[35m[36md
+				selectedTemplate={selectedTemplate}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\reports\+page.svelte[39m:1948:5
+[31mError[39m: Type 'Template | null' is not assignable to type 'null | undefined'.
+  Type 'Template' is not assignable to type 'null | undefined'. (ts)
+[36m			<ReportPreview
+				[35mselectedTemplate[36m={selectedTemplate}
+				selectedProject={selectedProject}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\reports\+page.svelte[39m:1949:5
+[31mError[39m: Type 'Project | undefined' is not assignable to type 'undefined'.
+  Type 'Project' is not assignable to type 'undefined'. (ts)
+[36m				selectedTemplate={selectedTemplate}
+				[35mselectedProject[36m={selectedProject}
+				generatedReport={generatedReport}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\voice\+page.svelte[39m:19:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-success {
+		[35m@apply[36m bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\voice\+page.svelte[39m:22:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-error {
+		[35m@apply[36m bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\voice\+page.svelte[39m:25:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-info {
+		[35m@apply[36m bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\voice\+page.svelte[39m:28:3
+[33mWarn[39m: Unknown at rule @apply (css)
+[36m	.toast-warning {
+		[35m@apply[36m bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg shadow;
+	}
+[39m
+
+d:\PROJECTS\oscar-ai\[32msrc\routes\workspace\+page.svelte[39m:222:31
+[31mError[39m: Argument of type 'Date' is not assignable to parameter of type 'string'. (ts)
+[36m								<p class="text-xs text-gray-400 mt-1">
+									Created: {formatDate([35mproject.createdAt[36m)}
+								</p>
+[39m
+
+====================================
+[31msvelte-check found 126 errors and 108 warnings in 69 files
+[39m

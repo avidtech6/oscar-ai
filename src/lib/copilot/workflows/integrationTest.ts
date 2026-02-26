@@ -31,6 +31,33 @@ const mockContext: CopilotContext = {
 		showTechnicalHints: true,
 		showSmartSharePrompts: true,
 		showDeliverabilityWarnings: true
+	},
+	route: '/settings',
+	assistantActive: false,
+	inputEmpty: true,
+	isMobile: false,
+	provider: {
+		configStatus: 'complete',
+		validationErrors: [],
+		validationWarnings: [],
+		requiresAppPassword: false,
+		isFreeTier: false,
+		requiresSandbox: false,
+		isUnsafeProvider: false
+	},
+	deliverability: {
+		spamScore: 85,
+		dkimConfigured: true,
+		spfConfigured: true,
+		dmarcConfigured: false,
+		imageTextRatioWarning: false,
+		unsafePatterns: [],
+		recentIssues: []
+	},
+	smartShare: {
+		isNeeded: false,
+		requested: false,
+		inProgress: false
 	}
 };
 

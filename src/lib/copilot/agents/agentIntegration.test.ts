@@ -459,6 +459,20 @@ function describe(name: string, fn: () => void) {
 	fn();
 }
 
+// Mock beforeEach function for testing
+function beforeEach(fn: () => void | Promise<void>) {
+	// Store the function to be called before each test
+	// In a real test framework, this would be called before each it()
+	fn();
+}
+
+// Mock afterEach function for testing
+function afterEach(fn: () => void | Promise<void>) {
+	// Store the function to be called after each test
+	// In a real test framework, this would be called after each it()
+	fn();
+}
+
 // Mock it function for testing
 function it(name: string, fn: () => void | Promise<void>) {
 	console.log(`  ✓ ${name}`);

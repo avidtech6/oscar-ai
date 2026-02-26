@@ -7,7 +7,6 @@ export const itemContext = writable<any>({});
 export const selectedIds = writable<string[]>([]);
 export const messages = writable<Array<{type: string, text: string, id?: string}>>([]);
 export const smartHint = writable('');
-export const microCue = writable<'nudge' | 'clarify' | 'context' | null>(null);
 
 // Image attachment store
 export const imageAttachment = writable<string | null>(null);
@@ -56,10 +55,6 @@ export function setSelectedIds(ids: string[]) {
 
 export function setSmartHint(hint: string) {
 	smartHint.set(hint);
-}
-
-export function setMicroCue(cue: 'nudge' | 'clarify' | 'context' | null) {
-	microCue.set(cue);
 }
 
 export function toggleExpanded() {

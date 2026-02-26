@@ -551,10 +551,10 @@ export class ProviderEngine {
 		configurationCount: number;
 		successRate: number;
 	} {
-		const configMemories = memories.filter(m => 
-			m.content.settings || 
+		const configMemories = memories.filter(m =>
+			m.content.settings ||
 			m.summary.toLowerCase().includes('config') ||
-			m.tags?.includes('provider-configuration')
+			m.metadata.tags?.includes('provider-configuration')
 		);
 		
 		if (configMemories.length === 0) {

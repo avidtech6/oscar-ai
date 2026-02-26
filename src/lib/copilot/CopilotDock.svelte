@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { copilotState, setMicro, setMid, setFull } from './copilotStore';
-	import { pageContext, itemContext, smartHint, selectedIds, microCue } from './copilotStore';
+	import { pageContext, itemContext, smartHint, selectedIds } from './copilotStore';
 	import { followUps, applyFollowUp } from './followUpStore';
 	import ContextChips from './ContextChips.svelte';
 	import SmartHint from './SmartHint.svelte';
@@ -103,24 +103,6 @@
 		}
 	}
 	
-	function getMicroCueSymbol() {
-		switch ($microCue) {
-			case 'nudge': return '!';
-			case 'clarify': return '?';
-			case 'context': return '●';
-			default: return '';
-		}
-	}
-	
-	function getMicroCueColor() {
-		switch ($microCue) {
-			case 'nudge': return 'bg-yellow-500';
-			case 'clarify': return 'bg-blue-500';
-			case 'context': return 'bg-green-500';
-			default: return 'bg-gray-300';
-		}
-	}
-	
 	// Handle follow‑up action click
 	function handleFollowUpClick(action: any) {
 		applyFollowUp(action);
@@ -141,12 +123,6 @@
 							O
 						</div>
 						
-						<!-- Micro-cue indicator -->
-						{#if $microCue}
-							<div class="ml-2 w-5 h-5 rounded-full {getMicroCueColor()} flex items-center justify-center text-white text-xs font-bold animate-pulse">
-								{getMicroCueSymbol()}
-							</div>
-						{/if}
 					</div>
 					
 					<div class="flex-1">

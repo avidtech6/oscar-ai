@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { browser } from '$app/environment';
 
 export interface Project {
 	id?: string;
@@ -181,6 +182,13 @@ export class OscarDatabase extends Dexie {
 	settings!: Table<Setting, string>;
 
 	constructor() {
+		// Only initialize in browser environment
+		if (!browser) {
+			// Return a minimal instance for SSR
+			super('OscarAI_SSR');
+			return;
+		}
+		
 		super('OscarAI');
 		
 		// Version 3 - original schema
@@ -283,13 +291,27 @@ export class OscarDatabase extends Dexie {
 	}
 }
 
-export const db = new OscarDatabase();
+let dbInstance: OscarDatabase | null = null;
+
+export function getDb(): OscarDatabase {
+	if (!dbInstance) {
+		dbInstance = new OscarDatabase();
+	}
+	return dbInstance;
+}
+
+// Export db as a lazy getter for backward compatibility
+export const db: OscarDatabase = new Proxy({} as OscarDatabase, {
+	get(target, prop) {
+		return (getDb() as any)[prop];
+	}
+});
 
 // CRUD Operations
 export async function createProject(project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
 	const now = new Date();
 	const id = crypto.randomUUID();
-	await db.projects.add({
+	await getDb().projects.add({
 		...project,
 		id,
 		createdAt: now,

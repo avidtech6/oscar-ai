@@ -21,20 +21,20 @@
 	import AssistVoiceInput from './AssistVoiceInput.svelte';
 	
 	// Reactive stores
-	let isOpen = $state(false);
-	let isExpanded = $state(false);
-	let currentTab = $state('actions' as 'actions' | 'hints' | 'tools' | 'voice');
-	let sheetHeight = $state(40);
-	let animationDuration = $state(300);
-	let quickActions = $state<AssistAction[]>([]);
-	let aiActions = $state<AssistAction[]>([]);
-	let navigationActions = $state<AssistAction[]>([]);
-	let hints = $state([]);
-	
+	let isOpen = false;
+	let isExpanded = false;
+	let currentTab: 'actions' | 'hints' | 'tools' | 'voice' = 'actions';
+	let sheetHeight = 40;
+	let animationDuration = 300;
+	let quickActions: AssistAction[] = [];
+	let aiActions: AssistAction[] = [];
+	let navigationActions: AssistAction[] = [];
+	let hints: any[] = [];
+
 	// Drag state
-	let isDragging = $state(false);
-	let dragStartY = $state(0);
-	let dragStartHeight = $state(0);
+	let isDragging = false;
+	let dragStartY = 0;
+	let dragStartHeight = 0;
 	
 	// Subscribe to stores
 	const unsubscribe = assistLayerStore.subscribe(state => {

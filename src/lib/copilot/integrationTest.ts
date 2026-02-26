@@ -108,7 +108,11 @@ function testContextFlow(): void {
 				isNeeded: false,
 				requested: false,
 				inProgress: false
-			}
+			},
+			route: '/message-view',
+			assistantActive: false,
+			inputEmpty: true,
+			isMobile: false
 		};
 		
 		// Update context engine using the correct methods

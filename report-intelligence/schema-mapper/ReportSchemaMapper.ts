@@ -8,14 +8,16 @@
 import type { DecompiledReport, DetectedSection, TerminologyEntry, ComplianceMarker } from '../decompiler/DecompiledReport';
 import type { ReportTypeRegistry } from '../registry/ReportTypeRegistry';
 import type { ReportTypeDefinition, ReportSectionDefinition } from '../registry/ReportTypeDefinition';
-import { 
-  SchemaMappingResult, 
-  MappedField, 
-  UnmappedSection, 
-  MissingRequiredSection, 
-  ExtraSection, 
-  UnknownTerminology, 
-  SchemaGap,
+import type {
+  SchemaMappingResult,
+  MappedField,
+  UnmappedSection,
+  MissingRequiredSection,
+  ExtraSection,
+  UnknownTerminology,
+  SchemaGap
+} from './SchemaMappingResult';
+import {
   createSchemaMappingResult,
   calculateMappingCoverage,
   calculateCompletenessScore,

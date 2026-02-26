@@ -233,7 +233,15 @@
 			// If intent is detected (not chat), execute it
 			if (intent && intent.type !== 'chat') {
 				console.log('Intent detected:', intent.type, intent.data);
-				actionResult = await unifiedIntentEngine.executeIntent(intent);
+				// Convert legacy intent format to IntentResult
+				const intentResult = {
+					intent: intent.type,
+					confidence: intent.confidence,
+					data: intent.data,
+					requiresConfirmation: intent.requiresConfirmation || false,
+					conversionOptions: intent.conversionOptions
+				};
+				actionResult = await unifiedIntentEngine.executeIntent(intentResult);
 				console.log('Action result:', actionResult);
 				
 				// Check if action needs project selection
@@ -555,54 +563,54 @@ Provide concise, accurate guidance.`;
 			switch (type) {
 				case 'note':
 					actionResult = await unifiedIntentEngine.executeIntent({
-						type: 'note',
-						action: 'createNote',
+						intent: 'note',
+						confidence: 1,
 						data: {
 							title: 'Converted from Chat',
 							content: content,
 							projectId: projectId || undefined
 						},
-						confidence: 1
+						requiresConfirmation: false
 					});
 					break;
 					
 				case 'report':
 					actionResult = await unifiedIntentEngine.executeIntent({
-						type: 'report',
-						action: 'createReport',
+						intent: 'report',
+						confidence: 1,
 						data: {
 							title: 'Report from Chat',
 							type: 'bs5837',
 							content: content,
 							projectId: projectId || undefined
 						},
-						confidence: 1
+						requiresConfirmation: false
 					});
 					break;
 					
 				case 'blog':
 					actionResult = await unifiedIntentEngine.executeIntent({
-						type: 'blog',
-						action: 'createBlogPost',
+						intent: 'blog',
+						confidence: 1,
 						data: {
 							title: 'Blog Post from Chat',
 							content: content,
 							projectId: projectId || undefined
 						},
-						confidence: 1
+						requiresConfirmation: false
 					});
 					break;
 					
 				case 'task':
 					actionResult = await unifiedIntentEngine.executeIntent({
-						type: 'task',
-						action: 'createTask',
+						intent: 'task',
+						confidence: 1,
 						data: {
 							title: 'Task from Chat',
 							content: content,
 							projectId: projectId || undefined
 						},
-						confidence: 1
+						requiresConfirmation: false
 					});
 					break;
 			}
@@ -760,13 +768,13 @@ Provide concise, accurate guidance.`;
 			if (!currentProjectIdValue) {
 				// Execute action without project ID
 				const actionResult = await unifiedIntentEngine.executeIntent({
-					type: projectSelectionData.action.replace('create', '').toLowerCase(),
-					action: projectSelectionData.action,
+					intent: projectSelectionData.action.replace('create', '').toLowerCase() as any,
+					confidence: 1,
 					data: {
 						...projectSelectionData.data,
 						projectId: undefined
 					},
-					confidence: 1
+					requiresConfirmation: false
 				});
 				
 				// Add result message
@@ -796,13 +804,13 @@ Provide concise, accurate guidance.`;
 			
 			// Execute action with project ID
 			const actionResult = await unifiedIntentEngine.executeIntent({
-				type: projectSelectionData.action.replace('create', '').toLowerCase(),
-				action: projectSelectionData.action,
+				intent: projectSelectionData.action.replace('create', '').toLowerCase() as any,
+				confidence: 1,
 				data: {
 					...projectSelectionData.data,
 					projectId: option
 				},
-				confidence: 1
+				requiresConfirmation: false
 			});
 			
 			// Add project tagging confirmation

@@ -81,14 +81,26 @@ export class CampaignService {
         updatedAt: new Date().toISOString()
       };
 
-      const { data, error } = await this.supabase
+      // Cast to any to bypass Supabase type issues
+      const { data, error } = await (this.supabase as any)
         .from('campaigns')
         .insert([campaignToCreate])
         .select()
         .single();
 
       if (error) throw error;
-      return data as Campaign;
+      
+      // Convert back to Campaign type
+      const result: Campaign = {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+        scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : undefined,
+        sentAt: data.sentAt ? new Date(data.sentAt) : undefined,
+        completedAt: data.completedAt ? new Date(data.completedAt) : undefined
+      };
+      
+      return result;
     } catch (error) {
       console.error('Error creating campaign:', error);
       throw error;
@@ -102,7 +114,8 @@ export class CampaignService {
         updatedAt: new Date().toISOString()
       };
 
-      const { data, error } = await this.supabase
+      // Cast to any to bypass Supabase type issues
+      const { data, error } = await (this.supabase as any)
         .from('campaigns')
         .update(updateData)
         .eq('id', id)
@@ -110,7 +123,18 @@ export class CampaignService {
         .single();
 
       if (error) throw error;
-      return data as Campaign;
+      
+      // Convert back to Campaign type
+      const result: Campaign = {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+        scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : undefined,
+        sentAt: data.sentAt ? new Date(data.sentAt) : undefined,
+        completedAt: data.completedAt ? new Date(data.completedAt) : undefined
+      };
+      
+      return result;
     } catch (error) {
       console.error('Error updating campaign:', error);
       throw error;
@@ -136,7 +160,7 @@ export class CampaignService {
     try {
       return await this.updateCampaign(id, {
         status: 'scheduled',
-        scheduledFor: scheduledFor.toISOString()
+        scheduledFor: scheduledFor  // Use Date object directly
       });
     } catch (error) {
       console.error('Error scheduling campaign:', error);
@@ -149,7 +173,7 @@ export class CampaignService {
       // In a real implementation, this would trigger the actual sending process
       return await this.updateCampaign(id, {
         status: 'sending',
-        sentAt: new Date().toISOString()
+        sentAt: new Date()  // Use Date object directly
       });
     } catch (error) {
       console.error('Error starting campaign:', error);
@@ -172,7 +196,7 @@ export class CampaignService {
     try {
       return await this.updateCampaign(id, {
         status: 'completed',
-        completedAt: new Date().toISOString()
+        completedAt: new Date()  // Use Date object directly
       });
     } catch (error) {
       console.error('Error completing campaign:', error);
@@ -205,14 +229,26 @@ export class CampaignService {
         createdAt: new Date().toISOString()
       };
 
-      const { data, error } = await this.supabase
+      // Cast to any to bypass Supabase type issues
+      const { data, error } = await (this.supabase as any)
         .from('campaign_recipients')
         .insert([recipientToAdd])
         .select()
         .single();
 
       if (error) throw error;
-      return data as CampaignRecipient;
+      
+      // Convert back to CampaignRecipient type
+      const result: CampaignRecipient = {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        sentAt: data.sentAt ? new Date(data.sentAt) : undefined,
+        deliveredAt: data.deliveredAt ? new Date(data.deliveredAt) : undefined,
+        openedAt: data.openedAt ? new Date(data.openedAt) : undefined,
+        clickedAt: data.clickedAt ? new Date(data.clickedAt) : undefined
+      };
+      
+      return result;
     } catch (error) {
       console.error('Error adding recipient to campaign:', error);
       throw error;
@@ -221,7 +257,8 @@ export class CampaignService {
 
   async updateRecipientStatus(recipientId: string, status: CampaignRecipient['status']): Promise<CampaignRecipient> {
     try {
-      const { data, error } = await this.supabase
+      // Cast to any to bypass Supabase type issues
+      const { data, error } = await (this.supabase as any)
         .from('campaign_recipients')
         .update({ status })
         .eq('id', recipientId)
@@ -229,7 +266,18 @@ export class CampaignService {
         .single();
 
       if (error) throw error;
-      return data as CampaignRecipient;
+      
+      // Convert back to CampaignRecipient type
+      const result: CampaignRecipient = {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        sentAt: data.sentAt ? new Date(data.sentAt) : undefined,
+        deliveredAt: data.deliveredAt ? new Date(data.deliveredAt) : undefined,
+        openedAt: data.openedAt ? new Date(data.openedAt) : undefined,
+        clickedAt: data.clickedAt ? new Date(data.clickedAt) : undefined
+      };
+      
+      return result;
     } catch (error) {
       console.error('Error updating recipient status:', error);
       throw error;
@@ -249,7 +297,13 @@ export class CampaignService {
         .order('createdAt', { ascending: false });
 
       if (error) throw error;
-      return data as RecipientList[];
+      
+      // Convert back to RecipientList type
+      return data.map((item: any) => ({
+        ...item,
+        createdAt: new Date(item.createdAt),
+        updatedAt: new Date(item.updatedAt)
+      })) as RecipientList[];
     } catch (error) {
       console.error('Error fetching recipient lists:', error);
       return [];
@@ -268,14 +322,23 @@ export class CampaignService {
         updatedAt: new Date().toISOString()
       };
 
-      const { data, error } = await this.supabase
+      // Cast to any to bypass Supabase type issues
+      const { data, error } = await (this.supabase as any)
         .from('recipient_lists')
         .insert([listToCreate])
         .select()
         .single();
 
       if (error) throw error;
-      return data as RecipientList;
+      
+      // Convert back to RecipientList type
+      const result: RecipientList = {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt)
+      };
+      
+      return result;
     } catch (error) {
       console.error('Error creating recipient list:', error);
       throw error;

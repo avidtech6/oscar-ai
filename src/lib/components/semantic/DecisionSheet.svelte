@@ -2,6 +2,7 @@
 	import { decisionSheetStore } from '$lib/stores/decisionSheetStore';
 	import { onDestroy } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import { debugStore } from '$lib/stores/debugStore';
 
 	let isOpen = false;
 	let title = '';
@@ -10,11 +11,14 @@
 	let ephemeral = true;
 
 	const unsubscribe = decisionSheetStore.subscribe(state => {
+		debugStore.log('DecisionSheet', 'store update', { isOpen: state.isOpen, title: state.title, actionsCount: state.actions.length });
+		console.log('[DecisionSheet] store update:', state);
 		isOpen = state.isOpen;
 		title = state.title;
 		message = state.message;
 		actions = state.actions;
 		ephemeral = state.ephemeral;
+		debugStore.log('DecisionSheet', 'local isOpen after update', { isOpen });
 	});
 
 	function closeSheet() {

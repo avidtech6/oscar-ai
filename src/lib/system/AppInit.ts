@@ -48,6 +48,10 @@ export class AppInit {
       // Step 3: Initialize other critical services here
       // (Add other service initializations as needed)
       
+      // TEST: Simulate Safe Mode timeout (uncomment to test)
+      // console.log('AppInit: Simulating immediate error to trigger Safe Mode...');
+      // throw new Error('Simulated immediate error for Safe Mode testing');
+      
       console.log('AppInit: Application initialization complete');
     } catch (error) {
       console.error('AppInit: Error during initialization:', error);

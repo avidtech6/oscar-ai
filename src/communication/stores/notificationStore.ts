@@ -118,16 +118,23 @@ const createNotificationStore = () => {
 			try {
 				const result = await getNotificationStats();
 				if (result.success && result.data) {
-					update(state => ({ 
-						...state, 
-						stats: result.data,
-						loading: false 
+					update(state => ({
+						...state,
+						stats: result.data as {
+							total: number;
+							unread: number;
+							urgent: number;
+							byType: Record<string, number>;
+							byPriority: Record<string, number>;
+						},
+						loading: false
 					}));
 				} else {
-					update(state => ({ 
-						...state, 
+					update(state => ({
+						...state,
+						stats: null,
 						error: result.error || 'Failed to load stats',
-						loading: false 
+						loading: false
 					}));
 				}
 			} catch (error) {

@@ -403,6 +403,7 @@ export class ImageEmbeddingPipeline {
       case 'data-url':
         if (result.dataUrl) {
           processedSource = {
+            url: '', // Required by ImageSource type
             dataUrl: result.dataUrl,
             alt: original.content.alt || '',
             caption: original.content.caption

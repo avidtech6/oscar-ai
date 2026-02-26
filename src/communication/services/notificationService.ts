@@ -3,7 +3,7 @@
  * Handles notification CRUD operations and preferences
  */
 
-import { supabase } from '$lib/supabaseClient';
+import { supabase } from '$lib/supabase/client';
 import type { Notification, NotificationPreference } from '../types';
 
 // Mock data for development (remove when Supabase is configured)

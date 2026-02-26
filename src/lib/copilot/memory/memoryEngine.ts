@@ -168,8 +168,9 @@ export class MemoryEngine {
 		
 		// If not in cache, load from storage
 		if (!memoryItem) {
-			memoryItem = await this.storage.getMemory(id);
-			if (memoryItem) {
+			const storedMemory = await this.storage.getMemory(id);
+			if (storedMemory) {
+				memoryItem = storedMemory;
 				// Update last accessed time
 				memoryItem.metadata.lastAccessedAt = new Date();
 				this.cache.set(id, memoryItem);

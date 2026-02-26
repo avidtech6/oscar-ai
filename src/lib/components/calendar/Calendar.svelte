@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { calendarStore, addEvent, deleteEvent } from '$lib/stores/calendar';
+	import { calendarStore } from '$lib/stores/calendar';
 
 	let selectedDate = new Date();
 	let newEventTitle = '';
@@ -31,7 +31,7 @@
 	function handleAddEvent() {
 		if (!newEventTitle.trim()) return;
 		const dateTime = `${newEventDate}T${newEventTime}:00`;
-		addEvent({
+		calendarStore.addEvent({
 			title: newEventTitle,
 			date: newEventDate,
 			time: newEventTime,
@@ -44,7 +44,7 @@
 	}
 
 	function handleDeleteEvent(id: string) {
-		deleteEvent(id);
+		calendarStore.deleteEvent(id);
 	}
 
 	function changeMonth(delta: number) {
@@ -95,10 +95,10 @@
 			<div class="h-24 bg-gray-50 rounded"></div>
 		{/each}
 		{#each Array(daysInMonth).fill(0) as _, i}
-			{const day = i + 1}
-			{const date = new Date(year, month, day)}
-			{const events = getEventsForDate(date)}
-			{const isToday = date.toDateString() === new Date().toDateString()}
+			{@const day = i + 1}
+			{@const date = new Date(year, month, day)}
+			{@const events = getEventsForDate(date)}
+			{@const isToday = date.toDateString() === new Date().toDateString()}
 			<div class="h-24 border border-gray-200 rounded p-1 {isToday ? 'bg-blue-50' : ''}">
 				<div class="flex justify-between items-start">
 					<span class="text-sm font-medium {isToday ? 'text-blue-600' : 'text-gray-700'}">

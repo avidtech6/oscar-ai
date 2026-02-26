@@ -247,7 +247,7 @@ export async function storeSyncState(
 	}
 ): Promise<string> {
 	console.log(`[AppFlowy] Storing sync state for connection ${options.connectionId}`);
-	console.log(`  Last sync: ${syncState.lastSync}, Provider: ${options.providerId}`);
+	console.log(`  Last sync: ${syncState.lastSyncDate}, Provider: ${options.providerId}`);
 	
 	// Prepare sync state data
 	const syncData = {
@@ -256,9 +256,10 @@ export async function storeSyncState(
 		workspace_id: options.workspaceId,
 		connection_id: options.connectionId,
 		provider_id: options.providerId,
-		last_sync: syncState.lastSync.toISOString(),
-		last_uid: syncState.lastUid,
-		highest_mod_seq: syncState.highestModSeq,
+		last_sync: syncState.lastSyncDate.toISOString(),
+		last_uid: syncState.lastSyncUid,
+		// highest_mod_seq is not available in ImapSyncState, using highestUid from first folder if available
+		highest_mod_seq: Object.values(syncState.folderStates)[0]?.highestUid || 0,
 		folder_states: JSON.stringify(syncState.folderStates),
 		created_at: new Date().toISOString(),
 		updated_at: new Date().toISOString()

@@ -4,19 +4,24 @@
 	import { sidebarOpen } from '$lib/stores/appStore';
 	import { fade, fly } from 'svelte/transition';
 	import { onMount } from 'svelte';
-	import { db } from '$lib/db';
+	// import { db } from '$lib/db';
 	import { initSettings } from '$lib/stores/settings';
 	import CopilotBar from '$lib/copilot/CopilotBar.svelte';
+	import PromptTooltip from '$lib/copilot/PromptTooltip.svelte';
 	import MobileBottomBar from '$lib/components/MobileBottomBar.svelte';
 	import { updateRoute } from '$lib/copilot/copilotContext';
 	import { onUserPrompt } from '$lib/copilot/eventModel';
-	import type { Project } from '$lib/db';
+	// import type { Project } from '$lib/db';
 	import { onDestroy } from 'svelte';
 	import { appInit } from '$lib/system/AppInit';
 	import SemanticContextSheet from '$lib/components/semantic/SemanticContextSheet.svelte';
 	import DecisionSheet from '$lib/components/semantic/DecisionSheet.svelte';
+	import { debugStore } from '$lib/stores/debugStore';
+	import { initializeSafeMode, withSafeMode } from '$lib/safeMode/integration';
 
-	let projects: Project[] = [];
+	const debugVisible = debugStore.visible;
+
+	let projects: any[] = [];
 	let loading = true;
 	let appInitialized = false;
 
@@ -57,12 +62,33 @@
 
 	// Load projects from IndexedDB on mount
 	onMount(async () => {
-		// Initialize AppInit (must happen first)
+		// Global error handler to capture runtime errors
+		window.addEventListener('error', (event) => {
+			console.error('Global error:', event.error);
+			debugStore.log('Global Error', event.error?.message || String(event), { error: event.error });
+		});
+		window.addEventListener('unhandledrejection', (event) => {
+			console.error('Unhandled rejection:', event.reason);
+			debugStore.log('Unhandled Rejection', event.reason?.message || String(event.reason), { reason: event.reason });
+		});
+
+		// Initialize AppInit with Safe Mode protection
 		try {
-			console.log('Layout: Initializing application...');
-			await appInit.initialize();
-			appInitialized = true;
-			console.log('Layout: Application initialized successfully');
+			console.log('Layout: Initializing application with Safe Mode protection...');
+			const safeModeResult = await withSafeMode(async () => {
+				await appInit.initialize();
+			});
+			
+			if (safeModeResult.success) {
+				appInitialized = true;
+				console.log('Layout: Application initialized successfully (Safe Mode not activated)');
+			} else {
+				console.log('Layout: Safe Mode activated, application initialization failed');
+				// Safe Mode fallback UI is already shown by withSafeMode
+				// We should not continue with normal initialization
+				loading = false;
+				return;
+			}
 		} catch (error) {
 			console.error('Layout: Failed to initialize application:', error);
 			// Continue anyway - some features may be limited
@@ -77,8 +103,10 @@
 			console.error('Layout: Failed to initialize settings:', error);
 		}
 		
+		// Temporarily disabled db import
 		try {
-			projects = await db.projects.toArray();
+			// projects = await db.projects.toArray();
+			projects = [];
 		} catch (error) {
 			console.error('Failed to load projects:', error);
 		} finally {
@@ -123,9 +151,20 @@
 	function handlePromptSubmit(event: CustomEvent<{ text: string }>) {
 		const promptText = event.detail.text;
 		if (promptText && promptText.trim()) {
+			debugStore.log('Layout', 'Processing prompt', { promptText });
 			console.log('Layout: Processing prompt:', promptText);
+			// DEBUG: Log to window for visibility
+			const win = window as any;
+			win.debugLog = win.debugLog || [];
+			win.debugLog.push({ type: 'prompt', text: promptText, timestamp: Date.now() });
+			console.log('DEBUG: window.debugLog updated', win.debugLog);
+			// TEMP: Alert for debugging
+			if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+				alert(`DEBUG: Prompt submitted: "${promptText}"`);
+			}
 			onUserPrompt(promptText.trim());
 		} else {
+			debugStore.log('Layout', 'Received empty prompt', { event });
 			console.warn('Layout: Received empty prompt');
 		}
 	}
@@ -306,6 +345,8 @@
 		
 		<!-- Global Copilot System - Now inside main content -->
 		{#if appInitialized}
+			<!-- Prompt Tooltip System (appears above CopilotBar) -->
+			<PromptTooltip />
 			<CopilotBar on:promptSubmit={handlePromptSubmit} />
 		{:else}
 			<!-- Loading placeholder for CopilotBar -->
@@ -323,4 +364,41 @@
 	
 	<!-- Decision Sheet (global) -->
 	<DecisionSheet />
+
+	<!-- Debug Panel (visible only in dev) -->
+	{#if $debugVisible}
+		<div class="fixed bottom-0 left-0 w-96 max-h-64 bg-black/90 text-white text-xs font-mono z-[9999] overflow-auto border-t border-r border-gray-700 rounded-tr-lg shadow-lg">
+			<div class="sticky top-0 bg-gray-900 px-3 py-2 flex items-center justify-between border-b border-gray-700">
+				<div class="font-semibold">Debug Logs</div>
+				<div class="flex gap-2">
+					<button
+						class="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs"
+						on:click={() => debugStore.clear()}
+					>
+						Clear
+					</button>
+					<button
+						class="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs"
+						on:click={() => debugStore.toggleVisibility()}
+					>
+						{$debugVisible ? 'Hide' : 'Show'}
+					</button>
+				</div>
+			</div>
+			<div class="p-2 space-y-1">
+				{#each $debugStore as log (log.id)}
+					<div class="border-l-2 border-blue-500 pl-2 py-1">
+						<div class="flex justify-between">
+							<span class="text-blue-300 font-semibold">{log.component}</span>
+							<span class="text-gray-400 text-xs">{new Date(log.timestamp).toLocaleTimeString()}</span>
+						</div>
+						<div class="text-gray-200">{log.message}</div>
+						{#if log.data}
+							<pre class="text-gray-400 text-xs mt-1 overflow-x-auto">{JSON.stringify(log.data, null, 2)}</pre>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 </div>
