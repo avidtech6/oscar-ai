@@ -131,11 +131,11 @@
     </div>
     
     <div class="toolbar-info">
-      {selectedText ? (
+      {#if selectedText}
         <span class="selection-info">Selected: {selectedText.substring(0, 50)}...</span>
-      ) : (
+      {:else}
         <span class="hint">Select text to rewrite</span>
-      )}
+      {/if}
     </div>
   </div>
   
@@ -147,8 +147,9 @@
         contenteditable={$pdfEditorState.isEditing}
         on:input={handleContentChange}
         on:mouseup={handleTextSelection}
-        innerHTML={$pdfEditorState.htmlContent}
-      />
+      >
+        {@html $pdfEditorState.htmlContent}
+      </div>
     {:else}
       <div class="empty-state">
         <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">

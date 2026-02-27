@@ -1325,7 +1325,18 @@
 						
 						<div class="flex-1 min-w-0">
 							<div class="flex items-start justify-between">
-								<h3 class="font-semibold text-gray-900 truncate flex-1 cursor-pointer" on:click={() => openEditForm(note)}>{note.title}</h3>
+								<h3
+									class="font-semibold text-gray-900 truncate flex-1 cursor-pointer"
+									on:click={() => openEditForm(note)}
+									tabindex="0"
+									role="button"
+									on:keydown={(e) => {
+										if (e.key === 'Enter' || e.key === ' ') {
+											e.preventDefault();
+											openEditForm(note);
+										}
+									}}
+								>{note.title}</h3>
 								<div class="flex gap-1">
 									<button
 										on:click|stopPropagation={() => note.id && openAIPrompt(note.id)}
@@ -1414,7 +1425,7 @@
 				<h2 class="text-lg font-semibold">
 					{editingNote ? 'Edit Note' : 'New Note'}
 				</h2>
-				<button on:click={() => showForm = false} class="text-gray-400 hover:text-gray-600">
+				<button on:click={() => showForm = false} class="text-gray-400 hover:text-gray-600" aria-label="Close">
 					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 					</svg>
@@ -1609,7 +1620,7 @@
 				<h2 class="text-lg font-semibold">
 					Ask AI About Note
 				</h2>
-				<button on:click={closeAIPrompt} class="text-gray-400 hover:text-gray-600">
+				<button on:click={closeAIPrompt} class="text-gray-400 hover:text-gray-600" aria-label="Close">
 					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 					</svg>
@@ -1708,7 +1719,7 @@
 				<h2 class="text-lg font-semibold">
 					AI Action on {selectedNotes.size} Note{selectedNotes.size !== 1 ? 's' : ''}
 				</h2>
-				<button on:click={closeBulkAIPrompt} class="text-gray-400 hover:text-gray-600">
+				<button on:click={closeBulkAIPrompt} class="text-gray-400 hover:text-gray-600" aria-label="Close">
 					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 					</svg>

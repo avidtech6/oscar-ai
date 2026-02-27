@@ -9,15 +9,3 @@
   </main>
   <CopilotBar />
 </div>
-
-<style>
-  .h-screen {
-    height: 100vh;
-  }
-  .flex-1 {
-    flex: 1 1 0%;
-  }
-  .overflow-hidden {
-    overflow: hidden;
-  }
-</style>

@@ -149,7 +149,7 @@
 		style={backdropStyle}
 		on:click={handleBackdropClick}
 		aria-hidden="true"
-	/>
+	></div>
 {/if}
 
 <!-- Assist Layer Sheet -->
@@ -171,7 +171,7 @@
 		on:touchstart={handleDragStart}
 		aria-label="Drag to resize"
 	>
-		<div class="drag-indicator" />
+		<div class="drag-indicator"></div>
 	</div>
 	
 	<!-- Header -->

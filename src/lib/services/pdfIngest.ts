@@ -1,8 +1,25 @@
-import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocument } from 'pdf-lib';
+// Browser-only imports - must be guarded
+let pdfjsLib: any = null;
+let PDFDocument: any = null;
 
-// Configure pdfjs worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+async function ensurePdfLibs() {
+  if (typeof window === 'undefined') {
+    return { pdfjsLib: null, PDFDocument: null };
+  }
+  
+  if (!pdfjsLib) {
+    pdfjsLib = await import('pdfjs-dist');
+    // Configure pdfjs worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  }
+  
+  if (!PDFDocument) {
+    const pdfLibModule = await import('pdf-lib');
+    PDFDocument = pdfLibModule.PDFDocument;
+  }
+  
+  return { pdfjsLib, PDFDocument };
+}
 
 export interface TextBlock {
   text: string;
@@ -49,6 +66,16 @@ export interface PdfExtractedDocument {
  */
 export async function extractPdf(file: File): Promise<PdfExtractedDocument> {
   try {
+    // Ensure we're in browser environment
+    if (typeof window === 'undefined') {
+      throw new Error('PDF extraction is only available in browser environment');
+    }
+    
+    const { pdfjsLib, PDFDocument } = await ensurePdfLibs();
+    if (!pdfjsLib || !PDFDocument) {
+      throw new Error('PDF libraries failed to load');
+    }
+    
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     

@@ -53,7 +53,7 @@
 		on:click={handleBackdropClick}
 		aria-hidden="true"
 		transition:fade={{ duration: 200 }}
-	/>
+	></div>
 {/if}
 
 <!-- Sheet -->
@@ -69,7 +69,7 @@
 >
 	<!-- Drag handle (mobile only) -->
 	<div class="drag-handle" aria-label="Drag to resize">
-		<div class="drag-indicator" />
+		<div class="drag-indicator"></div>
 	</div>
 
 	<!-- Header -->

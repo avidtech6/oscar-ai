@@ -35,7 +35,7 @@
       rows={4}
       style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;"
       placeholder="Enter your prompt..."
-    />
+    ></textarea>
   </div>
   
   <button

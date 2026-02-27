@@ -60,7 +60,7 @@
 
 <style>
 	.communication-hub-layout {
-		min-height: calc(100vh - 64px); /* Adjust based on header height */
+		min-height: calc(100vh - 64px);
 		background-color: #f9fafb;
 	}
 </style>

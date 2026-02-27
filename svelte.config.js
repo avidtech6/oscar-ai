@@ -4,18 +4,10 @@ import adapter from '@sveltejs/adapter-static';
 const config = {
 	kit: {
 		adapter: adapter({
-			fallback: 'index.html',
-			pages: 'build',
-			assets: 'build',
-			failMaxPageSizeWarning: true,
-			strict: false
+			fallback: 'index.html'
 		}),
-		prerender: { entries: [] },
-		alias: {
-			$components: 'src/lib/components',
-			$server: 'src/lib/server',
-			$stores: 'src/lib/stores',
-			$utils: 'src/lib/utils'
+		prerender: {
+			handleHttpError: 'ignore'
 		}
 	}
 };

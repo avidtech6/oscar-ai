@@ -1,11 +1,33 @@
-import html2pdf from 'html2pdf.js';
+let html2pdf: any = null;
+
+async function ensureHtml2Pdf() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  
+  if (!html2pdf) {
+    const module = await import('html2pdf.js');
+    html2pdf = module.default;
+  }
+  
+  return html2pdf;
+}
 
 /**
  * Export HTML content to PDF using html2pdf.js
  */
 export async function exportHtmlToPdf(html: string, filename: string = 'document.pdf'): Promise<Blob> {
-  return new Promise((resolve, reject) => {
+  if (typeof window === 'undefined') {
+    throw new Error('PDF export is only available in browser environment');
+  }
+  
+  return new Promise(async (resolve, reject) => {
     try {
+      const html2pdf = await ensureHtml2Pdf();
+      if (!html2pdf) {
+        throw new Error('html2pdf.js library failed to load');
+      }
+      
       // Create a temporary div with the HTML content
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
@@ -58,6 +80,10 @@ export async function exportHtmlToPdf(html: string, filename: string = 'document
  * Export HTML content to PDF and trigger download
  */
 export async function downloadHtmlAsPdf(html: string, filename: string = 'document.pdf'): Promise<void> {
+  if (typeof window === 'undefined') {
+    throw new Error('PDF download is only available in browser environment');
+  }
+  
   try {
     const blob = await exportHtmlToPdf(html, filename);
     
@@ -82,6 +108,11 @@ export async function downloadHtmlAsPdf(html: string, filename: string = 'docume
  * Simple fallback PDF generation for when html2pdf fails
  */
 export function generateSimplePdf(html: string): Blob {
+  if (typeof window === 'undefined') {
+    // Return empty blob for SSR
+    return new Blob([''], { type: 'application/pdf' });
+  }
+  
   // Create a simple text-based PDF using data URI
   const text = extractTextFromHtml(html);
   const pdfContent = `%PDF-1.4
@@ -131,12 +162,12 @@ endstream
 endobj
 xref
 0 6
-0000000000 65535 f 
-0000000010 00000 n 
-0000000053 00000 n 
-0000000106 00000 n 
-0000000179 00000 n 
-0000000234 00000 n 
+0000000000 65535 f
+0000000010 00000 n
+0000000053 00000 n
+0000000106 00000 n
+0000000179 00000 n
+0000000234 00000 n
 trailer
 <<
 /Size 6
@@ -153,6 +184,10 @@ startxref
  * Extract plain text from HTML for simple PDF fallback
  */
 function extractTextFromHtml(html: string): string {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
   return tempDiv.textContent || tempDiv.innerText || '';

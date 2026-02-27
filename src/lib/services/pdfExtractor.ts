@@ -1,11 +1,31 @@
-import * as pdfjsLib from 'pdfjs-dist';
+let pdfjsLib: any = null;
 
-// Set the worker source for PDF.js
-// Using CDN for the worker to avoid build configuration issues
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+async function ensurePdfJs() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  
+  if (!pdfjsLib) {
+    pdfjsLib = await import('pdfjs-dist');
+    // Set the worker source for PDF.js
+    // Using CDN for the worker to avoid build configuration issues
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  }
+  
+  return pdfjsLib;
+}
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {
+    if (typeof window === 'undefined') {
+      throw new Error('PDF extraction is only available in browser environment');
+    }
+    
+    const pdfjsLib = await ensurePdfJs();
+    if (!pdfjsLib) {
+      throw new Error('PDF.js library failed to load');
+    }
+    
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     

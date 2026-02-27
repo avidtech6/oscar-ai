@@ -145,7 +145,7 @@
 		class="fixed inset-0 bg-black/50 z-40"
 		on:click={closeSheet}
 		aria-hidden="true"
-	/>
+	></div>
 {/if}
 
 <!-- Sheet -->
@@ -170,7 +170,7 @@
 			role="button"
 			tabindex="0"
 		>
-			<div class="drag-indicator" />
+			<div class="drag-indicator"></div>
 		</div>
 	{/if}
 
