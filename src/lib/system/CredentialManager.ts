@@ -1,11 +1,11 @@
 // CredentialManager - Unified source of truth for API keys and credentials
 // Layered loading with priority: Local overrides > Supabase settings > Environment defaults
 
-import { getSupabase } from '$lib/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 
-export type CredentialKey = 
+export type CredentialKey =
   | 'oscar_api_key'
-  | 'openai_api_key' 
+  | 'openai_api_key'
   | 'groq_api_key'
   | 'anthropic_api_key'
   | 'supabase_url'
@@ -152,19 +152,18 @@ class CredentialManager {
   	try {
       console.log('CredentialManager: Attempting to load settings from Supabase...');
       
-      // Get the Supabase client
-      const supabase = getSupabase();
-      if (!supabase) {
-        console.warn('CredentialManager: Supabase client not available');
+      // Get environment defaults for Supabase credentials
+      const envDefaults = this.loadEnvironmentDefaults();
+      const supabaseUrl = envDefaults.supabase_url;
+      const supabaseAnonKey = envDefaults.supabase_anon_key;
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.log('CredentialManager: Supabase credentials not configured in environment, skipping Supabase settings load');
         return {};
       }
       
-      // Check if we have valid Supabase credentials
-      const envDefaults = this.loadEnvironmentDefaults();
-      if (!envDefaults.supabase_url || !envDefaults.supabase_anon_key) {
-        console.log('CredentialManager: Supabase credentials not configured in environment, using fallback defaults');
-        // Continue anyway - Supabase client may have fallback defaults
-      }
+      // Create a direct Supabase client (not using the shared one to avoid circular dependency)
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
       
   		// Use type assertion to bypass TypeScript errors for now
   		// The settings table might not exist in the generated types
@@ -285,7 +284,18 @@ class CredentialManager {
 
   private async saveToSupabase(key: CredentialKey, value: string): Promise<void> {
     try {
-      const { error } = await (getSupabase() as any)
+      // Get current credentials to create Supabase client
+      const supabaseUrl = this.credentials.supabase_url;
+      const supabaseAnonKey = this.credentials.supabase_anon_key;
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.warn('CredentialManager: No Supabase credentials available for saving');
+        return;
+      }
+      
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      
+      const { error } = await (supabase as any)
         .from('settings')
         .upsert({
           key,
@@ -417,7 +427,18 @@ class CredentialManager {
     
     // Clear Supabase settings
     try {
-      await (getSupabase() as any)
+      // Get current credentials to create Supabase client
+      const supabaseUrl = this.credentials.supabase_url;
+      const supabaseAnonKey = this.credentials.supabase_anon_key;
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.warn('CredentialManager: No Supabase credentials available for clearing settings');
+        return;
+      }
+      
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      
+      await (supabase as any)
         .from('settings')
         .delete()
         .in('key', [

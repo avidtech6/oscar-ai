@@ -40,6 +40,7 @@
 				{ id: 'tasks', label: 'Tasks', icon: 'tasks', href: '/tasks' },
 				{ id: 'notes', label: 'Notes', icon: 'notes', href: '/notes' },
 				{ id: 'reports', label: 'Reports', icon: 'document', href: '/reports' },
+				{ id: 'pdf', label: 'PDF Editor', icon: 'document', href: '/pdf' },
 				{ id: 'calendar', label: 'Calendar', icon: 'calendar', href: '/calendar' },
 				{ id: 'notifications', label: 'Notifications', icon: 'help', href: '/notifications' }
 			]
