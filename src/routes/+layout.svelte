@@ -2,26 +2,22 @@
 	import '../app.css';
 	import { page } from '$app/stores';
 	import { sidebarOpen } from '$lib/stores/appStore';
-	import { fade, fly } from 'svelte/transition';
 	import { onMount } from 'svelte';
-	// import { db } from '$lib/db';
 	import { initSettings } from '$lib/stores/settings';
-	import CopilotBar from '$lib/copilot/CopilotBar.svelte';
-	import PromptTooltip from '$lib/copilot/PromptTooltip.svelte';
-	import MobileBottomBar from '$lib/components/MobileBottomBar.svelte';
 	import { updateRoute } from '$lib/copilot/copilotContext';
 	import { onUserPrompt } from '$lib/copilot/eventModel';
-	// import type { Project } from '$lib/db';
 	import { onDestroy } from 'svelte';
 	import { appInit } from '$lib/system/AppInit';
-	import SemanticContextSheet from '$lib/components/semantic/SemanticContextSheet.svelte';
-	import DecisionSheet from '$lib/components/semantic/DecisionSheet.svelte';
 	import { debugStore } from '$lib/stores/debugStore';
 	import { initializeSafeMode, withSafeMode } from '$lib/safeMode/integration';
-	import RightPanel from '$lib/components/layout/RightPanel.svelte';
-	import ConversationSheet from '$lib/components/sheets/ConversationSheet.svelte';
-	import ContextActionSheet from '$lib/components/sheets/ContextActionSheet.svelte';
-	import ContextPills from '$lib/components/layout/ContextPills.svelte';
+
+	// New Architecture Components
+	import SidebarShell from '$lib/ui/shells/SidebarShell.svelte';
+	import TopBarShell from '$lib/ui/shells/TopBarShell.svelte';
+	import BottomBarShell from '$lib/ui/shells/BottomBarShell.svelte';
+	import RightPanelShell from '$lib/ui/shells/RightPanelShell.svelte';
+	import SheetSystem from '$lib/ui/shells/SheetSystem.svelte';
+	import AskOscarBar from '$lib/ui/shells/AskOscarBar.svelte';
 
 	const debugVisible = debugStore.visible;
 	
@@ -206,7 +202,7 @@
 		}
 	}
 
-	// Handle prompt submissions from CopilotBar
+	// Handle prompt submissions from AskOscarBar
 	function handlePromptSubmit(event: CustomEvent<{ text: string }>) {
 		const promptText = event.detail.text;
 		if (promptText && promptText.trim()) {
@@ -228,276 +224,45 @@
 		}
 	}
 
-	// Sidebar Components - Proper Svelte components defined as functions returning JSX-like objects
-	// These will be used with {@html} directive in the template
-	const SidebarIcon = (icon: string, icons: Record<string, string>) => {
-		return `<span class="flex-shrink-0 w-5 h-5">${icons[icon] || ''}</span>`;
-	};
-
-	const SidebarSection = (title: string, sectionIndex: number, sidebarOpen: boolean, children: string) => {
-		if (!sidebarOpen && title) return '';
-		
-		return `
-			${title ? `
-				<div class="pt-4 ${sectionIndex > 0 ? 'mt-4 border-t border-forest-700' : ''}">
-					<div class="px-3 mb-2">
-						<span class="text-xs font-semibold text-forest-300 uppercase tracking-wider">${title}</span>
-					</div>
-				</div>
-			` : ''}
-			${children}
-		`;
-	};
-
-	const SidebarItem = (
-		item: any,
-		sidebarOpen: boolean,
-		expandedItems: Set<string>,
-		icons: Record<string, string>,
-		isActive: (href: string) => boolean,
-		closeSidebarOnMobile: () => void,
-		toggleExpanded: (id: string) => void
-	) => {
-		const active = isActive(item.href);
-		const expanded = expandedItems.has(item.id);
-		const toggleFunction = `(function(e) { e.preventDefault(); window.toggleExpanded && window.toggleExpanded('${item.id}'); })`;
-		
-		return `
-			<div class="space-y-1">
-				<a
-					href="${item.href}"
-					onclick="(${closeSidebarOnMobile.toString()})()"
-					class="flex items-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
-						   ${active ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}
-						   ${sidebarOpen ? 'lg:justify-start' : 'lg:justify-center'}"
-					title="${sidebarOpen ? '' : item.label}"
-				>
-					<span class="flex-shrink-0 w-5 h-5">
-						${icons[item.icon] || ''}
-					</span>
-					${sidebarOpen ? `
-						<span class="transition-opacity duration-200 flex-1">${item.label}</span>
-						${item.subitems ? `
-							<button
-								onclick="${toggleFunction}"
-								class="p-1 text-forest-200 hover:text-white"
-								aria-label="${expanded ? 'Collapse' : 'Expand'}"
-							>
-								<svg class="w-4 h-4 transform transition-transform ${expanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-								</svg>
-							</button>
-						` : ''}
-					` : ''}
-				</a>
-				
-				${sidebarOpen && item.subitems && expanded ? `
-					<div class="ml-8 space-y-1">
-						${item.subitems.map((subitem: any) => `
-							<a
-								href="${subitem.href}"
-								onclick="(${closeSidebarOnMobile.toString()})()"
-								class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm
-									   ${isActive(subitem.href) ? 'bg-forest-700/50 text-white' : 'text-forest-200 hover:bg-forest-700/30'}"
-								title="${subitem.label}"
-							>
-								<span class="w-1.5 h-1.5 rounded-full bg-forest-400"></span>
-								<span>${subitem.label}</span>
-							</a>
-						`).join('')}
-					</div>
-				` : ''}
-			</div>
-		`;
-	};
+	// Sidebar Components - Now implemented as proper Svelte components in src/lib/ui/shells/
+	// The SidebarShell imports and uses SidebarSection, SidebarItem, and SidebarIcon components
 </script>
 
-<!-- Mobile overlay backdrop -->
-{#if $sidebarOpen}
-	<div 
-		class="fixed inset-0 bg-black/50 z-40 lg:hidden"
-		on:click={toggleSidebar}
-		on:keydown={(e) => e.key === 'Escape' && toggleSidebar()}
-		role="button"
-		tabindex="0"
-		aria-label="Close menu"
-		transition:fade={{ duration: 200 }}
-	></div>
-{/if}
-
+<!-- New Architecture Layout -->
 <div class="h-screen flex bg-gray-50 overflow-hidden">
-	<!-- Sidebar - Desktop: fixed width, Mobile: slide-in drawer -->
-	<aside 
-		class="fixed lg:relative z-50 lg:z-auto
-			   w-64 h-full bg-forest-800 text-white flex flex-col
-			   transform transition-transform duration-300 ease-in-out
-			   {$sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-20'}"
-	>
-		<!-- Logo & Collapse Button -->
-		<div class="p-4 border-b border-forest-700 flex items-center justify-between flex-shrink-0">
-			{#if $sidebarOpen}
-				<div class="flex items-center gap-2" transition:fly={{ x: -20, duration: 200 }}>
-					<span class="text-2xl">🌳</span>
-					{#if $sidebarOpen}
-						<div class="transition-opacity duration-200">
-							<h1 class="text-lg font-bold">Oscar AI</h1>
-							<p class="text-xs text-forest-200">Arboricultural</p>
-						</div>
-					{/if}
-				</div>
-			{:else}
-				<span class="text-2xl mx-auto">🌳</span>
-			{/if}
-			
-			<!-- Desktop toggle button -->
-			<button
-				class="hidden lg:flex p-1 text-forest-200 hover:text-white transition-colors"
-				on:click={toggleSidebar}
-				aria-label={$sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-			>
-				{@html icons.chevron}
-			</button>
-		</div>
-
-		<!-- Navigation -->
-		<nav class="flex-1 p-2 lg:p-4 space-y-1 lg:space-y-2 overflow-y-auto">
-			{#each navSections as section, sectionIndex}
-				{@html SidebarSection(section.title, sectionIndex, $sidebarOpen,
-					section.items.map(item => SidebarItem(
-						item,
-						$sidebarOpen,
-						expandedItems,
-						icons,
-						isActive,
-						closeSidebarOnMobile,
-						toggleExpanded
-					)).join('')
-				)}
-			{/each}
-
-			<!-- Projects Section -->
-			{@html SidebarSection("Projects", navSections.length, $sidebarOpen,
-				$sidebarOpen ? `
-					<div class="flex items-center justify-between px-3 mb-2">
-						<a
-							href="/workspace/new"
-							onclick="${closeSidebarOnMobile}"
-							class="p-1 text-forest-200 hover:text-white hover:bg-forest-700 rounded transition-colors"
-							title="New Project"
-						>
-							${SidebarIcon("plus", icons)}
-						</a>
-					</div>
-					
-					${loading ? `
-						<div class="px-3 py-2 text-sm text-forest-200">Loading...</div>
-					` : projects.length === 0 ? `
-						<div class="px-3 py-2 text-sm text-forest-200">No projects yet</div>
-					` : projects.map(project => `
-						<a
-							href="/project/${project.id}"
-							onclick="${closeSidebarOnMobile}"
-							class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
-								   ${isActive('/project/' + project.id) ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}"
-							title="${project.name}"
-						>
-							${SidebarIcon("folder", icons)}
-							<span class="truncate text-sm">${project.name}</span>
-						</a>
-					`).join('')}
-				` : `
-					<!-- Collapsed Projects button -->
-					<a
-						href="/workspace"
-						onclick="${closeSidebarOnMobile}"
-						class="flex items-center justify-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
-							   ${isActive('/workspace') ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}"
-						title="Projects"
-					>
-						${SidebarIcon("folder", icons)}
-					</a>
-				`
-			)}
-		</nav>
-	</aside>
-
-	<!-- Main content -->
-	<main class="flex-1 flex flex-col overflow-hidden min-w-0">
-		<!-- Mobile header with hamburger -->
-		<header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0 lg:hidden">
-			<!-- Mobile menu button -->
-			<button
-				class="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-				on:click={toggleSidebar}
-				aria-label="Toggle menu"
-			>
-				{#if $sidebarOpen}
-					{@html icons.close}
-				{:else}
-					{@html icons.menu}
-				{/if}
-			</button>
-			
-			<h1 class="text-lg font-semibold text-forest-800">Oscar AI</h1>
-			
-			<!-- Placeholder for symmetry -->
-			<div class="w-10"></div>
-		</header>
-
-		<!-- Desktop header with expand button (when sidebar collapsed) -->
-		{#if !$sidebarOpen}
-			<header class="hidden lg:flex bg-white border-b border-gray-200 px-4 py-3 items-center justify-between flex-shrink-0">
-				<button
-					class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-					on:click={toggleSidebar}
-					aria-label="Expand sidebar"
-				>
-					{@html icons.menu}
-				</button>
-				<span class="text-sm text-gray-500">Oscar AI</span>
-				<div class="w-10"></div>
-			</header>
-		{/if}
-
+	<!-- Sidebar Shell -->
+	<SidebarShell {navSections} {expandedItems} {icons} {isActive} {closeSidebarOnMobile} {toggleExpanded} {loading} {projects} />
+	
+	<!-- Main content area -->
+	<div class="flex-1 flex flex-col overflow-hidden min-w-0">
+		<!-- Top Bar Shell -->
+		<TopBarShell {toggleSidebar} />
+		
 		<!-- Page content -->
 		<div class="flex-1 overflow-auto p-4 lg:p-6">
 			<slot />
 		</div>
 		
-		<!-- Global Copilot System - Now inside main content -->
+		<!-- Bottom Bar Shell -->
+		<BottomBarShell />
+		
+		<!-- Ask Oscar Bar (replaces CopilotBar) -->
 		{#if appInitialized}
-			<!-- Prompt Tooltip System (appears above CopilotBar) -->
-			<PromptTooltip />
-			<CopilotBar on:promptSubmit={handlePromptSubmit} />
+			<AskOscarBar on:promptSubmit={handlePromptSubmit} />
 		{:else}
-			<!-- Loading placeholder for CopilotBar -->
+			<!-- Loading placeholder for AskOscarBar -->
 			<div class="w-full h-16 bg-white border-t border-gray-200 flex items-center justify-center">
 				<div class="text-gray-500 text-sm">Initializing assistant...</div>
 			</div>
 		{/if}
-	</main>
+	</div>
 	
-	<!-- Global Right Panel (Module 1 requirement) -->
-	<RightPanel />
+	<!-- Right Panel Shell -->
+	<RightPanelShell />
 	
-	<!-- Mobile Bottom Bar -->
-	<MobileBottomBar />
+	<!-- Sheet System -->
+	<SheetSystem />
 	
-	<!-- Semantic Context Sheet (global) -->
-	<SemanticContextSheet />
-	
-	<!-- Decision Sheet (global) -->
-	<DecisionSheet />
-	
-	<!-- Module 4 Sheet System -->
-	<ConversationSheet bind:isOpen={showConversationSheet} />
-	<ContextActionSheet
-		bind:isOpen={showContextActionSheet}
-		context={contextActionSheetProps.context}
-		itemTitle={contextActionSheetProps.itemTitle}
-		itemType={contextActionSheetProps.itemType}
-	/>
-
 	<!-- Debug Panel (visible only in dev) -->
 	{#if $debugVisible}
 		<div class="fixed bottom-0 left-0 w-96 max-h-64 bg-black/90 text-white text-xs font-mono z-[9999] overflow-auto border-t border-r border-gray-700 rounded-tr-lg shadow-lg">
