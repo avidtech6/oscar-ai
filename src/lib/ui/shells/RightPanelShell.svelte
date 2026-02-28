@@ -81,13 +81,56 @@
 		</div>
 	</div>
 	
-	<!-- Context info -->
+	<!-- Contextual content based on current domain -->
 	<div class="p-4 flex-1">
-		<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Context Info</div>
+		<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Domain Details</div>
 		<div class="text-sm text-gray-600 space-y-3">
-			<p>You are currently in the <strong>{getCurrentContext()}</strong> domain.</p>
-			<p>This panel shows contextual information and quick actions relevant to your current view.</p>
-			<p>Use the domain switcher to change contexts or access domain-specific settings.</p>
+			{#if getCurrentContext() === 'Workspace'}
+				<p class="font-medium">Workspace Management</p>
+				<ul class="list-disc pl-4 space-y-1">
+					<li>Manage tasks, notes, and reports</li>
+					<li>Track project progress</li>
+					<li>Calendar integration</li>
+				</ul>
+			{:else if getCurrentContext() === 'Projects'}
+				<p class="font-medium">Project Tracking</p>
+				<ul class="list-disc pl-4 space-y-1">
+					<li>Monitor project timelines</li>
+					<li>Resource allocation</li>
+					<li>Budget tracking</li>
+				</ul>
+			{:else if getCurrentContext() === 'Files'}
+				<p class="font-medium">File Management</p>
+				<ul class="list-disc pl-4 space-y-1">
+					<li>Organize documents</li>
+					<li>Version control</li>
+					<li>Collaborative editing</li>
+				</ul>
+			{:else if getCurrentContext() === 'Connect'}
+				<p class="font-medium">Communication Hub</p>
+				<ul class="list-disc pl-4 space-y-1">
+					<li>Team messaging</li>
+					<li>Email integration</li>
+					<li>Meeting scheduling</li>
+				</ul>
+			{:else if getCurrentContext() === 'Dashboard'}
+				<p class="font-medium">Analytics Dashboard</p>
+				<ul class="list-disc pl-4 space-y-1">
+					<li>Performance metrics</li>
+					<li>Activity trends</li>
+					<li>System health</li>
+				</ul>
+			{:else if getCurrentContext() === 'Search'}
+				<p class="font-medium">Search & Discovery</p>
+				<ul class="list-disc pl-4 space-y-1">
+					<li>Cross-domain search</li>
+					<li>AI-powered suggestions</li>
+					<li>Recent activity</li>
+				</ul>
+			{:else}
+				<p class="font-medium">General Context</p>
+				<p>Navigate to a specific domain to see contextual information and actions.</p>
+			{/if}
 		</div>
 	</div>
 	

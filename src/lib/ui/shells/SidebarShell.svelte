@@ -21,10 +21,10 @@
 
 <!-- Mobile overlay backdrop -->
 {#if $sidebarOpen}
-	<div 
+	<div
 		class="fixed inset-0 bg-black/50 z-40 lg:hidden"
-		on:click={toggleSidebar}
-		on:keydown={(e) => e.key === 'Escape' && toggleSidebar()}
+		onclick={toggleSidebar}
+		onkeydown={(e) => e.key === 'Escape' && toggleSidebar()}
 		role="button"
 		tabindex="0"
 		aria-label="Close menu"
@@ -58,7 +58,7 @@
 		<!-- Desktop toggle button -->
 		<button
 			class="hidden lg:flex p-1 text-forest-200 hover:text-white transition-colors"
-			on:click={toggleSidebar}
+			onclick={toggleSidebar}
 			aria-label={$sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
 		>
 			{@html icons.chevron}
@@ -97,7 +97,7 @@
 				<div class="flex items-center justify-between px-3 mb-2">
 					<a
 						href="/workspace/new"
-						on:click={closeSidebarOnMobile}
+						onclick={closeSidebarOnMobile}
 						class="p-1 text-forest-200 hover:text-white hover:bg-forest-700 rounded transition-colors"
 						title="New Project"
 					>
@@ -113,7 +113,7 @@
 					{#each projects as project}
 						<a
 							href="/project/{project.id}"
-							on:click={closeSidebarOnMobile}
+							onclick={closeSidebarOnMobile}
 							class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
 								   {isActive('/project/' + project.id) ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}"
 							title={project.name}
@@ -127,7 +127,7 @@
 				<!-- Collapsed Projects button -->
 				<a
 					href="/workspace"
-					on:click={closeSidebarOnMobile}
+					onclick={closeSidebarOnMobile}
 					class="flex items-center justify-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
 						   {isActive('/workspace') ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}"
 					title="Projects"

@@ -13,7 +13,7 @@
 
 	// Module-defined Oscar UI Components
 	import SidebarShell from '$lib/ui/shells/SidebarShell.svelte';
-	import RightPanelShell from '$lib/ui/shells/RightPanelShell.svelte';
+	import PeekPanel from '$lib/ui/shells/PeekPanel.svelte';
 	import SheetSystem from '$lib/ui/shells/SheetSystem.svelte';
 	import AskOscarBar from '$lib/ui/shells/AskOscarBar.svelte';
 
@@ -111,15 +111,23 @@
 		// Initialize AppInit with Safe Mode protection
 		try {
 			console.log('Layout: Initializing application with Safe Mode protection...');
+			console.log('Layout: Starting timestamp:', Date.now());
 			const safeModeResult = await withSafeMode(async () => {
+				console.log('Layout: AppInit.initialize() starting...');
+				const startTime = Date.now();
 				await appInit.initialize();
+				const endTime = Date.now();
+				console.log(`Layout: AppInit.initialize() completed in ${endTime - startTime}ms`);
 			});
+			
+			console.log('Layout: Safe Mode result:', safeModeResult);
 			
 			if (safeModeResult.success) {
 				appInitialized = true;
 				console.log('Layout: Application initialized successfully (Safe Mode not activated)');
 			} else {
 				console.log('Layout: Safe Mode activated, application initialization failed');
+				console.log('Layout: Safe Mode active:', safeModeResult.safeModeActive);
 				// Safe Mode fallback UI is already shown by withSafeMode
 				// We should not continue with normal initialization
 				loading = false;
@@ -127,7 +135,9 @@
 			}
 		} catch (error) {
 			console.error('Layout: Failed to initialize application:', error);
+			console.error('Layout: Error details:', error instanceof Error ? error.message : String(error));
 			// Continue anyway - some features may be limited
+			appInitialized = true; // Try to continue with limited functionality
 		}
 		
 		// Initialize settings (loads API key, theme, etc.)
@@ -249,8 +259,8 @@
 		{/if}
 	</div>
 	
-	<!-- Fixed right-hand panel -->
-	<RightPanelShell />
+	<!-- Peek Panel (hidden by default, shows item details) -->
+	<PeekPanel />
 	
 	<!-- Sheet system above everything -->
 	<SheetSystem />
@@ -263,13 +273,13 @@
 				<div class="flex gap-2">
 					<button
 						class="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs"
-						on:click={() => debugStore.clear()}
+						onclick={() => debugStore.clear()}
 					>
 						Clear
 					</button>
 					<button
 						class="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs"
-						on:click={() => debugStore.toggleVisibility()}
+						onclick={() => debugStore.toggleVisibility()}
 					>
 						{$debugVisible ? 'Hide' : 'Show'}
 					</button>

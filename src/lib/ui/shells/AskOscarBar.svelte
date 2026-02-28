@@ -41,7 +41,7 @@
 		<div class="flex items-center gap-2 bg-gray-50 rounded-xl p-1 border border-gray-200">
 			<!-- Attachment button -->
 			<button
-				on:click={handleAttach}
+				onclick={handleAttach}
 				class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
 				title="Attach file"
 				aria-label="Attach file"
@@ -53,14 +53,14 @@
 			<input
 				type="text"
 				bind:value={inputValue}
-				on:keydown={handleKeydown}
+				onkeydown={handleKeydown}
 				placeholder="Ask Oscar anything... (Press Enter to send)"
 				class="flex-1 px-3 py-2 bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-500"
 			/>
 			
 			<!-- Voice input button -->
 			<button
-				on:click={handleVoiceInput}
+				onclick={handleVoiceInput}
 				class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
 				title="Voice input"
 				aria-label="Voice input"
@@ -70,7 +70,7 @@
 			
 			<!-- Send button -->
 			<button
-				on:click={handleSubmit}
+				onclick={handleSubmit}
 				disabled={!inputValue.trim()}
 				class="px-4 py-2 bg-forest-600 text-white font-medium rounded-lg hover:bg-forest-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
 				title="Send message"
@@ -85,7 +85,7 @@
 		<div class="mt-3 flex flex-wrap gap-2 justify-center">
 			{#each ['Summarize this page', 'Find related files', 'Schedule a task', 'Generate report'] as suggestion}
 				<button
-					on:click={() => {
+					onclick={() => {
 						inputValue = suggestion;
 						handleSubmit();
 					}}

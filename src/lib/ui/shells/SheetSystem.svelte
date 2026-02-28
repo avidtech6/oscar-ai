@@ -22,10 +22,10 @@
 
 <!-- Sheet overlay backdrop -->
 {#if showSheet}
-	<div 
+	<div
 		class="fixed inset-0 bg-black/50 z-[100]"
-		on:click={closeSheet}
-		on:keydown={(e) => e.key === 'Escape' && closeSheet()}
+		onclick={closeSheet}
+		onkeydown={(e) => e.key === 'Escape' && closeSheet()}
 		role="button"
 		tabindex="0"
 		aria-label="Close sheet"
@@ -43,7 +43,7 @@
 			<div class="p-4 border-b border-gray-200 flex items-center justify-between">
 				<h3 class="text-lg font-semibold text-gray-800">{sheetTitle}</h3>
 				<button
-					on:click={closeSheet}
+					onclick={closeSheet}
 					class="p-1 text-gray-400 hover:text-gray-600 rounded"
 					aria-label="Close sheet"
 				>
@@ -54,11 +54,12 @@
 			<!-- Sheet content -->
 			<div class="h-[calc(100%-4rem)] overflow-auto">
 				<slot {sheetType} {sheetTitle}>
-					<!-- Default content when no slot provided -->
-					<div class="p-6 text-center text-gray-500">
-						<div class="i-mdi-information-outline w-12 h-12 mx-auto text-gray-300 mb-4"></div>
-						<p class="mb-2">Sheet content would appear here.</p>
-						<p class="text-sm">This is the {sheetType} sheet.</p>
+					<!-- Default empty state when no slot provided -->
+					<div class="p-6">
+						<div class="text-center text-gray-400">
+							<div class="i-mdi-information-outline w-12 h-12 mx-auto mb-3"></div>
+							<p class="text-sm">No content provided for this sheet.</p>
+						</div>
 					</div>
 				</slot>
 			</div>
@@ -67,7 +68,7 @@
 			<div class="p-4 border-t border-gray-200">
 				<div class="flex gap-2">
 					<button
-						on:click={closeSheet}
+						onclick={closeSheet}
 						class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
 					>
 						Close

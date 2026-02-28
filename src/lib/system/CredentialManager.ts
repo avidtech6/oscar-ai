@@ -149,7 +149,7 @@ class CredentialManager {
   }
 
   private async loadSupabaseSettings(): Promise<Partial<Credentials>> {
-  	try {
+    try {
       console.log('CredentialManager: Attempting to load settings from Supabase...');
       
       // Get environment defaults for Supabase credentials
@@ -162,41 +162,59 @@ class CredentialManager {
         return {};
       }
       
-      // Create a direct Supabase client (not using the shared one to avoid circular dependency)
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      // Validate URL format to prevent malformed URL errors
+      if (!supabaseUrl.startsWith('http') || !supabaseUrl.includes('supabase.co')) {
+        console.warn('CredentialManager: Invalid Supabase URL format, skipping Supabase settings load');
+        return {};
+      }
       
-  		// Use type assertion to bypass TypeScript errors for now
-  		// The settings table might not exist in the generated types
-  		const { data, error } = await (supabase as any)
-  			.from('settings')
-  			.select('key, value')
-  			.in('key', [
-  				'oscar_api_key',
-  				'openai_api_key',
-  				'groq_api_key',
-  				'anthropic_api_key',
-  				'supabase_url',
-  				'supabase_anon_key'
-  			]);
+      // Create a direct Supabase client with timeout protection
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        },
+        global: {
+          fetch: (url, options) => {
+            // Add timeout to fetch requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+            
+            return fetch(url, {
+              ...options,
+              signal: controller.signal
+            }).finally(() => clearTimeout(timeoutId));
+          }
+        }
+      });
+      
+      // Use type assertion to bypass TypeScript errors for now
+      // The settings table might not exist in the generated types
+      const { data, error } = await (supabase as any)
+        .from('settings')
+        .select('key, value')
+        .in('key', [
+          'oscar_api_key',
+          'openai_api_key',
+          'groq_api_key',
+          'anthropic_api_key',
+          'supabase_url',
+          'supabase_anon_key'
+        ])
+        .limit(10); // Limit results for faster response
   
-  		if (error) {
-  			console.warn('CredentialManager: Error loading Supabase settings:', error);
+      if (error) {
+        console.warn('CredentialManager: Error loading Supabase settings:', error);
         console.warn('CredentialManager: Supabase error details:', {
           code: error.code,
           message: error.message,
           details: error.details,
           hint: error.hint
         });
-  			return {};
-  		}
+        return {};
+      }
   
       console.log('CredentialManager: Supabase query successful, found', data?.length || 0, 'settings');
-      // Force serialization by converting to array
-      if (data && Array.isArray(data)) {
-        console.log('CredentialManager: Raw Supabase data entries:', data.map(d => ({ key: d.key, valueLength: d.value?.length })));
-      } else {
-        console.log('CredentialManager: Raw Supabase data:', data);
-      }
       
       const settings: Partial<Credentials> = {};
       (data as any[])?.forEach((setting: any) => {
@@ -216,12 +234,14 @@ class CredentialManager {
         console.log('CredentialManager: No Groq API key found in Supabase');
       }
   
-  		return settings;
-  	} catch (error) {
-  		console.warn('CredentialManager: Error accessing Supabase:', error);
-      console.warn('CredentialManager: Error details:', error);
-  		return {};
-  	}
+      return settings;
+    } catch (error) {
+      console.warn('CredentialManager: Error accessing Supabase:', error);
+      if (error instanceof Error) {
+        console.warn('CredentialManager: Error details:', error.message, error.name);
+      }
+      return {};
+    }
   }
 
   // Synchronous getters (safe to call after initialization)
