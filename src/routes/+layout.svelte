@@ -11,10 +11,8 @@
 	import { debugStore } from '$lib/stores/debugStore';
 	import { initializeSafeMode, withSafeMode } from '$lib/safeMode/integration';
 
-	// New Architecture Components
+	// Module-defined Oscar UI Components
 	import SidebarShell from '$lib/ui/shells/SidebarShell.svelte';
-	import TopBarShell from '$lib/ui/shells/TopBarShell.svelte';
-	import BottomBarShell from '$lib/ui/shells/BottomBarShell.svelte';
 	import RightPanelShell from '$lib/ui/shells/RightPanelShell.svelte';
 	import SheetSystem from '$lib/ui/shells/SheetSystem.svelte';
 	import AskOscarBar from '$lib/ui/shells/AskOscarBar.svelte';
@@ -228,25 +226,19 @@
 	// The SidebarShell imports and uses SidebarSection, SidebarItem, and SidebarIcon components
 </script>
 
-<!-- New Architecture Layout -->
+<!-- Module-defined Oscar UI Layout -->
 <div class="h-screen flex bg-gray-50 overflow-hidden">
-	<!-- Sidebar Shell -->
+	<!-- Fixed left sidebar -->
 	<SidebarShell {navSections} {expandedItems} {icons} {isActive} {closeSidebarOnMobile} {toggleExpanded} {loading} {projects} />
 	
-	<!-- Main content area -->
+	<!-- Scrollable main content -->
 	<div class="flex-1 flex flex-col overflow-hidden min-w-0">
-		<!-- Top Bar Shell -->
-		<TopBarShell {toggleSidebar} />
-		
-		<!-- Page content -->
+		<!-- Main content area -->
 		<div class="flex-1 overflow-auto p-4 lg:p-6">
 			<slot />
 		</div>
 		
-		<!-- Bottom Bar Shell -->
-		<BottomBarShell />
-		
-		<!-- Ask Oscar Bar (replaces CopilotBar) -->
+		<!-- Ask Oscar Bar fixed at the bottom -->
 		{#if appInitialized}
 			<AskOscarBar on:promptSubmit={handlePromptSubmit} />
 		{:else}
@@ -257,10 +249,10 @@
 		{/if}
 	</div>
 	
-	<!-- Right Panel Shell -->
+	<!-- Fixed right-hand panel -->
 	<RightPanelShell />
 	
-	<!-- Sheet System -->
+	<!-- Sheet system above everything -->
 	<SheetSystem />
 	
 	<!-- Debug Panel (visible only in dev) -->
