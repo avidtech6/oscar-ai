@@ -109,6 +109,11 @@
 			debugStore.log('Unhandled Rejection', event.reason?.message || String(event.reason), { reason: event.reason });
 		});
 
+		// Expose toggleExpanded to window for inline onclick handlers
+		(window as any).toggleExpanded = (itemId: string) => {
+			toggleExpanded(itemId);
+		};
+
 		// Initialize AppInit with Safe Mode protection
 		try {
 			console.log('Layout: Initializing application with Safe Mode protection...');
@@ -222,6 +227,89 @@
 			console.warn('Layout: Received empty prompt');
 		}
 	}
+
+	// Sidebar Components - Proper Svelte components defined as functions returning JSX-like objects
+	// These will be used with {@html} directive in the template
+	const SidebarIcon = (icon: string, icons: Record<string, string>) => {
+		return `<span class="flex-shrink-0 w-5 h-5">${icons[icon] || ''}</span>`;
+	};
+
+	const SidebarSection = (title: string, sectionIndex: number, sidebarOpen: boolean, children: string) => {
+		if (!sidebarOpen && title) return '';
+		
+		return `
+			${title ? `
+				<div class="pt-4 ${sectionIndex > 0 ? 'mt-4 border-t border-forest-700' : ''}">
+					<div class="px-3 mb-2">
+						<span class="text-xs font-semibold text-forest-300 uppercase tracking-wider">${title}</span>
+					</div>
+				</div>
+			` : ''}
+			${children}
+		`;
+	};
+
+	const SidebarItem = (
+		item: any,
+		sidebarOpen: boolean,
+		expandedItems: Set<string>,
+		icons: Record<string, string>,
+		isActive: (href: string) => boolean,
+		closeSidebarOnMobile: () => void,
+		toggleExpanded: (id: string) => void
+	) => {
+		const active = isActive(item.href);
+		const expanded = expandedItems.has(item.id);
+		const toggleFunction = `(function(e) { e.preventDefault(); window.toggleExpanded && window.toggleExpanded('${item.id}'); })`;
+		
+		return `
+			<div class="space-y-1">
+				<a
+					href="${item.href}"
+					onclick="(${closeSidebarOnMobile.toString()})()"
+					class="flex items-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
+						   ${active ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}
+						   ${sidebarOpen ? 'lg:justify-start' : 'lg:justify-center'}"
+					title="${sidebarOpen ? '' : item.label}"
+				>
+					<span class="flex-shrink-0 w-5 h-5">
+						${icons[item.icon] || ''}
+					</span>
+					${sidebarOpen ? `
+						<span class="transition-opacity duration-200 flex-1">${item.label}</span>
+						${item.subitems ? `
+							<button
+								onclick="${toggleFunction}"
+								class="p-1 text-forest-200 hover:text-white"
+								aria-label="${expanded ? 'Collapse' : 'Expand'}"
+							>
+								<svg class="w-4 h-4 transform transition-transform ${expanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+								</svg>
+							</button>
+						` : ''}
+					` : ''}
+				</a>
+				
+				${sidebarOpen && item.subitems && expanded ? `
+					<div class="ml-8 space-y-1">
+						${item.subitems.map((subitem: any) => `
+							<a
+								href="${subitem.href}"
+								onclick="(${closeSidebarOnMobile.toString()})()"
+								class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm
+									   ${isActive(subitem.href) ? 'bg-forest-700/50 text-white' : 'text-forest-200 hover:bg-forest-700/30'}"
+								title="${subitem.label}"
+							>
+								<span class="w-1.5 h-1.5 rounded-full bg-forest-400"></span>
+								<span>${subitem.label}</span>
+							</a>
+						`).join('')}
+					</div>
+				` : ''}
+			</div>
+		`;
+	};
 </script>
 
 <!-- Mobile overlay backdrop -->
@@ -274,114 +362,62 @@
 		<!-- Navigation -->
 		<nav class="flex-1 p-2 lg:p-4 space-y-1 lg:space-y-2 overflow-y-auto">
 			{#each navSections as section, sectionIndex}
-				{#if $sidebarOpen && section.title}
-					<div class="pt-4 {sectionIndex > 0 ? 'mt-4 border-t border-forest-700' : ''}">
-						<div class="px-3 mb-2">
-							<span class="text-xs font-semibold text-forest-300 uppercase tracking-wider">{section.title}</span>
-						</div>
-					</div>
-				{/if}
-				
-				{#each section.items as item}
-					<div class="space-y-1">
-						<a
-							href={item.href}
-							on:click={closeSidebarOnMobile}
-							class="flex items-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
-								   {isActive(item.href) ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}
-								   {$sidebarOpen ? 'lg:justify-start' : 'lg:justify-center'}"
-							title={$sidebarOpen ? '' : item.label}
-						>
-							<span class="flex-shrink-0 w-5 h-5">
-								{@html icons[item.icon]}
-							</span>
-							{#if $sidebarOpen}
-								<span class="transition-opacity duration-200 flex-1" transition:fly={{ x: -10, duration: 200 }}>{item.label}</span>
-								{#if item.subitems}
-									<button
-										on:click|preventDefault={() => toggleExpanded(item.id)}
-										class="p-1 text-forest-200 hover:text-white"
-										aria-label={expandedItems.has(item.id) ? 'Collapse' : 'Expand'}
-									>
-										<svg class="w-4 h-4 transform transition-transform {expandedItems.has(item.id) ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-										</svg>
-									</button>
-								{/if}
-							{/if}
-						</a>
-						
-						<!-- Subitems (only when sidebar is open and item is expanded) -->
-						{#if $sidebarOpen && item.subitems && expandedItems.has(item.id)}
-							<div class="ml-8 space-y-1">
-								{#each item.subitems as subitem}
-									<a
-										href={subitem.href}
-										on:click={closeSidebarOnMobile}
-										class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm
-											   {isActive(subitem.href) ? 'bg-forest-700/50 text-white' : 'text-forest-200 hover:bg-forest-700/30'}"
-										title={subitem.label}
-									>
-										<span class="w-1.5 h-1.5 rounded-full bg-forest-400"></span>
-										<span>{subitem.label}</span>
-									</a>
-								{/each}
-							</div>
-						{/if}
-					</div>
-				{/each}
+				{@html SidebarSection(section.title, sectionIndex, $sidebarOpen,
+					section.items.map(item => SidebarItem(
+						item,
+						$sidebarOpen,
+						expandedItems,
+						icons,
+						isActive,
+						closeSidebarOnMobile,
+						toggleExpanded
+					)).join('')
+				)}
 			{/each}
 
 			<!-- Projects Section -->
-			{#if $sidebarOpen}
-				<div class="pt-4 mt-4 border-t border-forest-700">
+			{@html SidebarSection("Projects", navSections.length, $sidebarOpen,
+				$sidebarOpen ? `
 					<div class="flex items-center justify-between px-3 mb-2">
-						<span class="text-xs font-semibold text-forest-300 uppercase tracking-wider">Projects</span>
 						<a
 							href="/workspace/new"
-							on:click={closeSidebarOnMobile}
+							onclick="${closeSidebarOnMobile}"
 							class="p-1 text-forest-200 hover:text-white hover:bg-forest-700 rounded transition-colors"
 							title="New Project"
 						>
-							{@html icons.plus}
+							${SidebarIcon("plus", icons)}
 						</a>
 					</div>
 					
-					{#if loading}
+					${loading ? `
 						<div class="px-3 py-2 text-sm text-forest-200">Loading...</div>
-					{:else if projects.length === 0}
+					` : projects.length === 0 ? `
 						<div class="px-3 py-2 text-sm text-forest-200">No projects yet</div>
-					{:else}
-						{#each projects as project}
-							<a
-								href="/project/{project.id}"
-								on:click={closeSidebarOnMobile}
-								class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
-									   {isActive('/project/' + project.id) ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}"
-								title={project.name}
-							>
-								<span class="flex-shrink-0 w-5 h-5">
-									{@html icons.folder}
-								</span>
-								<span class="truncate text-sm">{project.name}</span>
-							</a>
-						{/each}
-					{/if}
-				</div>
-			{:else}
-				<!-- Collapsed Projects button -->
-				<a
-					href="/workspace"
-					on:click={closeSidebarOnMobile}
-					class="flex items-center justify-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
-						   {isActive('/workspace') ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}"
-					title="Projects"
-				>
-					<span class="flex-shrink-0 w-5 h-5">
-						{@html icons.folder}
-					</span>
-				</a>
-			{/if}
+					` : projects.map(project => `
+						<a
+							href="/project/${project.id}"
+							onclick="${closeSidebarOnMobile}"
+							class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+								   ${isActive('/project/' + project.id) ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}"
+							title="${project.name}"
+						>
+							${SidebarIcon("folder", icons)}
+							<span class="truncate text-sm">${project.name}</span>
+						</a>
+					`).join('')}
+				` : `
+					<!-- Collapsed Projects button -->
+					<a
+						href="/workspace"
+						onclick="${closeSidebarOnMobile}"
+						class="flex items-center justify-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
+							   ${isActive('/workspace') ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}"
+						title="Projects"
+					>
+						${SidebarIcon("folder", icons)}
+					</a>
+				`
+			)}
 		</nav>
 	</aside>
 
