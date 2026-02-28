@@ -33,14 +33,14 @@
 	});
 
 	interface Message {
-		role: 'user' | 'oscar';
-		content: string;
-		timestamp: string;
-		actionUrl?: string;
-		actionType?: IntentType;
-		actionResult?: ActionResult;
-		objects?: any[];
-		id?: string;
+	  role: 'user' | 'oscar';
+	  content: string;
+	  timestamp: string;
+	  actionUrl?: string;
+	  actionType?: string;
+	  actionResult?: ActionResult;
+	  objects?: any[];
+	  id?: string;
 	}
 
 	let messages: Message[] = [];
@@ -98,7 +98,7 @@
 	async function loadChatHistory() {
 		isLoadingHistory = true;
 		try {
-			const history = await getChatHistory(100);
+			const history = await getChatHistory();
 			if (history.length > 0) {
 				messages = history.map(msg => ({
 					role: msg.role,
@@ -949,7 +949,7 @@ Provide concise, accurate guidance.`;
 										<p class="text-green-800 font-medium text-sm">✓ {message.actionResult.message}</p>
 										{#if message.actionUrl}
 											<button
-												on:click={() => handleActionClick(message.actionUrl)}
+												on:click={() => handleActionClick(message.actionUrl!)}
 												class="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors text-sm"
 											>
 												<span>Open</span>

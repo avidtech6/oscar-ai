@@ -16,7 +16,7 @@
 	let exporting = false;
 	let importing = false;
 	let dummyDataToggle = false;
-	let dummyCount = { projects: 0, tasks: 0, notes: 0, trees: 0, reports: 0 };
+	let dummyCount = 0; // countDummyItems returns a number, not an object
 	let clearing = false;
 	
 	// Credential manager state
@@ -158,7 +158,7 @@
 			await removeDummyData();
 			dummyDataToggle = false;
 			dummyDataEnabled.set(false);
-			dummyCount = { projects: 0, tasks: 0, notes: 0, trees: 0, reports: 0 };
+			dummyCount = 0;
 		} catch (e) {
 			alert('Failed to clear dummy data: ' + (e instanceof Error ? e.message : 'Unknown error'));
 		} finally {
@@ -625,30 +625,12 @@
 				</label>
 			</div>
 			
-			{#if dummyCount.projects > 0 || dummyCount.tasks > 0 || dummyCount.notes > 0 || dummyCount.trees > 0 || dummyCount.reports > 0}
+			{#if dummyCount > 0}
 				<div class="p-4 bg-blue-50 rounded-lg">
 					<h3 class="font-medium text-blue-900 mb-2">Current Dummy Data</h3>
-					<div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-						<div class="text-center p-2 bg-white rounded">
-							<div class="font-bold text-lg">{dummyCount.projects}</div>
-							<div class="text-gray-600">Projects</div>
-						</div>
-						<div class="text-center p-2 bg-white rounded">
-							<div class="font-bold text-lg">{dummyCount.tasks}</div>
-							<div class="text-gray-600">Tasks</div>
-						</div>
-						<div class="text-center p-2 bg-white rounded">
-							<div class="font-bold text-lg">{dummyCount.notes}</div>
-							<div class="text-gray-600">Notes</div>
-						</div>
-						<div class="text-center p-2 bg-white rounded">
-							<div class="font-bold text-lg">{dummyCount.trees}</div>
-							<div class="text-gray-600">Trees</div>
-						</div>
-						<div class="text-center p-2 bg-white rounded">
-							<div class="font-bold text-lg">{dummyCount.reports}</div>
-							<div class="text-gray-600">Reports</div>
-						</div>
+					<div class="text-center p-4 bg-white rounded">
+						<div class="font-bold text-3xl mb-2">{dummyCount}</div>
+						<div class="text-gray-600">Total dummy items</div>
 					</div>
 				</div>
 				

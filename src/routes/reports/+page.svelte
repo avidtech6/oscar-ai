@@ -1932,13 +1932,13 @@
 				reportMode={reportMode}
 				additionalNotes={additionalNotes}
 				generating={generating}
-				on:goBack={goBack}
-				on:continueAIFlow={continueAIFlow}
-				on:generateReport={generateReport}
-				on:suggestClientNameForGap={suggestClientNameForGap}
-				on:suggestSiteAddressForGap={suggestSiteAddressForGap}
-				on:cleanAnswerWithAI={cleanAnswerWithAI}
-				on:generateFollowUpForGap={generateFollowUpForGap}
+				goBack={goBack}
+				continueAIFlow={continueAIFlow}
+				generateReport={generateReport}
+				suggestClientNameForGap={suggestClientNameForGap}
+				suggestSiteAddressForGap={suggestSiteAddressForGap}
+				cleanAnswerWithAI={cleanAnswerWithAI}
+				generateFollowUpForGap={generateFollowUpForGap}
 			/>
 		{/if}
 

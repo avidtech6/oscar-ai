@@ -118,6 +118,7 @@ export interface SearchResult {
 	snippet: string;
 	folder: string;
 	modifiedTime: string;
+	mimeType: string;
 }
 
 // Project type

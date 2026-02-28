@@ -2,6 +2,8 @@
 // Ensures CredentialManager is ready before other services start
 
 import { credentialManager } from './CredentialManager';
+import { initializeCrossDomainEventSystem } from '$lib/services/crossDomain/CrossDomainEventBus';
+import { initializeSupabaseEventService } from '$lib/services/supabase/SupabaseEventService';
 
 export class AppInit {
   private static instance: AppInit;
@@ -45,7 +47,15 @@ export class AppInit {
         console.log('AppInit: Credentials loaded successfully');
       }
       
-      // Step 3: Initialize other critical services here
+      // Step 3: Initialize cross-domain event system
+      console.log('AppInit: Initializing cross-domain event system...');
+      initializeCrossDomainEventSystem();
+      
+      // Step 4: Initialize Supabase event service
+      console.log('AppInit: Initializing Supabase event service...');
+      await initializeSupabaseEventService();
+      
+      // Step 5: Initialize other critical services here
       // (Add other service initializations as needed)
       
       // TEST: Simulate Safe Mode timeout (uncomment to test)

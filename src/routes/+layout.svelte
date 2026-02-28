@@ -18,8 +18,21 @@
 	import DecisionSheet from '$lib/components/semantic/DecisionSheet.svelte';
 	import { debugStore } from '$lib/stores/debugStore';
 	import { initializeSafeMode, withSafeMode } from '$lib/safeMode/integration';
+	import RightPanel from '$lib/components/layout/RightPanel.svelte';
+	import ConversationSheet from '$lib/components/sheets/ConversationSheet.svelte';
+	import ContextActionSheet from '$lib/components/sheets/ContextActionSheet.svelte';
+	import ContextPills from '$lib/components/layout/ContextPills.svelte';
 
 	const debugVisible = debugStore.visible;
+	
+	// Sheet states
+	let showConversationSheet = false;
+	let showContextActionSheet = false;
+	let contextActionSheetProps = {
+		context: 'general',
+		itemTitle: '',
+		itemType: ''
+	};
 
 	let projects: any[] = [];
 	let loading = true;
@@ -29,37 +42,60 @@
 	$: updateRoute($page.url.pathname);
 
 
-	// Navigation structure with sections
+	// Navigation structure with sections (Module 2: Navigation Structure)
 	const navSections = [
-		{
-			title: 'Workspace',
-			items: [
-				{ id: 'oscar', label: 'Oscar AI (Chat Assistant)', icon: 'chat', href: '/oscar' },
-				{ id: 'home', label: 'Home', icon: 'home', href: '/' },
-				{ id: 'projects', label: 'Projects', icon: 'folder', href: '/workspace' },
-				{ id: 'tasks', label: 'Tasks', icon: 'tasks', href: '/tasks' },
-				{ id: 'notes', label: 'Notes', icon: 'notes', href: '/notes' },
-				{ id: 'reports', label: 'Reports', icon: 'document', href: '/reports' },
-				{ id: 'pdf', label: 'PDF Editor', icon: 'document', href: '/pdf' },
-				{ id: 'calendar', label: 'Calendar', icon: 'calendar', href: '/calendar' },
-				{ id: 'notifications', label: 'Notifications', icon: 'help', href: '/notifications' }
-			]
-		},
-		{
-			title: 'Capture',
-			items: [
-				{ id: 'camera', label: 'Camera', icon: 'camera', href: '/camera' },
-				{ id: 'files', label: 'Files', icon: 'notes', href: '/files' },
-				{ id: 'voice', label: 'Voice Note', icon: 'message', href: '/voice' }
-			]
-		},
-		{
-			title: 'Support',
-			items: [
-				{ id: 'help', label: 'Help', icon: 'help', href: '/help' }
-			]
-		}
+	  {
+	    title: 'Core Domains',
+	    items: [
+	      { id: 'home', label: 'Home', icon: 'home', href: '/' },
+	      {
+	        id: 'workspace',
+	        label: 'Workspace',
+	        icon: 'folder',
+	        href: '/workspace',
+	        subitems: [
+	          { id: 'workspace-home', label: 'Workspace Home', href: '/workspace' },
+	          { id: 'tasks', label: 'Tasks', href: '/workspace?tab=tasks' },
+	          { id: 'notes', label: 'Notes', href: '/workspace?tab=notes' },
+	          { id: 'reports', label: 'Reports', href: '/workspace?tab=reports' },
+	          { id: 'calendar', label: 'Calendar', href: '/workspace?tab=calendar' }
+	        ]
+	      },
+	      { id: 'files', label: 'Files', icon: 'notes', href: '/files' },
+	      { id: 'connect', label: 'Connect', icon: 'email', href: '/connect' },
+	      { id: 'projects', label: 'Projects', icon: 'tasks', href: '/projects' },
+	      { id: 'timeline', label: 'Timeline', icon: 'calendar', href: '/timeline' },
+	      { id: 'dashboard', label: 'Dashboard', icon: 'cog', href: '/dashboard' },
+	      { id: 'search', label: 'Search', icon: 'search', href: '/search' },
+	      { id: 'map', label: 'Map', icon: 'map', href: '/map' }
+	    ]
+	  },
+	  {
+	    title: 'Integration & Systems',
+	    items: [
+	      { id: 'integrations', label: 'Integrations', icon: 'cog', href: '/integrations' },
+	      { id: 'notifications', label: 'Notifications', icon: 'bell', href: '/notifications' },
+	      { id: 'identity', label: 'Identity', icon: 'user', href: '/identity' },
+	      { id: 'permissions', label: 'Permissions', icon: 'lock', href: '/permissions' },
+	      { id: 'automations', label: 'Automations', icon: 'bolt', href: '/automations' },
+	      { id: 'eventstream', label: 'Event Stream', icon: 'activity', href: '/eventstream' },
+	      { id: 'sync', label: 'Sync Engine', icon: 'refresh', href: '/sync' },
+	      { id: 'ai-context', label: 'AI Context', icon: 'brain', href: '/ai-context' }
+	    ]
+	  }
 	];
+	
+	// Track expanded state for items with subitems
+	let expandedItems = new Set(['workspace', 'dashboard']);
+	
+	function toggleExpanded(itemId: string) {
+		if (expandedItems.has(itemId)) {
+			expandedItems.delete(itemId);
+		} else {
+			expandedItems.add(itemId);
+		}
+		expandedItems = new Set(expandedItems); // Trigger reactivity
+	}
 
 	// Load projects from IndexedDB on mount
 	onMount(async () => {
@@ -120,22 +156,39 @@
 	}
 
 	const icons: Record<string, string> = {
-		home: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>`,
-		cog: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>`,
-		folder: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`,
-		tasks: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>`,
-		notes: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>`,
-		email: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>`,
-		calendar: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
-		chat: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>`,
-		document: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>`,
-		blog: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`,
-		learn: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>`,
-		help: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
-		plus: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-		menu: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>`,
-		close: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`,
-		chevron: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>`
+		home: "i-mdi-home-outline",
+		workspace: "i-mdi-view-dashboard-outline",
+		tasks: "i-mdi-format-list-checkbox",
+		notes: "i-mdi-note-text-outline",
+		reports: "i-mdi-file-chart-outline",
+		pdf: "i-mdi-file-pdf-box",
+		calendar: "i-mdi-calendar-month-outline",
+		notifications: "i-mdi-bell-outline",
+		capture: "i-mdi-camera-outline",
+		camera: "i-mdi-camera-outline",
+		files: "i-mdi-folder-outline",
+		voicenote: "i-mdi-microphone-outline",
+		support: "i-mdi-lifebuoy",
+		help: "i-mdi-help-circle-outline",
+		chevron: "i-mdi-chevron-right",
+
+		search: "i-mdi-magnify",
+		bell: "i-mdi-bell-outline",
+		user: "i-mdi-account-outline",
+		lock: "i-mdi-lock-outline",
+		bolt: "i-mdi-flash-outline",
+		activity: "i-mdi-pulse",
+		refresh: "i-mdi-refresh",
+		brain: "i-mdi-brain",
+		map: "i-mdi-map-outline",
+		plus: "i-mdi-plus",
+		menu: "i-mdi-menu",
+		close: "i-mdi-close",
+		
+		// Navigation icons referenced in navSections
+		folder: "i-mdi-folder-outline",
+		email: "i-mdi-email-outline",
+		cog: "i-mdi-cog-outline",
 	};
 
 	function toggleSidebar() {
@@ -230,21 +283,52 @@
 				{/if}
 				
 				{#each section.items as item}
-					<a
-						href={item.href}
-						on:click={closeSidebarOnMobile}
-						class="flex items-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
-							   {isActive(item.href) ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}
-							   {$sidebarOpen ? 'lg:justify-start' : 'lg:justify-center'}"
-						title={$sidebarOpen ? '' : item.label}
-					>
-						<span class="flex-shrink-0 w-5 h-5">
-							{@html icons[item.icon]}
-						</span>
-						{#if $sidebarOpen}
-							<span class="transition-opacity duration-200" transition:fly={{ x: -10, duration: 200 }}>{item.label}</span>
+					<div class="space-y-1">
+						<a
+							href={item.href}
+							on:click={closeSidebarOnMobile}
+							class="flex items-center gap-3 px-3 lg:px-4 py-3 rounded-lg transition-colors
+								   {isActive(item.href) ? 'bg-forest-700 text-white' : 'text-forest-100 hover:bg-forest-700/50'}
+								   {$sidebarOpen ? 'lg:justify-start' : 'lg:justify-center'}"
+							title={$sidebarOpen ? '' : item.label}
+						>
+							<span class="flex-shrink-0 w-5 h-5">
+								{@html icons[item.icon]}
+							</span>
+							{#if $sidebarOpen}
+								<span class="transition-opacity duration-200 flex-1" transition:fly={{ x: -10, duration: 200 }}>{item.label}</span>
+								{#if item.subitems}
+									<button
+										on:click|preventDefault={() => toggleExpanded(item.id)}
+										class="p-1 text-forest-200 hover:text-white"
+										aria-label={expandedItems.has(item.id) ? 'Collapse' : 'Expand'}
+									>
+										<svg class="w-4 h-4 transform transition-transform {expandedItems.has(item.id) ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+										</svg>
+									</button>
+								{/if}
+							{/if}
+						</a>
+						
+						<!-- Subitems (only when sidebar is open and item is expanded) -->
+						{#if $sidebarOpen && item.subitems && expandedItems.has(item.id)}
+							<div class="ml-8 space-y-1">
+								{#each item.subitems as subitem}
+									<a
+										href={subitem.href}
+										on:click={closeSidebarOnMobile}
+										class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm
+											   {isActive(subitem.href) ? 'bg-forest-700/50 text-white' : 'text-forest-200 hover:bg-forest-700/30'}"
+										title={subitem.label}
+									>
+										<span class="w-1.5 h-1.5 rounded-full bg-forest-400"></span>
+										<span>{subitem.label}</span>
+									</a>
+								{/each}
+							</div>
 						{/if}
-					</a>
+					</div>
 				{/each}
 			{/each}
 
@@ -357,6 +441,9 @@
 		{/if}
 	</main>
 	
+	<!-- Global Right Panel (Module 1 requirement) -->
+	<RightPanel />
+	
 	<!-- Mobile Bottom Bar -->
 	<MobileBottomBar />
 	
@@ -365,6 +452,15 @@
 	
 	<!-- Decision Sheet (global) -->
 	<DecisionSheet />
+	
+	<!-- Module 4 Sheet System -->
+	<ConversationSheet bind:isOpen={showConversationSheet} />
+	<ContextActionSheet
+		bind:isOpen={showContextActionSheet}
+		context={contextActionSheetProps.context}
+		itemTitle={contextActionSheetProps.itemTitle}
+		itemType={contextActionSheetProps.itemType}
+	/>
 
 	<!-- Debug Panel (visible only in dev) -->
 	{#if $debugVisible}

@@ -1,0 +1,124 @@
+{
+  "modules": [
+    {
+      "id": 1,
+      "name": "GLOBAL SYSTEM RULES",
+      "file": "Module 1 — GLOBAL SYSTEM RULES.md"
+    },
+    {
+      "id": 2,
+      "name": "NAVIGATION",
+      "file": "Module 2 — NAVIGATION.md"
+    },
+    {
+      "id": 3,
+      "name": "ASK OSCAR",
+      "file": "Module 3 — ASK OSCAR.md"
+    },
+    {
+      "id": 4,
+      "name": "Sheet System",
+      "file": "Module 4 — Sheet System.md"
+    },
+    {
+      "id": 5,
+      "name": "CAPTURE",
+      "file": "Module 5 — CAPTURE .md"
+    },
+    {
+      "id": 6,
+      "name": "Map & GPS Blueprint",
+      "file": "Module 6 - Map & GPS Blueprint.md"
+    },
+    {
+      "id": 7,
+      "name": "WORKSPACE",
+      "file": "Module 7 — WORKSPACE.MD"
+    },
+    {
+      "id": 8,
+      "name": "Files Blueprint",
+      "file": "Module 8 — Files Blueprint.md"
+    },
+    {
+      "id": 9,
+      "name": "Connect",
+      "file": "Module 9 — Connect.md"
+    },
+    {
+      "id": 10,
+      "name": "Projects",
+      "file": "Module 10 —Projects.md"
+    },
+    {
+      "id": 11,
+      "name": "Timeline",
+      "file": "Module 11 —Timeline.md"
+    },
+    {
+      "id": 12,
+      "name": "Dashboard",
+      "file": "Module 12 — Dashboard,.md"
+    },
+    {
+      "id": 13,
+      "name": "Integrations & Help System",
+      "file": "Module 13 — Integrations & Help System.md"
+    },
+    {
+      "id": 14,
+      "name": "Notifications & Activity",
+      "file": "Module 14 — Notifications & Activity.md"
+    },
+    {
+      "id": 15,
+      "name": "Search & Indexing",
+      "file": "Module 15 — Search & Indexing.md"
+    },
+    {
+      "id": 16,
+      "name": "Map",
+      "file": "Module 16 — Map.md"
+    },
+    {
+      "id": 17,
+      "name": "Filesystem & Storage",
+      "file": "Module 17 — Filesystem & Storage.md"
+    },
+    {
+      "id": 18,
+      "name": "Identity & User Profile",
+      "file": "Module 18 — Identity & User Profile.md"
+    },
+    {
+      "id": 19,
+      "name": "Permissions & Roles",
+      "file": "Module 19 — Permissions & Roles.md"
+    },
+    {
+      "id": 20,
+      "name": "Automations",
+      "file": "Module 20 — Automations.md"
+    },
+    {
+      "id": 21,
+      "name": "Timeline Automations & Event Streams",
+      "file": "Module 21 — Timeline Automations & Event Streams.md"
+    },
+    {
+      "id": 22,
+      "name": "Search and Indexing",
+      "file": "Module 22 — Search and Indexing.md"
+    },
+    {
+      "id": 23,
+      "name": "Sync Engine",
+      "file": "Module 23 — Sync Engine.md"
+    },
+    {
+      "id": 24,
+      "name": "AI Context Engine",
+      "file": "Module 24 — AI Context Engine.md"
+    }
+  ]
+}

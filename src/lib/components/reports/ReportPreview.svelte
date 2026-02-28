@@ -2,10 +2,11 @@
 	import { quickComplianceCheck, validateReportCompliance } from '$lib/services/complianceValidatorService';
 	import { analyzeRenderingQuality, quickRenderPreview } from '$lib/services/visualRenderingService';
 	import { renderReport, convertTemplateDataToReportData, type ReportData } from '$lib/reportTemplate/renderReport';
-	import { prepareTemplateData } from '$lib/services/templateService';
+	import { prepareTemplateData, type Template } from '$lib/services/templateService';
+	import type { Project } from '$lib/db';
 	
-	export let selectedTemplate = null;
-	export let selectedProject = undefined;
+	export let selectedTemplate: Template | null = null;
+	export let selectedProject: Project | undefined = undefined;
 	export let generatedReport = '';
 	export let safeGeneratedReport = '';
 	export let copyToClipboard = () => {};

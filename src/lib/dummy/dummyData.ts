@@ -241,5 +241,7 @@ export async function removeDummyData(): Promise<void> {
 // Helper function to check if dummy data exists
 export async function hasDummyData(): Promise<boolean> {
 	const count = await countDummyItems();
-	return count.projects > 0 || count.tasks > 0 || count.notes > 0 || count.trees > 0 || count.reports > 0;
+	// countDummyItems returns a number, not an object
+	// If count > 0, we assume dummy data exists
+	return count > 0;
 }

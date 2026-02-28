@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy } from 'svelte';
+	import { get } from 'svelte/store';
 	import { fade, slide } from 'svelte/transition';
 	import { voiceRecordingService } from '$lib/services/unified/VoiceRecordingService';
 	import { unifiedIntentEngine } from '$lib/services/unified/UnifiedIntentEngine';
@@ -137,8 +138,7 @@
 				}) || '';
 				
 				// 5. Save to database if in project context
-				const projectContext = projectContextStore;
-				const currentProjectId = projectContext.currentProjectId;
+				const currentProjectId = get(projectContextStore).currentProjectId;
 				
 				if (currentProjectId) {
 					await voiceRecordingService.saveVoiceNote({
@@ -192,11 +192,11 @@
 			const feedback = intentFeedbackService.getFeedback(intentResult);
 			
 			// Dispatch with intent context
-			dispatch('send', { 
+			dispatch('send', {
 				message: text,
 				intent: intentResult.intent,
 				confidence: intentResult.confidence,
-				entities: intentResult.entities,
+				entities: intentResult.data?.entities,
 				feedback: feedback.message
 			});
 		} catch (error) {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { get } from 'svelte/store';
 	import { db } from '$lib/db';
 	import { groqApiKey, settings } from '$lib/stores/settings';
 	import type { Project, Tree, Note } from '$lib/db';
@@ -18,6 +19,7 @@
 		title: string;
 		subtitle: string;
 		bodyHTML: string;
+		bodyContent: string;
 		tags: string[];
 		createdAt: string;
 		updatedAt: string;
@@ -93,7 +95,8 @@
 						tags: post.tags ? post.tags.join(', ') : '',
 						prompt: post.bodyContent || '',
 						includePhotos: true,
-						styleProfile: ''
+						styleProfile: '',
+						attachProject: !!post.projectId
 					};
 					viewMode = 'edit';
 				}
@@ -158,7 +161,7 @@
 			return;
 		}
 
-		const currentSettings = settings.get();
+		const currentSettings = get(settings);
 		if (!currentSettings.groqApiKey) {
 			error = 'Please configure your Groq API key in Settings first.';
 			return;
@@ -174,8 +177,8 @@
 			
 			if (newPost.attachProject && project) {
 				context += `PROJECT: ${project.name}\n`;
-				if (project.clientName) context += `Client: ${project.clientName}\n`;
-				if (project.siteAddress) context += `Location: ${project.siteAddress}\n\n`;
+				if (project.client) context += `Client: ${project.client}\n`;
+				if (project.location) context += `Location: ${project.location}\n\n`;
 			}
 
 			if (newPost.attachProject && trees.length > 0 && newPost.includePhotos) {
@@ -261,6 +264,7 @@ Use markdown formatting for headings, lists, and emphasis.`;
 				title: newPost.title,
 				subtitle: newPost.subtitle,
 				bodyHTML: generatedContent,
+				bodyContent: generatedContent,
 				tags: newPost.tags.split(',').map(t => t.trim()).filter(t => t),
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString()
@@ -593,7 +597,7 @@ Created: ${new Date(post.createdAt).toLocaleString()}
 					<h2 class="text-lg font-semibold">{selectedPost.title}</h2>
 					<div class="flex gap-2">
 						<button
-							on:click={() => exportPost(selectedPost)}
+							on:click={() => selectedPost && exportPost(selectedPost)}
 							class="btn btn-secondary text-sm"
 						>
 							Export

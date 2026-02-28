@@ -257,7 +257,7 @@
 					</label>
 					<textarea
 						value={localGapFillQuestions[localCurrentGapIndex]?.answer || ''}
-						on:input={(e) => handleGapAnswerChange(localCurrentGapIndex, e.target.value)}
+						on:input={(e) => handleGapAnswerChange(localCurrentGapIndex, (e.target as HTMLTextAreaElement).value)}
 						rows="3"
 						class="input w-full"
 						placeholder="Enter your answer..."
@@ -558,7 +558,7 @@
 					<textarea
 						bind:value={localAdditionalNotes}
 						on:input={(e) => {
-							localAdditionalNotes = e.target.value;
+							localAdditionalNotes = (e.target as HTMLTextAreaElement).value;
 							additionalNotes = localAdditionalNotes;
 						}}
 						placeholder="Any specific requirements or additional information for the AI..."

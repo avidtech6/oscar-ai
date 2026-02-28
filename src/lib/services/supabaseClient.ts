@@ -18,11 +18,13 @@ export async function getGroqKey(): Promise<string> {
       throw new Error(`Failed to fetch Groq API key: ${error.message}`);
     }
 
-    if (!data?.groq_api_key) {
+    // Cast data to any to avoid TypeScript errors about missing table definitions
+    const typedData = data as any;
+    if (!typedData?.groq_api_key) {
       throw new Error('Groq API key not found in the database');
     }
 
-    return data.groq_api_key;
+    return typedData.groq_api_key;
   } catch (err) {
     console.error('Error retrieving Groq API key:', err);
     throw err;

@@ -67,7 +67,7 @@
 	let editingTreeNotes = '';
 
 	onMount(async () => {
-		projectId = $page.params.id;
+		projectId = $page.params.id || '';
 		await loadProject();
 
 		// Add event listener for report generation

@@ -306,7 +306,7 @@
 			<h3 class="font-medium mb-3">Section Preview</h3>
 			<div class="border rounded-lg p-4 bg-gray-50 max-h-[300px] overflow-auto">
 				<div class="section-title font-medium text-lg mb-3">{sections[currentSectionIndex]?.title || 'Untitled'}</div>
-				<div class="prose max-w-none" innerHTML={safeSectionContent}></div>
+				<div class="prose max-w-none">{@html safeSectionContent}</div>
 			</div>
 		</div>
 		

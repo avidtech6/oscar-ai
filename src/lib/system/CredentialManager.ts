@@ -316,37 +316,17 @@ class CredentialManager {
   // IndexedDB caching for faster startup
   private async cacheToIndexedDB(credentials: Credentials): Promise<void> {
     try {
-      // Use the existing db module if available, otherwise fall back to localStorage
-      const { setSetting } = await import('$lib/db/index');
-      await setSetting('cached_credentials', JSON.stringify(credentials));
-      console.log('CredentialManager: Cached credentials to IndexedDB');
+      // Use localStorage directly - simpler and more reliable
+      localStorage.setItem('oscar.cached_credentials', JSON.stringify(credentials));
+      console.log('CredentialManager: Cached credentials to localStorage');
     } catch (error) {
-      console.warn('CredentialManager: Error caching to IndexedDB:', error);
-      // Fall back to localStorage
-      try {
-        localStorage.setItem('oscar.cached_credentials', JSON.stringify(credentials));
-      } catch (localError) {
-        console.warn('CredentialManager: Error caching to localStorage:', localError);
-      }
+      console.warn('CredentialManager: Error caching credentials to localStorage:', error);
     }
   }
 
   private async loadFromIndexedDBCache(): Promise<Partial<Credentials>> {
     try {
-      // Try to load from IndexedDB first
-      const { getSetting } = await import('$lib/db/index');
-      const cached = await getSetting('cached_credentials');
-      
-      if (cached) {
-        console.log('CredentialManager: Loaded cached credentials from IndexedDB');
-        return JSON.parse(cached);
-      }
-    } catch (error) {
-      console.warn('CredentialManager: Error loading from IndexedDB:', error);
-    }
-    
-    // Fall back to localStorage
-    try {
+      // Load from localStorage
       const cached = localStorage.getItem('oscar.cached_credentials');
       if (cached) {
         console.log('CredentialManager: Loaded cached credentials from localStorage');

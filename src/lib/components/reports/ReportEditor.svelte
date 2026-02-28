@@ -558,7 +558,8 @@
 		photoUploadSectionId = null;
 	}
 	
-	function handlePhotoUpload(url: string) {
+	function handlePhotoUpload(event: CustomEvent<{ url: string }>) {
+		const url = event.detail.url;
 		if (!photoUploadSectionId || !url) return;
 		
 		// Insert image HTML into the active section content
@@ -1222,7 +1223,7 @@
 					</div>
 					<PhotoUploader
 						projectId={selectedProject?.id || ''}
-						onUpload={handlePhotoUpload}
+						on:uploadComplete={handlePhotoUpload}
 						buttonText="Upload Photo"
 						buttonVariant="primary"
 						showPreview={true}

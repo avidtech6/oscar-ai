@@ -1,5 +1,24 @@
 import { generateLLMResponse } from './ai';
 import type { Card } from '$lib/models/Card';
+import type { Project } from '$lib/db';
+
+export interface AIContext {
+  workspace: string;
+  timestamp: number;
+  items: any[];
+  currentProject?: Project | null;
+  projects?: Project[];
+}
+
+export interface ActionResult {
+  success: boolean;
+  message: string;
+  intentType?: string;
+  redirectUrl?: string;
+  objects?: any[];
+  data?: any;
+  action?: string;
+}
 
 /**
  * Summarises a card using AI.
@@ -22,7 +41,7 @@ export async function summariseCard(card: Card): Promise<string> {
  * Get AI context for semantic routing.
  * This is a placeholder implementation.
  */
-export async function getAIContext(): Promise<any> {
+export async function getAIContext(): Promise<AIContext> {
   // Return minimal context for now
   return {
     workspace: 'default',
@@ -35,46 +54,45 @@ export async function getAIContext(): Promise<any> {
  * Format AI context for prompt.
  * This is a placeholder implementation.
  */
-export function formatContextForAI(context: any): string {
+export function formatContextForAI(context: AIContext): string {
   return `Workspace: ${context.workspace}\nTimestamp: ${new Date(context.timestamp).toISOString()}`;
-}
-
-/**
- * Parse user answer for AI review.
- * This is a placeholder implementation.
- */
-export async function parseUserAnswer(answer: string, question: string): Promise<any> {
-  return {
-    parsed: answer,
-    confidence: 0.8,
-    issues: []
-  };
 }
 
 /**
  * Suggest client name based on context.
  * This is a placeholder implementation.
  */
-export async function suggestClientName(context: any): Promise<string> {
-  return 'Client Name';
+export async function suggestClientName(context: any): Promise<{ suggestion: string; confidence: number }> {
+  return { suggestion: 'Client Name', confidence: 85 };
 }
 
 /**
  * Suggest site address based on context.
  * This is a placeholder implementation.
  */
-export async function suggestSiteAddress(context: any): Promise<string> {
-  return '123 Main St, City, Country';
+export async function suggestSiteAddress(context: any): Promise<{ suggestion: string; confidence: number }> {
+  return { suggestion: '123 Main St, City, Country', confidence: 75 };
+}
+
+/**
+ * Parse user answer for AI review.
+ * This is a placeholder implementation.
+ */
+export async function parseUserAnswer(answer: string, question: string): Promise<{ cleaned: string; confidence: number }> {
+  return {
+    cleaned: answer.trim(),
+    confidence: 0.8 * 100
+  };
 }
 
 /**
  * Generate follow-up questions for a report.
  * This is a placeholder implementation.
  */
-export async function generateFollowUpQuestions(reportContent: string): Promise<string[]> {
+export async function generateFollowUpQuestions(field: string, answer: string): Promise<string[]> {
   return [
-    'What is the primary objective of this report?',
-    'Are there any specific compliance requirements?'
+    `Can you provide more details about the ${field}?`,
+    `Is there any specific location or address?`
   ];
 }
 
@@ -82,12 +100,33 @@ export async function generateFollowUpQuestions(reportContent: string): Promise<
  * Generate AI gap-fill questions for a report.
  * This is a placeholder implementation.
  */
-export async function generateAIGapFillQuestions(reportContent: string): Promise<any[]> {
-  return [
+export async function generateAIGapFillQuestions(templateId: string, projectData: any): Promise<Array<{id: string; question: string; answer: string; field: string}>> {
+  // Generate a simple set of questions based on template
+  const questions = [
     {
-      question: 'What is the main finding?',
-      field: 'mainFinding',
-      required: true
+      id: crypto.randomUUID(),
+      question: 'What is the client or organization name?',
+      answer: '',
+      field: 'client'
+    },
+    {
+      id: crypto.randomUUID(),
+      question: 'What is the site address or location?',
+      answer: '',
+      field: 'location'
+    },
+    {
+      id: crypto.randomUUID(),
+      question: 'Do you have any tree survey data to include?',
+      answer: '',
+      field: 'trees'
+    },
+    {
+      id: crypto.randomUUID(),
+      question: 'Any field notes or observations to include?',
+      answer: '',
+      field: 'notes'
     }
   ];
+  return questions;
 }

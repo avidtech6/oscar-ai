@@ -9,6 +9,7 @@
 	import { sanitizePrompt, ensureAppReady } from './sanitizeInput';
 	import { onMount, onDestroy } from 'svelte';
 	import { debugStore } from '$lib/stores/debugStore';
+	import PromptSuggestionsSheet from '$lib/components/sheets/PromptSuggestionsSheet.svelte';
 
 	const emit = createEventDispatcher();
 
@@ -17,6 +18,7 @@
 	let speechRecognition: any = null;
 	let isUploadingPdf = false;
 	let uploadProgress = 0;
+	let showSuggestionsSheet = false;
 
 	// Keyboard visibility detection
 	let keyboardHeight = 0;
@@ -148,6 +150,21 @@
 	
 	function openVoiceNote() {
 		emit('openVoiceNote');
+	}
+	
+	function openSuggestionsSheet() {
+		showSuggestionsSheet = true;
+		debugStore.log('CopilotBar', 'Opening suggestions sheet');
+	}
+	
+	function closeSuggestionsSheet() {
+		showSuggestionsSheet = false;
+	}
+	
+	function handleSuggestionSelect(event: CustomEvent<{ text: string }>) {
+		const suggestionText = event.detail.text;
+		inputValue = suggestionText;
+		debugStore.log('CopilotBar', 'Suggestion selected', { suggestionText });
 	}
 	
 	// PDF upload functionality
@@ -310,9 +327,28 @@
 	});
 </script>
 
-<div class="w-full h-16 bg-white border-t border-gray-200">
+<div class="w-full h-16 bg-white border-t border-gray-200 z-30">
 	<div class="h-full px-6">
 		<div class="flex items-center justify-between h-full gap-4">
+			<!-- Tree Icon (Module 3 requirement) -->
+			<button
+				class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+				title="Ask Oscar"
+				aria-label="Ask Oscar"
+			>
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+				</svg>
+			</button>
+			
+			<!-- Ask Oscar label -->
+			<div class="text-sm font-medium text-gray-700 whitespace-nowrap">
+				Ask Oscar
+			</div>
+			
+			<!-- Separator -->
+			<div class="w-px h-6 bg-gray-300"></div>
+			
 			<!-- Input field -->
 			<div class="flex-1 max-w-3xl">
 				<div class="relative">
@@ -357,9 +393,64 @@
 				</div>
 			</div>
 			
-			<!-- Action buttons -->
+			<!-- Action buttons (Module 3 layout: [?] [Mic] [Voice Record] [Camera*] [Send]) -->
 			<div class="flex items-center gap-2">
-				<!-- PDF upload button -->
+				<!-- Suggestions button (?) -->
+				<button
+					on:click={openSuggestionsSheet}
+					class="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+					title="Prompt suggestions"
+					aria-label="Open prompt suggestions"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+					</svg>
+				</button>
+				
+				<!-- Mic button (already in input, but keep for consistency) -->
+				<button
+					on:click={startVoiceDictation}
+					class="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+					title={isRecording ? 'Stop recording' : 'Start voice dictation'}
+					aria-label={isRecording ? 'Stop voice dictation' : 'Start voice dictation'}
+				>
+					{#if isRecording}
+						<svg class="w-5 h-5 text-red-600 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+							<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+						</svg>
+					{:else}
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+						</svg>
+					{/if}
+				</button>
+				
+				<!-- Voice Record button -->
+				<button
+					on:click={openVoiceNote}
+					class="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+					title="Record voice note"
+					aria-label="Record voice note"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+					</svg>
+				</button>
+				
+				<!-- Camera button (tablet landscape only - placeholder) -->
+				<button
+					on:click={() => console.log('Open camera')}
+					class="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors hidden lg:block"
+					title="Camera"
+					aria-label="Open camera"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+					</svg>
+				</button>
+				
+				<!-- PDF upload button (non-standard but useful) -->
 				<button
 					on:click={triggerPdfUpload}
 					class="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -377,17 +468,6 @@
 					{/if}
 				</button>
 				
-				<!-- Voice note button (waveform icon) -->
-				<button
-					on:click={openVoiceNote}
-					class="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-					title="Record voice note"
-				>
-					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-					</svg>
-				</button>
-				
 				<!-- Send button -->
 				<button
 					on:click={handleClick}
@@ -403,6 +483,13 @@
 		</div>
 	</div>
 </div>
+
+<!-- Prompt Suggestions Sheet -->
+<PromptSuggestionsSheet
+	bind:isOpen={showSuggestionsSheet}
+	on:close={closeSuggestionsSheet}
+	on:select={handleSuggestionSelect}
+/>
 
 <!-- <style>
 /* Universal prompt bar keyboard handling */

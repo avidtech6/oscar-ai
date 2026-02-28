@@ -62,7 +62,7 @@ export async function getReport(reportId: string): Promise<Report | null> {
 /**
  * Save a report to Supabase
  */
-export async function saveReport(report: Omit<Report, 'id' | 'generatedAt'> & { htmlContent: string }): Promise<string> {
+export async function saveReport(report: Omit<Report, 'id' | 'generatedAt' | 'pdfBlob'> & { htmlContent: string }): Promise<string> {
 	try {
 		const supabaseReport: any = {
 			project_id: report.projectId,

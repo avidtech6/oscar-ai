@@ -1,0 +1,32 @@
+<script lang="ts">
+  import CommunicationShell from '$lib/components/communication/CommunicationShell.svelte';
+</script>
+
+<div class="page-container">
+  <div class="connect-container">
+    <CommunicationShell />
+  </div>
+</div>
+
+<style>
+  :global(body) {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  :global(#svelte) {
+    height: 100%;
+  }
+  
+  .page-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .connect-container {
+    flex: 1;
+    overflow: hidden;
+  }
+</style>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import { settings } from '$lib/stores/settings';
 	import { extractTextFromPDF, isValidPDFFile } from '$lib/services/pdfExtractor';
 	import { extractStyleFromDocx, isValidDocxFile, type VisualStyle } from '$lib/services/docxExtractor';
@@ -75,7 +76,7 @@
 			return;
 		}
 
-		const currentSettings = settings.get();
+		const currentSettings = get(settings);
 		if (!currentSettings.groqApiKey) {
 			error = 'Please configure your Groq API key in Settings first.';
 			return;

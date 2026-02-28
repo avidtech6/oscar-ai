@@ -291,14 +291,16 @@
 			reader.readAsDataURL(audioBlob);
 			const base64Audio = await base64Promise;
 			
+			const formData = new FormData();
+			formData.append('file', audioBlob, 'audio.webm');
+			formData.append('model', 'whisper-large-v3');
+			
 			const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${apiKey}`,
 				},
-				body: new FormData()
-					.append('file', audioBlob, 'audio.webm')
-					.append('model', 'whisper-large-v3')
+				body: formData
 			});
 			
 			if (!response.ok) {
@@ -383,13 +385,13 @@
 			const userMessage = `Summarize the following note concisely:\n\n${noteForm.content}`;
 			
 			// Check for project references in the note content
-			const inferredProject = inferProjectFromMessage(noteForm.content, projects);
-			if (inferredProject && !hasCurrentProject) {
+			const inferredProject = await inferProjectFromMessage(noteForm.content, projects);
+			if (inferredProject.shouldSwitch && inferredProject.projectId && inferredProject.projectName && !hasCurrentProject) {
 				// Show context switch prompt
 				showContextSwitchPromptFn(
-					inferredProject.id,
-					inferredProject.name,
-					`This note mentions "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+					inferredProject.projectId,
+					inferredProject.projectName,
+					`This note mentions "${inferredProject.projectName}". Would you like to switch to Project Mode for this action?`
 				);
 				return;
 			}
@@ -453,13 +455,13 @@
 			const userMessage = `Expand and elaborate on the following note with more detail:\n\n${noteForm.content}`;
 			
 			// Check for project references in the note content
-			const inferredProject = inferProjectFromMessage(noteForm.content, projects);
-			if (inferredProject && !hasCurrentProject) {
+			const inferredProject = await inferProjectFromMessage(noteForm.content, projects);
+			if (inferredProject.shouldSwitch && inferredProject.projectId && inferredProject.projectName && !hasCurrentProject) {
 				// Show context switch prompt
 				showContextSwitchPromptFn(
-					inferredProject.id,
-					inferredProject.name,
-					`This note mentions "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+					inferredProject.projectId,
+					inferredProject.projectName,
+					`This note mentions "${inferredProject.projectName}". Would you like to switch to Project Mode for this action?`
 				);
 				return;
 			}
@@ -548,13 +550,13 @@
 			
 			// Check for project references in the note content and prompt
 			const combinedText = note.content + ' ' + aiPromptText;
-			const inferredProject = inferProjectFromMessage(combinedText, projects);
-			if (inferredProject && !hasCurrentProject) {
+			const inferredProject = await inferProjectFromMessage(combinedText, projects);
+			if (inferredProject.shouldSwitch && inferredProject.projectId && inferredProject.projectName && !hasCurrentProject) {
 				// Show context switch prompt
 				showContextSwitchPromptFn(
-					inferredProject.id,
-					inferredProject.name,
-					`This note mentions "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+					inferredProject.projectId,
+					inferredProject.projectName,
+					`This note mentions "${inferredProject.projectName}". Would you like to switch to Project Mode for this action?`
 				);
 				return;
 			}
@@ -699,13 +701,13 @@
 			const userMessage = prompt;
 			
 			// Check for project references
-			const inferredProject = inferProjectFromMessage(prompt, projects);
-			if (inferredProject && !hasCurrentProject) {
+			const inferredProject = await inferProjectFromMessage(prompt, projects);
+			if (inferredProject.shouldSwitch && inferredProject.projectId && inferredProject.projectName && !hasCurrentProject) {
 				// Show context switch prompt
 				showContextSwitchPromptFn(
-					inferredProject.id,
-					inferredProject.name,
-					`This request mentions "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+					inferredProject.projectId,
+					inferredProject.projectName,
+					`This request mentions "${inferredProject.projectName}". Would you like to switch to Project Mode for this action?`
 				);
 				return;
 			}
@@ -884,13 +886,13 @@
 			
 			// Check for project references
 			const allContent = combinedContent + ' ' + bulkAIPrompt;
-			const inferredProject = inferProjectFromMessage(allContent, projects);
-			if (inferredProject && !hasCurrentProject) {
+			const inferredProject = await inferProjectFromMessage(allContent, projects);
+			if (inferredProject.shouldSwitch && inferredProject.projectId && inferredProject.projectName && !hasCurrentProject) {
 				// Show context switch prompt
 				showContextSwitchPromptFn(
-					inferredProject.id,
-					inferredProject.name,
-					`These notes mention "${inferredProject.name}". Would you like to switch to Project Mode for this action?`
+					inferredProject.projectId,
+					inferredProject.projectName,
+					`These notes mention "${inferredProject.projectName}". Would you like to switch to Project Mode for this action?`
 				);
 				return;
 			}
@@ -1312,13 +1314,13 @@
 	<!-- Notes List -->
 	{:else}
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-			{#each notes as note (note.id)}
-				<div class="card p-4 hover:shadow-md transition-shadow {selectedNotes.has(note.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}">
+			{#each notes as note (note.id ?? note.title)}
+				<div class="card p-4 hover:shadow-md transition-shadow {note.id && selectedNotes.has(note.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}">
 					<div class="flex items-start gap-3 mb-2">
 						<!-- Checkbox for selection -->
 						<input
 							type="checkbox"
-							checked={selectedNotes.has(note.id)}
+							checked={note.id ? selectedNotes.has(note.id) : false}
 							on:change={() => note.id && toggleNoteSelection(note.id)}
 							class="mt-1 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
 						/>

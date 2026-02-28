@@ -1,13 +1,11 @@
 <script lang="ts">
   import CommunicationShell from '$lib/components/communication/CommunicationShell.svelte';
-  import CopilotBar from '$lib/components/CopilotBar/CopilotBar.svelte';
 </script>
 
 <div class="page-container">
   <div class="communication-container">
     <CommunicationShell />
   </div>
-  <CopilotBar />
 </div>
 
 <style>

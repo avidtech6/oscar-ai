@@ -94,10 +94,11 @@ export async function updatePdfDocument(id: string, updates: Partial<PdfDocument
   try {
     const { error } = await supabase
       .from('pdf_documents')
+      // @ts-ignore - Supabase type mismatch
       .update({
         ...updates,
         updated_at: new Date().toISOString()
-      } as any)
+      })
       .eq('id', id);
 
     if (error) {

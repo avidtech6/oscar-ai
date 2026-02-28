@@ -19,6 +19,10 @@ export interface ContextHint {
 	context: string[]; // Screen contexts where this hint is relevant
 	priority: 'low' | 'medium' | 'high';
 	seen: boolean;
+	actionable?: boolean;
+	timestamp?: number;
+	actionLabel?: string;
+	source?: string;
 }
 
 export interface ContextPanelState {
