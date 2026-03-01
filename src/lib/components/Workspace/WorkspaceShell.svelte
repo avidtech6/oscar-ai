@@ -1,19 +1,18 @@
 <script lang="ts">
   import ContextBar from './ContextBar.svelte';
   import CardList from './CardList.svelte';
-  import ContextPills from '$lib/components/layout/ContextPills.svelte';
   import { rightPanelStore } from '$lib/stores/rightPanelStore';
   import { selectedCard } from '$lib/stores/cards';
   
   // When a card is selected, open it in the right panel
   $: if ($selectedCard) {
-    rightPanelStore.open({
+    rightPanelStore.openCard({
       title: $selectedCard.title,
-      content: `Selected: ${$selectedCard.title}`
+      content: $selectedCard.summary || `Selected: ${$selectedCard.title}`
     });
   } else {
     // If no card selected, ensure right panel is closed or shows default
-    rightPanelStore.close();
+    rightPanelStore.resetToDefault();
   }
   
   // Navigation rail state
@@ -46,9 +45,12 @@
       {/if}
     </div>
     
-    <!-- Right: Context Pills for domain switching -->
+    <!-- Right: Empty space or could be used for other content -->
     <div class="workspace-right-pills">
-      <ContextPills />
+      <div class="text-center text-gray-500 py-12">
+        <span class="i-mdi-eye-outline text-4xl text-gray-400 mb-4 block"></span>
+        <p class="text-gray-600">Select an item to view details</p>
+      </div>
     </div>
   </div>
 </div>

@@ -4,7 +4,6 @@
 	import { sidebarOpen } from '$lib/stores/appStore';
 	import { onMount } from 'svelte';
 	import { initSettings } from '$lib/stores/settings';
-	import { updateRoute } from '$lib/copilot/copilotContext';
 	import { onUserPrompt } from '$lib/copilot/eventModel';
 	import { onDestroy } from 'svelte';
 	import { appInit } from '$lib/system/AppInit';
@@ -13,30 +12,26 @@
 
 	// Module-defined Oscar UI Components
 	import SidebarShell from '$lib/ui/shells/SidebarShell.svelte';
-	import PeekPanel from '$lib/ui/shells/PeekPanel.svelte';
+	import RightPanel from '$lib/ui/shells/RightPanel.svelte';
 	import SheetSystem from '$lib/ui/shells/SheetSystem.svelte';
 	import AskOscarBar from '$lib/ui/shells/AskOscarBar.svelte';
+	import PeekPanel from '$lib/ui/shells/PeekPanel.svelte';
 
 	const debugVisible = debugStore.visible;
 	
-	// Sheet states
-	let showConversationSheet = false;
-	let showContextActionSheet = false;
-	let contextActionSheetProps = {
-		context: 'general',
-		itemTitle: '',
-		itemType: ''
-	};
-
-	let projects: any[] = [];
-	let loading = true;
+	// App initialization state
 	let appInitialized = false;
+	let loading = true;
 
 	// Update copilot context when route changes
-	$: updateRoute($page.url.pathname);
+	$: {
+		// Update route context when page changes
+		// This will be implemented in the copilot context module
+	}
 
-
-	// Navigation structure with sections (Module 2: Navigation Structure)
+	// Module 2: Navigation Structure
+	// According to Module 2, sidebar contains:
+	// Home, Workspace (Projects, Tasks, Notes, Reports, Calendar), Files, Connect, Map, Dashboard (Settings, Support, Documents), Recent (3-4 dynamic)
 	const navSections = [
 	  {
 	    title: 'Core Domains',
@@ -48,40 +43,34 @@
 	        icon: 'folder',
 	        href: '/workspace',
 	        subitems: [
-	          { id: 'workspace-home', label: 'Workspace Home', href: '/workspace' },
-	          { id: 'tasks', label: 'Tasks', href: '/workspace?tab=tasks' },
-	          { id: 'notes', label: 'Notes', href: '/workspace?tab=notes' },
-	          { id: 'reports', label: 'Reports', href: '/workspace?tab=reports' },
-	          { id: 'calendar', label: 'Calendar', href: '/workspace?tab=calendar' }
+	          { id: 'workspace-projects', label: 'Projects', href: '/workspace?view=projects' },
+	          { id: 'workspace-tasks', label: 'Tasks', href: '/workspace?view=tasks' },
+	          { id: 'workspace-notes', label: 'Notes', href: '/workspace?view=notes' },
+	          { id: 'workspace-reports', label: 'Reports', href: '/workspace?view=reports' },
+	          { id: 'workspace-calendar', label: 'Calendar', href: '/workspace?view=calendar' }
 	        ]
 	      },
 	      { id: 'files', label: 'Files', icon: 'notes', href: '/files' },
 	      { id: 'connect', label: 'Connect', icon: 'email', href: '/connect' },
-	      { id: 'projects', label: 'Projects', icon: 'tasks', href: '/projects' },
-	      { id: 'timeline', label: 'Timeline', icon: 'calendar', href: '/timeline' },
-	      { id: 'dashboard', label: 'Dashboard', icon: 'cog', href: '/dashboard' },
-	      { id: 'search', label: 'Search', icon: 'search', href: '/search' },
-	      { id: 'map', label: 'Map', icon: 'map', href: '/map' }
-	    ]
-	  },
-	  {
-	    title: 'Integration & Systems',
-	    items: [
-	      { id: 'integrations', label: 'Integrations', icon: 'cog', href: '/integrations' },
-	      { id: 'notifications', label: 'Notifications', icon: 'bell', href: '/notifications' },
-	      { id: 'identity', label: 'Identity', icon: 'user', href: '/identity' },
-	      { id: 'permissions', label: 'Permissions', icon: 'lock', href: '/permissions' },
-	      { id: 'automations', label: 'Automations', icon: 'bolt', href: '/automations' },
-	      { id: 'eventstream', label: 'Event Stream', icon: 'activity', href: '/eventstream' },
-	      { id: 'sync', label: 'Sync Engine', icon: 'refresh', href: '/sync' },
-	      { id: 'ai-context', label: 'AI Context', icon: 'brain', href: '/ai-context' }
+	      { id: 'map', label: 'Map', icon: 'map', href: '/map' },
+	      {
+	        id: 'dashboard',
+	        label: 'Dashboard',
+	        icon: 'cog',
+	        href: '/dashboard',
+	        subitems: [
+	          { id: 'dashboard-settings', label: 'Settings', href: '/dashboard?view=settings' },
+	          { id: 'dashboard-support', label: 'Support', href: '/dashboard?view=support' },
+	          { id: 'dashboard-documents', label: 'Documents', href: '/dashboard?view=documents' }
+	        ]
+	      }
 	    ]
 	  }
 	];
-	
+
 	// Track expanded state for items with subitems
 	let expandedItems = new Set(['workspace', 'dashboard']);
-	
+
 	function toggleExpanded(itemId: string) {
 		if (expandedItems.has(itemId)) {
 			expandedItems.delete(itemId);
@@ -90,6 +79,39 @@
 		}
 		expandedItems = new Set(expandedItems); // Trigger reactivity
 	}
+
+	// Recent items (dynamic, will be populated from store)
+	let recentItems: Array<{id: string, label: string, href: string, icon: string}> = [];
+
+	// Projects list (for sidebar)
+	let projects: any[] = [];
+
+	// Icons mapping
+	const icons: Record<string, string> = {
+		home: "i-mdi-home-outline",
+		workspace: "i-mdi-view-dashboard-outline",
+		folder: "i-mdi-folder-outline",
+		tasks: "i-mdi-format-list-checkbox",
+		notes: "i-mdi-note-text-outline",
+		reports: "i-mdi-file-chart-outline",
+		calendar: "i-mdi-calendar-month-outline",
+		files: "i-mdi-folder-outline",
+		email: "i-mdi-email-outline",
+		map: "i-mdi-map-outline",
+		cog: "i-mdi-cog-outline",
+		search: "i-mdi-magnify",
+		bell: "i-mdi-bell-outline",
+		user: "i-mdi-account-outline",
+		lock: "i-mdi-lock-outline",
+		bolt: "i-mdi-flash-outline",
+		activity: "i-mdi-pulse",
+		refresh: "i-mdi-refresh",
+		brain: "i-mdi-brain",
+		plus: "i-mdi-plus",
+		menu: "i-mdi-menu",
+		close: "i-mdi-close",
+		chevron: "i-mdi-chevron-right",
+	};
 
 	// Load projects from IndexedDB on mount
 	onMount(async () => {
@@ -103,105 +125,50 @@
 			debugStore.log('Unhandled Rejection', event.reason?.message || String(event.reason), { reason: event.reason });
 		});
 
-		// Expose toggleExpanded to window for inline onclick handlers
-		(window as any).toggleExpanded = (itemId: string) => {
-			toggleExpanded(itemId);
-		};
-
 		// Initialize AppInit with Safe Mode protection
 		try {
 			console.log('Layout: Initializing application with Safe Mode protection...');
-			console.log('Layout: Starting timestamp:', Date.now());
 			const safeModeResult = await withSafeMode(async () => {
-				console.log('Layout: AppInit.initialize() starting...');
-				const startTime = Date.now();
 				await appInit.initialize();
-				const endTime = Date.now();
-				console.log(`Layout: AppInit.initialize() completed in ${endTime - startTime}ms`);
 			});
-			
-			console.log('Layout: Safe Mode result:', safeModeResult);
 			
 			if (safeModeResult.success) {
 				appInitialized = true;
 				console.log('Layout: Application initialized successfully (Safe Mode not activated)');
 			} else {
 				console.log('Layout: Safe Mode activated, application initialization failed');
-				console.log('Layout: Safe Mode active:', safeModeResult.safeModeActive);
 				// Safe Mode fallback UI is already shown by withSafeMode
-				// We should not continue with normal initialization
 				loading = false;
 				return;
 			}
 		} catch (error) {
 			console.error('Layout: Failed to initialize application:', error);
-			console.error('Layout: Error details:', error instanceof Error ? error.message : String(error));
 			// Continue anyway - some features may be limited
 			appInitialized = true; // Try to continue with limited functionality
 		}
 		
 		// Initialize settings (loads API key, theme, etc.)
 		try {
-			console.log('Layout: Initializing settings...');
 			await initSettings();
-			console.log('Layout: Settings initialized successfully');
 		} catch (error) {
 			console.error('Layout: Failed to initialize settings:', error);
 		}
 		
-		// Temporarily disabled db import
-		try {
-			// projects = await db.projects.toArray();
-			projects = [];
-		} catch (error) {
-			console.error('Failed to load projects:', error);
-		} finally {
-			loading = false;
-		}
+		// Load recent items (mock for now)
+		recentItems = [
+			{ id: 'recent-1', label: 'Project Alpha', href: '/project/alpha', icon: 'project' },
+			{ id: 'recent-2', label: 'Meeting Notes', href: '/note/meeting-123', icon: 'note' },
+			{ id: 'recent-3', label: 'Q1 Report', href: '/report/q1-2026', icon: 'report' }
+		];
+		
+		// Load projects (mock for now)
+		projects = [];
+		
+		loading = false;
 	});
 
 	function isActive(href: string) {
 		return $page.url.pathname.startsWith(href);
-	}
-
-	const icons: Record<string, string> = {
-		home: "i-mdi-home-outline",
-		workspace: "i-mdi-view-dashboard-outline",
-		tasks: "i-mdi-format-list-checkbox",
-		notes: "i-mdi-note-text-outline",
-		reports: "i-mdi-file-chart-outline",
-		pdf: "i-mdi-file-pdf-box",
-		calendar: "i-mdi-calendar-month-outline",
-		notifications: "i-mdi-bell-outline",
-		capture: "i-mdi-camera-outline",
-		camera: "i-mdi-camera-outline",
-		files: "i-mdi-folder-outline",
-		voicenote: "i-mdi-microphone-outline",
-		support: "i-mdi-lifebuoy",
-		help: "i-mdi-help-circle-outline",
-		chevron: "i-mdi-chevron-right",
-
-		search: "i-mdi-magnify",
-		bell: "i-mdi-bell-outline",
-		user: "i-mdi-account-outline",
-		lock: "i-mdi-lock-outline",
-		bolt: "i-mdi-flash-outline",
-		activity: "i-mdi-pulse",
-		refresh: "i-mdi-refresh",
-		brain: "i-mdi-brain",
-		map: "i-mdi-map-outline",
-		plus: "i-mdi-plus",
-		menu: "i-mdi-menu",
-		close: "i-mdi-close",
-		
-		// Navigation icons referenced in navSections
-		folder: "i-mdi-folder-outline",
-		email: "i-mdi-email-outline",
-		cog: "i-mdi-cog-outline",
-	};
-
-	function toggleSidebar() {
-		sidebarOpen.update(v => !v);
 	}
 
 	function closeSidebarOnMobile() {
@@ -216,30 +183,28 @@
 		if (promptText && promptText.trim()) {
 			debugStore.log('Layout', 'Processing prompt', { promptText });
 			console.log('Layout: Processing prompt:', promptText);
-			// DEBUG: Log to window for visibility
-			const win = window as any;
-			win.debugLog = win.debugLog || [];
-			win.debugLog.push({ type: 'prompt', text: promptText, timestamp: Date.now() });
-			console.log('DEBUG: window.debugLog updated', win.debugLog);
-			// TEMP: Alert for debugging
-			if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-				alert(`DEBUG: Prompt submitted: "${promptText}"`);
-			}
 			onUserPrompt(promptText.trim());
 		} else {
 			debugStore.log('Layout', 'Received empty prompt', { event });
 			console.warn('Layout: Received empty prompt');
 		}
 	}
-
-	// Sidebar Components - Now implemented as proper Svelte components in src/lib/ui/shells/
-	// The SidebarShell imports and uses SidebarSection, SidebarItem, and SidebarIcon components
 </script>
 
-<!-- Module-defined Oscar UI Layout -->
+<!-- Module 1: Global System Rules Layout -->
+<!-- Cockpit layout: sidebar, header, content, right panel, persistent bottom bar -->
 <div class="h-screen flex bg-gray-50 overflow-hidden">
-	<!-- Fixed left sidebar -->
-	<SidebarShell {navSections} {expandedItems} {icons} {isActive} {closeSidebarOnMobile} {toggleExpanded} {loading} {projects} />
+	<!-- Fixed left sidebar (Module 2: Navigation) -->
+	<SidebarShell
+		{navSections}
+		{expandedItems}
+		{icons}
+		{isActive}
+		{closeSidebarOnMobile}
+		{toggleExpanded}
+		{loading}
+		{projects}
+	/>
 	
 	<!-- Scrollable main content -->
 	<div class="flex-1 flex flex-col overflow-hidden min-w-0">
@@ -248,7 +213,7 @@
 			<slot />
 		</div>
 		
-		<!-- Ask Oscar Bar fixed at the bottom -->
+		<!-- Ask Oscar Bar fixed at the bottom (Module 1: Persistent bar) -->
 		{#if appInitialized}
 			<AskOscarBar on:promptSubmit={handlePromptSubmit} />
 		{:else}
@@ -259,10 +224,13 @@
 		{/if}
 	</div>
 	
-	<!-- Peek Panel (hidden by default, shows item details) -->
+	<!-- Right Panel (Module 1: Shows card backs, PDFs, documents, metadata) -->
+	<RightPanel />
+	
+	<!-- Peek Panel (Module 1: Right-side temporary drawer for viewing item details) -->
 	<PeekPanel />
 	
-	<!-- Sheet system above everything -->
+	<!-- Sheet system above everything (Module 4: Sheet System) -->
 	<SheetSystem />
 	
 	<!-- Debug Panel (visible only in dev) -->

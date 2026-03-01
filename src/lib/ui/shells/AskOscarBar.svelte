@@ -1,14 +1,18 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { isTabletLandscape } from '$lib/stores/deviceStore';
 	
 	const dispatch = createEventDispatcher();
 	
 	let inputValue = '';
 	
 	const icons: Record<string, string> = {
+		tree: "i-mdi-file-tree",
 		send: "i-mdi-send",
 		mic: "i-mdi-microphone",
-		attach: "i-mdi-paperclip"
+		voiceRecord: "i-mdi-record-circle-outline",
+		camera: "i-mdi-camera",
+		help: "i-mdi-help-circle-outline"
 	};
 	
 	function handleSubmit() {
@@ -26,74 +30,109 @@
 	}
 	
 	function handleVoiceInput() {
-		// Voice input would be implemented here
-		console.log('Voice input requested');
+		dispatch('voiceInput');
 	}
 	
-	function handleAttach() {
-		// File attachment would be implemented here
-		console.log('Attachment requested');
+	function handleVoiceRecord() {
+		dispatch('voiceRecord');
+	}
+	
+	function handleCamera() {
+		dispatch('camera');
+	}
+	
+	function handleHelp() {
+		dispatch('openSuggestions');
+	}
+	
+	function handleTree() {
+		dispatch('openContextTree');
 	}
 </script>
 
-<div class="fixed bottom-16 lg:bottom-0 left-0 right-0 lg:left-80 lg:right-80 bg-white border-t border-gray-200 z-30">
-	<div class="max-w-4xl mx-auto p-4">
-		<div class="flex items-center gap-2 bg-gray-50 rounded-xl p-1 border border-gray-200">
-			<!-- Attachment button -->
+<div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30">
+	<div class="max-w-7xl mx-auto px-4 py-3">
+		<div class="flex items-center gap-3">
+			<!-- Tree Icon -->
 			<button
-				onclick={handleAttach}
-				class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-				title="Attach file"
-				aria-label="Attach file"
+				onclick={handleTree}
+				class="p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
+				title="Context tree"
+				aria-label="Context tree"
 			>
-				<span class="w-5 h-5">{@html icons.attach}</span>
+				<span class="w-5 h-5">{@html icons.tree}</span>
 			</button>
+			
+			<!-- "Ask Oscar" label -->
+			<div class="text-sm font-medium text-gray-700 whitespace-nowrap">
+				Ask Oscar
+			</div>
+			
+			<!-- Separator -->
+			<div class="w-px h-6 bg-gray-300"></div>
 			
 			<!-- Input field -->
 			<input
 				type="text"
 				bind:value={inputValue}
 				onkeydown={handleKeydown}
-				placeholder="Ask Oscar anything... (Press Enter to send)"
-				class="flex-1 px-3 py-2 bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-500"
+				placeholder="Type your question or command..."
+				class="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent text-gray-800 placeholder-gray-500"
 			/>
 			
-			<!-- Voice input button -->
+			<!-- Help button (?) -->
+			<button
+				onclick={handleHelp}
+				class="p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
+				title="Suggestions"
+				aria-label="Suggestions"
+			>
+				<span class="w-5 h-5">{@html icons.help}</span>
+			</button>
+			
+			<!-- Mic button -->
 			<button
 				onclick={handleVoiceInput}
-				class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+				class="p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
 				title="Voice input"
 				aria-label="Voice input"
 			>
 				<span class="w-5 h-5">{@html icons.mic}</span>
 			</button>
 			
+			<!-- Voice Record button -->
+			<button
+				onclick={handleVoiceRecord}
+				class="p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
+				title="Voice recording"
+				aria-label="Voice recording"
+			>
+				<span class="w-5 h-5">{@html icons.voiceRecord}</span>
+			</button>
+			
+			<!-- Camera button (tablet landscape only per Module 3.1) -->
+			{#if $isTabletLandscape}
+				<button
+					onclick={handleCamera}
+					class="p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
+					title="Camera"
+					aria-label="Camera"
+				>
+					<span class="w-5 h-5">{@html icons.camera}</span>
+				</button>
+			{/if}
+			
 			<!-- Send button -->
 			<button
 				onclick={handleSubmit}
 				disabled={!inputValue.trim()}
 				class="px-4 py-2 bg-forest-600 text-white font-medium rounded-lg hover:bg-forest-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-				title="Send message"
-				aria-label="Send message"
+				title="Send"
+				aria-label="Send"
 			>
 				<span class="w-4 h-4">{@html icons.send}</span>
 				<span class="hidden sm:inline">Send</span>
 			</button>
-		</div>
-		
-		<!-- Quick suggestions -->
-		<div class="mt-3 flex flex-wrap gap-2 justify-center">
-			{#each ['Summarize this page', 'Find related files', 'Schedule a task', 'Generate report'] as suggestion}
-				<button
-					onclick={() => {
-						inputValue = suggestion;
-						handleSubmit();
-					}}
-					class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-				>
-					{suggestion}
-				</button>
-			{/each}
 		</div>
 	</div>
 </div>

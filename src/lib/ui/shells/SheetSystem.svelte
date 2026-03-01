@@ -1,31 +1,49 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
+	import { sheetStore, type SheetType } from '$lib/stores/sheetStore';
 	
-	// Sheet states would come from a store in a real implementation
-	let showSheet = false;
-	let sheetType = 'conversation'; // 'conversation' | 'context' | 'suggestions'
-	let sheetTitle = 'Conversation';
+	// Sheet state from store
+	let isOpen = $sheetStore.isOpen;
+	let sheetType: SheetType = $sheetStore.type;
+	let sheetTitle = $sheetStore.title;
+	let sheetContent = $sheetStore.content;
 	
-	function openSheet(type: string, title: string) {
-		sheetType = type;
-		sheetTitle = title;
-		showSheet = true;
-	}
+	// Subscribe to store changes
+	$: isOpen = $sheetStore.isOpen;
+	$: sheetType = $sheetStore.type;
+	$: sheetTitle = $sheetStore.title;
+	$: sheetContent = $sheetStore.content;
 	
 	function closeSheet() {
-		showSheet = false;
+		sheetStore.close();
 	}
 	
-	// Expose for external use
-	export { openSheet, closeSheet };
+	// Handle escape key
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape' && isOpen) {
+			closeSheet();
+		}
+	}
+	
+	// Handle backdrop click
+	function handleBackdropClick(e: MouseEvent) {
+		if (e.target === e.currentTarget) {
+			closeSheet();
+		}
+	}
+	
+	// For suggestions sheet
+	function selectSuggestion(suggestion: any) {
+		sheetStore.selectSuggestion(suggestion);
+	}
 </script>
 
 <!-- Sheet overlay backdrop -->
-{#if showSheet}
+{#if isOpen}
 	<div
-		class="fixed inset-0 bg-black/50 z-[100]"
-		onclick={closeSheet}
-		onkeydown={(e) => e.key === 'Escape' && closeSheet()}
+		class="fixed inset-0 bg-black/30 z-40"
+		onclick={handleBackdropClick}
+		onkeydown={handleKeydown}
 		role="button"
 		tabindex="0"
 		aria-label="Close sheet"
@@ -33,52 +51,90 @@
 {/if}
 
 <!-- Sheet container -->
-<div class="fixed inset-0 z-[101] pointer-events-none">
-	{#if showSheet}
+<div class="fixed inset-0 z-50 pointer-events-none">
+	{#if isOpen}
 		<div 
-			class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-xl pointer-events-auto"
-			transition:fly={{ x: 300, duration: 300 }}
+			class="absolute left-0 right-0 bottom-0 bg-white rounded-t-2xl shadow-2xl pointer-events-auto max-h-[70vh]"
+			transition:fly={{ y: 100, duration: 300 }}
+			style="z-index: 50;"
 		>
-			<!-- Sheet header -->
-			<div class="p-4 border-b border-gray-200 flex items-center justify-between">
-				<h3 class="text-lg font-semibold text-gray-800">{sheetTitle}</h3>
+			<!-- Sheet header with chevron (from module 4.5) -->
+			<div class="p-4 border-b border-gray-200 flex items-center justify-center">
+				<!-- Chevron for closing (module 4.5) -->
 				<button
 					onclick={closeSheet}
-					class="p-1 text-gray-400 hover:text-gray-600 rounded"
+					class="absolute left-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
 					aria-label="Close sheet"
 				>
-					<span class="i-mdi-close w-5 h-5"></span>
+					<span class="i-mdi-chevron-down w-6 h-6"></span>
 				</button>
+				
+				<!-- Sheet title -->
+				<h3 class="text-lg font-semibold text-gray-800">{sheetTitle}</h3>
 			</div>
 			
 			<!-- Sheet content -->
-			<div class="h-[calc(100%-4rem)] overflow-auto">
-				<slot {sheetType} {sheetTitle}>
-					<!-- Default empty state when no slot provided -->
-					<div class="p-6">
-						<div class="text-center text-gray-400">
-							<div class="i-mdi-information-outline w-12 h-12 mx-auto mb-3"></div>
-							<p class="text-sm">No content provided for this sheet.</p>
+			<div class="h-[calc(70vh-4rem)] overflow-auto">
+				{#if sheetType === 'conversation'}
+					<!-- Conversation Sheet (module 4.6) -->
+					<div class="p-4">
+						<div class="space-y-4">
+							{#each sheetContent?.messages || [] as message}
+								<div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
+									<div class="max-w-[80%] rounded-2xl p-4 {message.role === 'user' ? 'bg-forest-100 text-forest-900' : 'bg-gray-100 text-gray-900'}">
+										<p class="text-sm">{message.content}</p>
+										<div class="text-xs mt-1 opacity-60">
+											{message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+										</div>
+									</div>
+								</div>
+							{/each}
 						</div>
 					</div>
-				</slot>
-			</div>
-			
-			<!-- Sheet footer -->
-			<div class="p-4 border-t border-gray-200">
-				<div class="flex gap-2">
-					<button
-						onclick={closeSheet}
-						class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-					>
-						Close
-					</button>
-					<button
-						class="flex-1 px-4 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors"
-					>
-						Action
-					</button>
-				</div>
+				{:else if sheetType === 'suggestions'}
+					<!-- Prompt Suggestions Sheet (module 4.7) -->
+					<div class="p-4">
+						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							{#each sheetContent?.suggestions || [] as suggestion}
+								<button
+									onclick={() => {
+										selectSuggestion(suggestion);
+										closeSheet();
+									}}
+									class="p-4 text-left bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors"
+								>
+									<div class="font-medium text-gray-800 mb-1">{suggestion.title}</div>
+									<div class="text-sm text-gray-600">{suggestion.description}</div>
+								</button>
+							{/each}
+						</div>
+					</div>
+				{:else if sheetType === 'contextAction'}
+					<!-- Context Action Sheet (module 4.8) -->
+					<div class="p-4">
+						<div class="space-y-3">
+							{#each sheetContent?.actions || [] as action}
+								<button
+									onclick={() => {
+										action.handler();
+										closeSheet();
+									}}
+									class="w-full p-4 text-left bg-white hover:bg-gray-50 rounded-xl border border-gray-200 transition-colors flex items-center gap-3"
+								>
+									{#if action.icon}
+										<span class="text-gray-600 {action.icon} w-5 h-5"></span>
+									{/if}
+									<div class="flex-1">
+										<div class="font-medium text-gray-800">{action.label}</div>
+										{#if action.description}
+											<div class="text-sm text-gray-600 mt-1">{action.description}</div>
+										{/if}
+									</div>
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/if}
 			</div>
 		</div>
 	{/if}
