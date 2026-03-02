@@ -260,6 +260,6 @@
 </main>
 
 <style>
-	@import '$lib/components/intelligence/IntelligencePage.css';
-	@import '$lib/components/intelligence/IntelligenceSection.css';
+	@import '../../lib/components/intelligence/IntelligencePage.css';
+	@import '../../lib/components/intelligence/IntelligenceSection.css';
 </style>

@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build",
+  "buildOutputDirectory": "build",
+  "nodeVersion": "20"
+}

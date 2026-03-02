@@ -17,12 +17,12 @@
 	export let onShare: (id: number) => void = () => {};
 </script>
 
-<div class="report-card" class:status-{report.status}>
+<div class="report-card status-{report.status}">
 	<div class="report-card-header">
-		<div class="report-type-badge" class:type-{report.type}>
+		<div class="report-type-badge type-{report.type}">
 			{report.typeLabel}
 		</div>
-		<div class="report-status" class:status-{report.status}>
+		<div class="report-status status-{report.status}">
 			{report.status}
 		</div>
 	</div>
@@ -54,13 +54,13 @@
 	</div>
 	
 	<div class="report-card-actions">
-		<button class="btn-action" on:click={() => onEdit(report.id)}>
+		<button class="btn-action" onclick={() => onEdit(report.id)}>
 			✏️ Edit
 		</button>
-		<button class="btn-action" on:click={() => onView(report.id)}>
+		<button class="btn-action" onclick={() => onView(report.id)}>
 			👁️ View
 		</button>
-		<button class="btn-action" on:click={() => onShare(report.id)}>
+		<button class="btn-action" onclick={() => onShare(report.id)}>
 			↗️ Share
 		</button>
 	</div>

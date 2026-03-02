@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { getIntelligenceLayer } from '$lib/intelligence';
 	import NoteCard from '$lib/components/NoteCard.svelte';
-	
+
 	const intelligence = getIntelligenceLayer();
-	
-	let searchQuery = '';
-	let selectedCategory = 'all';
-	
+
+	let searchQuery = $state('');
+	let selectedCategory = $state('all');
+
 	const categories = [
 		{ id: 'all', label: 'All Categories' },
 		{ id: 'field', label: 'Field Notes' },
@@ -14,8 +14,8 @@
 		{ id: 'measurement', label: 'Measurements' },
 		{ id: 'planning', label: 'Planning' }
 	];
-	
-	let notes = [
+
+	let notes = $state([
 		{ 
 			id: 1, 
 			title: 'Oak Tree Health Assessment', 
@@ -82,7 +82,7 @@
 			treeSpecies: ['Mixed'],
 			attachments: 2
 		}
-	];
+	]);
 	
 	let filteredNotes = $derived(
 		notes.filter(note => {
@@ -122,7 +122,7 @@
 			<p class="subtitle">Capture and organize your arboricultural observations and field notes</p>
 		</div>
 		<div class="header-actions">
-			<button class="btn-primary" on:click={createNewNote}>
+			<button class="btn-primary" onclick={createNewNote}>
 				📝 New Note
 			</button>
 		</div>
@@ -174,7 +174,7 @@
 			<div class="empty-icon">📝</div>
 			<h3>No notes found</h3>
 			<p>Try adjusting your search or filters, or create a new note.</p>
-			<button class="btn-primary" on:click={() => {
+			<button class="btn-primary" onclick={() => {
 				searchQuery = '';
 				selectedCategory = 'all';
 			}}>Clear filters</button>
@@ -195,22 +195,22 @@
 	<div class="quick-actions">
 		<h2>Quick Actions</h2>
 		<div class="actions-grid">
-			<button class="action-card" on:click={createNewNote}>
+			<button class="action-card" onclick={createNewNote}>
 				<div class="action-icon">📝</div>
 				<div class="action-label">Quick Note</div>
 				<div class="action-description">Capture a brief observation</div>
 			</button>
-			<button class="action-card" on:click={() => console.log('Add photo')}>
+			<button class="action-card" onclick={() => console.log('Add photo')}>
 				<div class="action-icon">📸</div>
 				<div class="action-label">Add Photo</div>
 				<div class="action-description">Upload tree photos</div>
 			</button>
-			<button class="action-card" on:click={() => console.log('Voice note')}>
+			<button class="action-card" onclick={() => console.log('Voice note')}>
 				<div class="action-icon">🎤</div>
 				<div class="action-label">Voice Note</div>
 				<div class="action-description">Record field observations</div>
 			</button>
-			<button class="action-card" on:click={() => console.log('Export notes')}>
+			<button class="action-card" onclick={() => console.log('Export notes')}>
 				<div class="action-icon">📤</div>
 				<div class="action-label">Export</div>
 				<div class="action-description">Export all notes</div>

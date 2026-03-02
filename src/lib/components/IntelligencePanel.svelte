@@ -942,3 +942,4 @@
 	.log-entry.warning .log-message {
 		color: #92400e;
 	}
+</style>

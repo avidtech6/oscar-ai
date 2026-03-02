@@ -3,13 +3,13 @@
 	import ReportsFilters from '$lib/components/ReportsFilters.svelte';
 	import ReportsStats from '$lib/components/ReportsStats.svelte';
 	import ReportCard from '$lib/components/ReportCard.svelte';
-	
+
 	const intelligence = getIntelligenceLayer();
-	
-	let searchQuery = '';
-	let selectedType = 'all';
-	let selectedStatus = 'all';
-	
+
+	let searchQuery = $state('');
+	let selectedType = $state('all');
+	let selectedStatus = $state('all');
+
 	let reports = [
 		{ 
 			id: 1, 
@@ -127,10 +127,10 @@
 			<p class="subtitle">Manage your arboricultural reports and documentation</p>
 		</div>
 		<div class="header-actions">
-			<button class="btn-secondary" on:click={exportReports}>
+			<button class="btn-secondary" onclick={exportReports}>
 				📤 Export
 			</button>
-			<button class="btn-primary" on:click={createNewReport}>
+			<button class="btn-primary" onclick={createNewReport}>
 				➕ New Report
 			</button>
 		</div>
@@ -152,7 +152,7 @@
 			<div class="empty-icon">📄</div>
 			<h3>No reports found</h3>
 			<p>Try adjusting your search or filters, or create a new report.</p>
-			<button class="btn-primary" on:click={() => {
+			<button class="btn-primary" onclick={() => {
 				searchQuery = '';
 				selectedType = 'all';
 				selectedStatus = 'all';

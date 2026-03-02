@@ -264,5 +264,5 @@
 </main>
 
 <style>
-	@import '$lib/components/intelligence/IntelligencePage.css';
+	@import '../../../lib/components/intelligence/IntelligencePage.css';
 </style>

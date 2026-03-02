@@ -33,7 +33,7 @@
 	
 	<div class="stats-grid">
 		{#each stats as stat}
-			<div class="stat-card" class:color-{stat.color}>
+			<div class="stat-card color-{stat.color}">
 				<div class="stat-icon">{stat.icon}</div>
 				<div class="stat-content">
 					<div class="stat-value">{stat.value}</div>
@@ -59,10 +59,10 @@
 							<div class="report-meta">
 								<span class="report-type">{report.type}</span>
 								<span class="report-date">{report.date}</span>
-								<span class="report-status" class:status-{report.status}>{report.status}</span>
+								<span class="report-status status-{report.status}">{report.status}</span>
 							</div>
 						</div>
-						<button class="report-action" on:click={() => console.log('Open report', report.id)}>Open</button>
+						<button class="report-action" onclick={() => console.log('Open report', report.id)}>Open</button>
 					</div>
 				{/each}
 			</div>
@@ -75,7 +75,7 @@
 			</div>
 			<div class="actions-grid">
 				{#each quickActions as action}
-					<button class="action-card" on:click={action.action}>
+					<button class="action-card" onclick={action.action}>
 						<div class="action-icon">{action.icon}</div>
 						<div class="action-label">{action.label}</div>
 						<div class="action-description">{action.description}</div>

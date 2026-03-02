@@ -72,3 +72,86 @@ export function useIntelligence() {
 		phaseCount: intelligenceLayer.phaseFiles.length
 	};
 }
+
+// Synchronous function to get intelligence layer data for dashboard
+export function getIntelligenceLayer() {
+	const phases = intelligenceLayer.phaseFiles.map((file) => {
+		// Extract phase number and title
+		const match = file.match(/^PHASE_(\d+)_(.+)\.md$/);
+		if (match) {
+			const number = parseInt(match[1]);
+			const title = match[2].replace(/_/g, ' ');
+			return {
+				name: `Phase ${number}: ${title}`,
+				description: `Architectural blueprint for ${title}`
+			};
+		} else {
+			// For non-standard phase files
+			const name = file.replace(/\.md$/, '').replace(/_/g, ' ');
+			return {
+				name,
+				description: `Supporting document for ${name}`
+			};
+		}
+	});
+
+	return {
+		phaseCount: intelligenceLayer.phaseFiles.length,
+		phases,
+		version: intelligenceLayer.version,
+		description: intelligenceLayer.description
+	};
+}
+
+// Helper function to get phase description by ID
+function getPhaseDescription(id: string): string {
+	const descriptions: Record<string, string> = {
+		'PHASE_0': 'Master Vision & Copilot Layer - Core intelligence foundation',
+		'PHASE_1': 'Report Type Registry - Central registry for all report types',
+		'PHASE_2': 'Report Decompiler Engine - Extracts structure from raw reports',
+		'PHASE_3': 'Report Schema Mapper - Maps extracted data to structured schemas',
+		'PHASE_4': 'Schema Updater Engine - Continuously improves schemas',
+		'PHASE_5': 'Report Style Learner - Learns and applies report styling',
+		'PHASE_6': 'Report Classification Engine - Classifies reports by type',
+		'PHASE_7': 'Report Self-Healing Engine - Automatically fixes report issues',
+		'PHASE_8': 'Report Template Generator - Creates templates from examples',
+		'PHASE_9': 'Report Compliance Validator - Ensures regulatory compliance',
+		'PHASE_10': 'Report Reproduction Tester - Tests report generation',
+		'PHASE_11': 'Report Type Expansion Framework - Expands supported report types',
+		'PHASE_12': 'AI Reasoning Integration - Adds AI reasoning to reports',
+		'PHASE_13': 'User Workflow Learning - Learns from user interactions',
+		'PHASE_14': 'Final Integration & Validation - System-wide integration',
+		'PHASE_15': 'HTML Rendering Engine - Visual reproduction engine',
+		'PHASE_16': 'PDF Parsing Engine - Direct PDF parsing and layout extraction',
+		'PHASE_17': 'Content Intelligence Engine - Blog post and content generation',
+		'PHASE_18': 'Unified Editor & Supabase Integration - Editor and database integration',
+		'PHASE_19': 'Email Calendar Task Intelligence - Email and calendar integration',
+		'PHASE_20': 'Full System Testing & Debugging - Comprehensive testing',
+		'PHASE_21': 'Global Assistant Intelligence - Global AI assistant layer',
+		'PHASE_22': 'Media Intelligence Layer - Media processing intelligence',
+		'PHASE_23': 'AI Layout Engine - Intelligent layout generation',
+		'PHASE_24': 'Document Intelligence Layer - Document processing intelligence',
+		'PHASE_25': 'Workflow Intelligence Layer - Workflow optimization',
+		'PHASE_26': 'Final System Integration - Final build preparation',
+	};
+	return descriptions[id] || 'Intelligence phase';
+}
+
+// Mock intelligence object for UI components
+export const intelligence = {
+	getPhaseFiles: () => {
+		return intelligenceLayer.phaseFiles.map((file) => {
+			const match = file.match(/^PHASE_(\d+)_(.+)\.md$/);
+			const id = match ? `PHASE_${match[1]}` : file.replace(/\.md$/, '');
+			const name = match ? `Phase ${match[1]}: ${match[2].replace(/_/g, ' ')}` : file.replace(/\.md$/, '').replace(/_/g, ' ');
+			return {
+				id,
+				name,
+				description: getPhaseDescription(id),
+				path: `/intelligence/${file}`,
+				size: 1024, // placeholder
+				modified: '2025-03-02' // placeholder
+			};
+		});
+	}
+};

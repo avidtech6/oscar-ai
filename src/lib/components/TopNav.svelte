@@ -2,23 +2,23 @@
 	import { page } from '$app/stores';
 	import { navigating } from '$app/stores';
 	import SyncStatus from './SyncStatus.svelte';
-	
+
 	export let user = {
 		name: 'Arborist User',
 		avatar: '🌳',
 		role: 'Tree Surveyor'
 	};
-	
+
 	let searchQuery = '';
 	let notifications = [
 		{ id: 1, text: 'New report template available', time: '2 hours ago', unread: true },
 		{ id: 2, text: 'Schema update completed', time: '1 day ago', unread: true },
 		{ id: 3, text: 'Weekly summary ready', time: '3 days ago', unread: false }
 	];
-	
+
 	let showNotifications = false;
 	let showUserMenu = false;
-	
+
 	function handleSearch(e: Event) {
 		e.preventDefault();
 		if (searchQuery.trim()) {
@@ -26,7 +26,7 @@
 			console.log('Searching for:', searchQuery);
 		}
 	}
-	
+
 	function markAllAsRead() {
 		notifications = notifications.map(n => ({ ...n, unread: false }));
 	}
@@ -48,7 +48,7 @@
 	</div>
 	
 	<div class="nav-center">
-		<form on:submit={handleSearch} class="search-form">
+		<form onsubmit={handleSearch} class="search-form">
 			<input
 				type="search"
 				placeholder="Search reports, notes, or intelligence..."
@@ -68,7 +68,7 @@
 				<SyncStatus />
 			</div>
 			
-			<button class="nav-button" on:click={() => showNotifications = !showNotifications} aria-label="Notifications">
+			<button class="nav-button" onclick={() => showNotifications = !showNotifications} aria-label="Notifications">
 				🔔
 				{#if notifications.some(n => n.unread)}
 					<span class="badge">{notifications.filter(n => n.unread).length}</span>
@@ -79,7 +79,7 @@
 				❓
 			</button>
 			
-			<button class="nav-button" on:click={() => showUserMenu = !showUserMenu} aria-label="User menu">
+			<button class="nav-button" onclick={() => showUserMenu = !showUserMenu} aria-label="User menu">
 				<span class="user-avatar">{user.avatar}</span>
 				<span class="user-name">{user.name}</span>
 			</button>
@@ -89,14 +89,14 @@
 			<div class="dropdown notifications-dropdown">
 				<div class="dropdown-header">
 					<h3>Notifications</h3>
-					<button on:click={markAllAsRead} class="mark-read">Mark all as read</button>
+					<button onclick={markAllAsRead} class="mark-read">Mark all as read</button>
 				</div>
 				<div class="dropdown-content">
 					{#if notifications.length === 0}
 						<p class="empty">No notifications</p>
 					{:else}
 						{#each notifications as notification}
-							<div class="notification-item" class:unread={notification.unread}>
+							<div class="notification-item {notification.unread ? 'unread' : ''}">
 								<div class="notification-text">{notification.text}</div>
 								<div class="notification-time">{notification.time}</div>
 							</div>
@@ -128,10 +128,21 @@
 </header>
 
 {#if showNotifications || showUserMenu}
-	<div class="dropdown-backdrop" on:click={() => {
-		showNotifications = false;
-		showUserMenu = false;
-	}} />
+	<div
+		class="dropdown-backdrop"
+		role="button"
+		tabindex="0"
+		onclick={() => {
+			showNotifications = false;
+			showUserMenu = false;
+		}}
+		onkeydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				showNotifications = false;
+				showUserMenu = false;
+			}
+		}}
+	></div>
 {/if}
 
 <style>

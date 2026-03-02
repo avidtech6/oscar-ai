@@ -18,7 +18,7 @@
 
 <div class="note-card">
 	<div class="note-card-header">
-		<div class="note-category" class:category-{note.category}>
+		<div class="note-category category-{note.category}">
 			{note.category}
 		</div>
 		<div class="note-date">{note.date}</div>
@@ -54,13 +54,13 @@
 	</div>
 	
 	<div class="note-card-actions">
-		<button class="btn-action" on:click={() => onExpand(note.id)}>
+		<button class="btn-action" onclick={() => onExpand(note.id)}>
 			👁️ View
 		</button>
-		<button class="btn-action" on:click={() => onEdit(note.id)}>
+		<button class="btn-action" onclick={() => onEdit(note.id)}>
 			✏️ Edit
 		</button>
-		<button class="btn-action delete" on:click={() => onDelete(note.id)}>
+		<button class="btn-action delete" onclick={() => onDelete(note.id)}>
 			🗑️ Delete
 		</button>
 	</div>
