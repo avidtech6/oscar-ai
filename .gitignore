@@ -1,0 +1,73 @@
+# Dependencies
+node_modules/
+.pnpm/
+.yarn/
+dist/
+dist-ssr/
+*.local
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# SvelteKit build output
+.svelte-kit/
+package/
+build/
+
+# Vite cache
+.cache/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Supabase
+.supabase/
+
+# Edge Functions
+supabase/functions/.env
+supabase/functions/deno.lock
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Misc
+.DS_Store
+*.pem
+
+# Sensitive files
+*.key
+*.p12
+*.crt
+*.csr
+
+# Local development
+.localhost
+.localhost.*
+
+# Temporary files
+tmp/
+temp/

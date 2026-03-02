@@ -1,0 +1,211 @@
+/* Intelligence Page CSS Module */
+.intelligence-page {
+	max-width: 100%;
+}
+
+.page-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 2rem;
+}
+
+.page-header h1 {
+	font-size: 2rem;
+	font-weight: 700;
+	margin: 0 0 0.5rem 0;
+	color: #111827;
+}
+
+.subtitle {
+	color: #6b7280;
+	font-size: 1rem;
+	margin: 0;
+}
+
+.header-stats {
+	display: flex;
+	gap: 1.5rem;
+}
+
+.stat {
+	text-align: center;
+}
+
+.stat-value {
+	font-size: 2rem;
+	font-weight: 700;
+	color: #3b82f6;
+}
+
+.stat-label {
+	font-size: 0.875rem;
+	color: #6b7280;
+}
+
+.introduction {
+	background: #f0f9ff;
+	border-radius: 12px;
+	padding: 2rem;
+	margin-bottom: 2rem;
+	border-left: 4px solid #3b82f6;
+}
+
+.introduction h2 {
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: #111827;
+	margin: 0 0 1rem 0;
+}
+
+.introduction p {
+	color: #374151;
+	margin: 0 0 1rem 0;
+	line-height: 1.6;
+}
+
+.introduction p:last-child {
+	margin-bottom: 0;
+}
+
+.introduction strong {
+	color: #1e40af;
+}
+
+.intelligence-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+	gap: 1.5rem;
+	margin-bottom: 2rem;
+}
+
+.intelligence-panel-section {
+	background: white;
+	border-radius: 12px;
+	padding: 2rem;
+	margin-bottom: 2rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.intelligence-panel-section h2 {
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: #111827;
+	margin: 0 0 0.5rem 0;
+}
+
+.intelligence-panel-section p {
+	color: #6b7280;
+	margin: 0 0 1.5rem 0;
+}
+
+.architecture-rules {
+	background: #fef3c7;
+	border-radius: 12px;
+	padding: 2rem;
+	border-left: 4px solid #f59e0b;
+}
+
+.architecture-rules h2 {
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: #92400e;
+	margin: 0 0 1.5rem 0;
+}
+
+.rules-list {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.rule {
+	background: white;
+	border-radius: 8px;
+	padding: 1.5rem;
+}
+
+.rule h3 {
+	font-size: 1rem;
+	font-weight: 600;
+	color: #92400e;
+	margin: 0 0 0.75rem 0;
+}
+
+.rule p {
+	font-size: 0.875rem;
+	color: #374151;
+	margin: 0;
+	line-height: 1.5;
+}
+
+/* Loading and Error States */
+.loading-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 4rem 2rem;
+	text-align: center;
+}
+
+.loading-spinner {
+	width: 48px;
+	height: 48px;
+	border: 4px solid #e5e7eb;
+	border-top: 4px solid #3b82f6;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+	margin-bottom: 1rem;
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+.loading-state p {
+	color: #6b7280;
+	font-size: 1rem;
+}
+
+.error-state {
+	background: #fef2f2;
+	border-radius: 12px;
+	padding: 3rem 2rem;
+	text-align: center;
+	border: 1px solid #fecaca;
+}
+
+.error-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.error-state h2 {
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: #dc2626;
+	margin: 0 0 1rem 0;
+}
+
+.error-state p {
+	color: #7f1d1d;
+	margin: 0 0 2rem 0;
+	line-height: 1.5;
+}
+
+.error-state button {
+	background: #dc2626;
+	color: white;
+	border: none;
+	border-radius: 6px;
+	padding: 0.75rem 1.5rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.error-state button:hover {
+	background: #b91c1c;
+}
