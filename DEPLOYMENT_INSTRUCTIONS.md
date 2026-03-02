@@ -1,9 +1,11 @@
-# Oscar AI V2 - GitHub Deployment Instructions
+# Oscar AI V2 - Deployment Instructions
 
 ## Project Status
 ✅ **Phase 6: Secure API Key Vault** - COMPLETED
 ✅ **Git Repository** - Initialized with initial commit
 ✅ **GitHub Deployment** - Deployed to https://github.com/avidtech6/oscar-ai
+✅ **Build‑System Repair** - Svelte 5 compatibility, Cloudflare Pages config, static adapter with fallback
+✅ **Cloudflare Pages Ready** - Configuration files and SPA routing added
 
 ## Manual Deployment Steps
 
@@ -47,7 +49,7 @@ git push -u origin main
 ## Project Verification
 After deployment, verify at:
 - **Repository URL:** `https://github.com/avidtech6/oscar-ai`
-- **Live Demo:** Can be deployed to Vercel/Netlify using the included configuration
+- **Live Demo:** Can be deployed to Cloudflare Pages, Vercel, or Netlify using the included configuration
 
 ## Quick Start Development
 ```bash
@@ -59,10 +61,31 @@ npm run dev
 ## Key Features Deployed
 - ✅ **Phase Files Intelligence Layer** (src/lib/intelligence/)
 - ✅ **Secure API Key Vault** (Phase 6 complete)
-- ✅ **Svelte 5 Modern Architecture**
+- ✅ **Svelte 5 Modern Architecture** (with runes mode)
 - ✅ **Supabase Edge Functions**
 - ✅ **Full TypeScript Support**
 - ✅ **Responsive UI Components**
+- ✅ **Cloudflare Pages SPA Configuration** (static/_redirects, static/_headers)
+- ✅ **Static Adapter with Fallback** (svelte.config.js)
+- ✅ **Build‑System Repaired** (missing exports, Svelte 5 syntax, dependency overrides)
+
+## Cloudflare Pages Deployment
+The project is configured for Cloudflare Pages with a single‑page application (SPA) fallback.
+
+### Deployment Steps
+1. **Connect GitHub repository** to Cloudflare Pages.
+2. **Build settings:**
+   - **Build command:** `npm run build`
+   - **Build output directory:** `build`
+   - **Root directory:** (leave empty)
+3. **Environment variables:** Add any required Supabase variables (see `.env.example`).
+4. **Deploy** – Cloudflare Pages will automatically deploy on each push to `main`.
+
+### Configuration Files
+- `cloudflare-pages.config.json` – Build configuration
+- `static/_redirects` – SPA routing (all routes → index.html)
+- `static/_headers` – Security headers
+- `svelte.config.js` – Static adapter with `fallback: 'index.html'`
 
 ## Next Steps After Deployment
 1. **Set up Supabase:**
@@ -73,25 +96,34 @@ npm run dev
    - Copy `.env.example` to `.env`
    - Add your Supabase credentials
 
-3. **Deploy to Vercel/Netlify:**
+3. **Deploy to Cloudflare Pages (recommended):**
+   - Connect GitHub repository
+   - Configure build settings as above
+   - Set environment variables
+
+4. **Alternative: Deploy to Vercel/Netlify:**
    - Connect GitHub repository
    - Configure build settings
    - Set environment variables
 
 ## Security Notes
-- All API keys are encrypted end-to-end
+- All API keys are encrypted end‑to‑end
 - No plaintext key exposure
 - RLS policies enforced
 - JWT validation for all edge functions
+- Security headers configured for Cloudflare Pages
 
 ## Repository Structure
 ```
 oscar-ai/
 ├── src/lib/intelligence/     # Phase Files (authoritative architecture)
 ├── src/lib/vault/           # Secure API Key Vault (Phase 6)
-├── src/lib/components/      # UI Components (HAR-based)
+├── src/lib/components/      # UI Components (HAR‑based)
 ├── supabase/               # Migrations & Edge Functions
 ├── src/routes/             # SvelteKit routes
+├── static/                 # Cloudflare Pages SPA routing & headers
+├── cloudflare-pages.config.json
+├── svelte.config.js        # Static adapter with fallback
 └── package.json           # Svelte 5 dependencies
 ```
 
