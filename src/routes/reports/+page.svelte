@@ -3,6 +3,8 @@
 	import ReportsFilters from '$lib/components/ReportsFilters.svelte';
 	import ReportsStats from '$lib/components/ReportsStats.svelte';
 	import ReportCard from '$lib/components/ReportCard.svelte';
+	import ExportMenu from '$lib/components/export/ExportMenu.svelte';
+	import { exportManager } from '$lib/export/exportManager';
 
 	const intelligence = getIntelligenceLayer();
 
@@ -105,6 +107,18 @@
 	
 	function exportReports() {
 		console.log('Exporting reports');
+		// Export all filtered reports as a summary
+		const items = filteredReports.map(report => ({
+			id: report.id.toString(),
+			title: report.title,
+			content: report.description
+		}));
+		exportManager.exportSummary(items, 'pdf');
+	}
+	
+	function handleExport(id: number) {
+		console.log('Export report', id);
+		exportManager.exportReport(id.toString(), 'pdf');
 	}
 	
 	function handleEdit(id: number) {
@@ -161,11 +175,12 @@
 	{:else}
 		<div class="reports-grid">
 			{#each filteredReports as report}
-				<ReportCard 
-					{report} 
+				<ReportCard
+					{report}
 					onEdit={handleEdit}
 					onView={handleView}
 					onShare={handleShare}
+					onExport={handleExport}
 				/>
 			{/each}
 		</div>

@@ -15,6 +15,7 @@
 	export let onEdit: (id: number) => void = () => {};
 	export let onView: (id: number) => void = () => {};
 	export let onShare: (id: number) => void = () => {};
+	export let onExport: (id: number) => void = () => {};
 </script>
 
 <div class="report-card status-{report.status}">
@@ -62,6 +63,9 @@
 		</button>
 		<button class="btn-action" onclick={() => onShare(report.id)}>
 			↗️ Share
+		</button>
+		<button class="btn-action" onclick={() => onExport(report.id)} title="Export">
+			📤 Export
 		</button>
 	</div>
 </div>

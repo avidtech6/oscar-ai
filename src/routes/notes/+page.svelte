@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getIntelligenceLayer } from '$lib/intelligence';
 	import NoteCard from '$lib/components/NoteCard.svelte';
+	import { exportManager } from '$lib/export/exportManager';
 
 	const intelligence = getIntelligenceLayer();
 
@@ -110,6 +111,21 @@
 		notes = notes.filter(note => note.id !== id);
 	}
 	
+	function handleExport(id: number) {
+		console.log('Export note', id);
+		exportManager.exportNote(id.toString(), 'pdf');
+	}
+
+	function exportAllNotes() {
+		console.log('Export all notes');
+		const items = filteredNotes.map(note => ({
+			id: note.id.toString(),
+			title: note.title,
+			content: note.content
+		}));
+		exportManager.exportSummary(items, 'pdf');
+	}
+
 	function handleExpand(id: number) {
 		console.log('Expand note', id);
 	}
@@ -122,6 +138,9 @@
 			<p class="subtitle">Capture and organize your arboricultural observations and field notes</p>
 		</div>
 		<div class="header-actions">
+			<button class="btn-secondary" onclick={exportAllNotes}>
+				📤 Export All
+			</button>
 			<button class="btn-primary" onclick={createNewNote}>
 				📝 New Note
 			</button>
@@ -182,11 +201,12 @@
 	{:else}
 		<div class="notes-grid">
 			{#each filteredNotes as note}
-				<NoteCard 
-					{note} 
+				<NoteCard
+					{note}
 					onEdit={handleEdit}
 					onDelete={handleDelete}
 					onExpand={handleExpand}
+					onExport={handleExport}
 				/>
 			{/each}
 		</div>
@@ -210,7 +230,7 @@
 				<div class="action-label">Voice Note</div>
 				<div class="action-description">Record field observations</div>
 			</button>
-			<button class="action-card" onclick={() => console.log('Export notes')}>
+			<button class="action-card" onclick={exportAllNotes}>
 				<div class="action-icon">📤</div>
 				<div class="action-label">Export</div>
 				<div class="action-description">Export all notes</div>
@@ -249,7 +269,7 @@
 		gap: 0.75rem;
 	}
 	
-	.btn-primary {
+	.btn-primary, .btn-secondary {
 		padding: 0.75rem 1.5rem;
 		border-radius: 8px;
 		font-weight: 500;
@@ -259,13 +279,27 @@
 		align-items: center;
 		gap: 0.5rem;
 		border: none;
+		transition: all 0.2s ease;
+	}
+	
+	.btn-primary {
 		background: #10b981;
 		color: white;
-		transition: all 0.2s ease;
 	}
 	
 	.btn-primary:hover {
 		background: #059669;
+	}
+	
+	.btn-secondary {
+		background: white;
+		color: #374151;
+		border: 1px solid #d1d5db;
+	}
+	
+	.btn-secondary:hover {
+		background: #f9fafb;
+		border-color: #9ca3af;
 	}
 	
 	.filters-section {

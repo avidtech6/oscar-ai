@@ -14,6 +14,7 @@
 	export let onEdit: (id: number) => void = () => {};
 	export let onDelete: (id: number) => void = () => {};
 	export let onExpand: (id: number) => void = () => {};
+	export let onExport: (id: number) => void = () => {};
 </script>
 
 <div class="note-card">
@@ -59,6 +60,9 @@
 		</button>
 		<button class="btn-action" onclick={() => onEdit(note.id)}>
 			✏️ Edit
+		</button>
+		<button class="btn-action" onclick={() => onExport(note.id)} title="Export">
+			📤 Export
 		</button>
 		<button class="btn-action delete" onclick={() => onDelete(note.id)}>
 			🗑️ Delete
