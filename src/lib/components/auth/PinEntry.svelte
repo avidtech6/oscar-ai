@@ -173,10 +173,11 @@
   {#if showRecoveryInput}
     <!-- Recovery token input -->
     <div class="recovery-input mb-6">
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <label for="recovery-token-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         Recovery Token
       </label>
       <input
+        id="recovery-token-input"
         type="text"
         bind:value={recoveryToken}
         placeholder="Enter your recovery token"
@@ -199,7 +200,7 @@
             }"
           >
             {#if i < pin.length}
-              <div class="w-4 h-4 rounded-full bg-blue-500 dark:bg-blue-400" />
+              <div class="w-4 h-4 rounded-full bg-blue-500 dark:bg-blue-400"></div>
             {/if}
           </div>
         {/each}

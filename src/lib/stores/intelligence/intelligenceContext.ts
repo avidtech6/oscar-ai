@@ -233,9 +233,9 @@ export const intelligenceContext = createIntelligenceContextStore();
 export const searchState = derived(intelligenceContext, $context => ({
 	hasQuery: !!$context.searchQuery,
 	resultCount: $context.searchResults.length,
-	isSearching: $context.searchQuery.length > 0 && $context.searchResults.length === 0,
+	isSearching: ($context.searchQuery ?? '').length > 0 && $context.searchResults.length === 0,
 	hasResults: $context.searchResults.length > 0,
-	query: $context.searchQuery
+	query: $context.searchQuery ?? ''
 }));
 
 /** Derived store for reasoning trace */

@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { page } from '$app/stores'
   import { goto } from '$app/navigation'
-  import { authStore } from '$lib/stores/auth/auth'
+  import { authStore, authActions } from '$lib/stores/auth/auth'
   import { pinStore, pinRequiresSetup, shouldShowPin } from '$lib/stores/auth/pin'
   import PinSetup from '$lib/components/auth/PinSetup.svelte'
   import PinEntry from '$lib/components/auth/PinEntry.svelte'
@@ -62,7 +62,7 @@
   // Handle PIN entry cancel
   function handlePinEntryCancel() {
     // If user cancels PIN entry, log them out
-    authStore.signOut()
+    authActions.signOut()
     goto('/login')
   }
   
@@ -130,11 +130,11 @@
         </div>
         
         <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label for="recovery-token-display" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Your Recovery Token
           </label>
           <div class="relative">
-            <div class="font-mono text-sm bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg p-4 break-all">
+            <div id="recovery-token-display" class="font-mono text-sm bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg p-4 break-all">
               {recoveryToken}
             </div>
             <button

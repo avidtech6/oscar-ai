@@ -182,7 +182,8 @@ export function downloadHtmlSnapshot(
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = options.filename || DEFAULT_OPTIONS.filename
+    const filename = options.filename ?? DEFAULT_OPTIONS.filename
+    a.download = filename as string
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

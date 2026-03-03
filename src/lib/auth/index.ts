@@ -2,6 +2,6 @@
 export * from './client'
 export * from './session'
 export * from './pin'
-export * from './biometrics'
-export * from './recovery'
+export * from './biometric'
+// export * from './recovery' // TODO: create recovery module
 export * from './types'

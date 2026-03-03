@@ -137,11 +137,12 @@
   
   <div class="pin-inputs mb-6">
     <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <label for="pin-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         Enter PIN
       </label>
       <div class="relative">
         <input
+          id="pin-input"
           type="password"
           bind:value={pin}
           on:input={(e) => handlePinInput(e.currentTarget.value)}
@@ -172,7 +173,7 @@
             <div
               class="h-full {getStrengthColor()} transition-all duration-300"
               style="width: {strength}%"
-            />
+            ></div>
           </div>
           {#if strengthCategory === 'weak'}
             <p class="text-xs text-red-600 dark:text-red-400 mt-1">
@@ -184,11 +185,12 @@
     </div>
     
     <div>
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <label for="confirm-pin-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         Confirm PIN
       </label>
       <div class="relative">
         <input
+          id="confirm-pin-input"
           type="password"
           bind:value={confirmPin}
           on:input={(e) => handleConfirmPinInput(e.currentTarget.value)}
