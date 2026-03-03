@@ -1,5 +1,22 @@
 {
   "version": 1,
   "include": ["/*"],
-  "exclude": ["/_app/*", "/*/__data.json", "/__data.json"]
+  "exclude": [
+    "/_app/*",
+    "/*/__data.json",
+    "/__data.json",
+    "/_routes.json",
+    "/_redirects",
+    "/*.json",
+    "/*.js",
+    "/*.css",
+    "/*.png",
+    "/*.jpg",
+    "/*.ico",
+    "/*.svg",
+    "/*.woff",
+    "/*.woff2",
+    "/*.ttf",
+    "/*.eot"
+  ]
 }
