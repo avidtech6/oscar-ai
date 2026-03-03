@@ -155,3 +155,6 @@ export const intelligence = {
 		});
 	}
 };
+
+// Export Report Type Registry (Phase 1)
+export { reportTypeRegistry } from './registry/ReportTypeRegistry';
