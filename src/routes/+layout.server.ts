@@ -19,6 +19,18 @@ export const load: LayoutServerLoad = async ({ cookies, url }: { cookies: any; u
     }
   }
 
+  // During static build (SSR but not dev), we cannot have real sessions.
+  // Return dummy data to allow pre-rendering.
+  if (import.meta.env.SSR && !import.meta.env.DEV) {
+    console.log('[BUILD] Static build detected, returning empty session')
+    return {
+      session: null,
+      user: null,
+      isAuthenticated: false,
+      isPublicRoute
+    }
+  }
+
   // Create Supabase client for server-side
   const supabase = createServerClientWithCookies(cookies)
   
