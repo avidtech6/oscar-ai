@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": ["/_app/*", "/*/__data.json", "/__data.json"]
+}
