@@ -1,29 +1,35 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
+	import { getPhaseFile } from '$lib/intelligence';
+
+	let content = '';
+	let loading = true;
+	let error: string | null = null;
+
+	onMount(async () => {
+		try {
+			content = await getPhaseFile('PHASE_5_REPORT_STYLE_LEARNER.md');
+			loading = false;
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to load phase file';
+			loading = false;
+		}
+	});
 </script>
 
 <div class="page">
 	<h1>Style Learner</h1>
-	<p class="subtitle">Learn and apply consistent styling across reports.</p>
-	
-	<div class="placeholder-content">
-		<div class="placeholder-card">
-			<h2>🎨 Style Learning</h2>
-			<p>This section is under construction. Future features will analyze report styling patterns and help you maintain consistent branding and formatting.</p>
-			<ul>
-				<li>Extract styling from existing reports</li>
-				<li>Create style templates</li>
-				<li>Apply styles to new reports</li>
-				<li>Brand consistency checks</li>
-			</ul>
-			<button class="btn" on:click={() => alert('Feature coming soon!')}>Learn Style</button>
+	<p class="subtitle">Phase 5 — Report Style Learner</p>
+
+	{#if loading}
+		<div class="loading">Loading phase file...</div>
+	{:else if error}
+		<div class="error">{error}</div>
+	{:else}
+		<div class="phase-content">
+			<pre>{content}</pre>
 		</div>
-		
-		<div class="placeholder-card">
-			<h2>📐 Active Templates</h2>
-			<p>No style templates defined.</p>
-		</div>
-	</div>
+	{/if}
 </div>
 
 <style>
@@ -41,48 +47,27 @@
 		font-size: 1.125rem;
 		margin-bottom: 2rem;
 	}
-	.placeholder-content {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 2rem;
-	}
-	.placeholder-card {
-		background: white;
-		border-radius: 12px;
+	.loading, .error {
 		padding: 2rem;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-		border: 1px solid #e5e7eb;
-	}
-	.placeholder-card h2 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: #111827;
-		margin-bottom: 1rem;
-	}
-	.placeholder-card p {
-		color: #4b5563;
-		line-height: 1.6;
-		margin-bottom: 1.5rem;
-	}
-	.placeholder-card ul {
-		padding-left: 1.5rem;
-		margin-bottom: 1.5rem;
-	}
-	.placeholder-card li {
-		color: #4b5563;
-		margin-bottom: 0.5rem;
-	}
-	.btn {
-		background: #3b82f6;
-		color: white;
-		border: none;
+		background: #f9fafb;
 		border-radius: 8px;
-		padding: 0.75rem 1.5rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background 0.2s;
+		text-align: center;
 	}
-	.btn:hover {
-		background: #2563eb;
+	.error {
+		color: #dc2626;
+	}
+	.phase-content {
+		background: white;
+		border: 1px solid #e5e7eb;
+		border-radius: 8px;
+		padding: 2rem;
+		overflow-x: auto;
+	}
+	pre {
+		margin: 0;
+		font-family: 'Courier New', monospace;
+		font-size: 0.875rem;
+		line-height: 1.5;
+		white-space: pre-wrap;
 	}
 </style>
