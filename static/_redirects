@@ -1,2 +1,4 @@
 !/_app/*
+!/*/__data.json
+!/__data.json
 /*    /index.html   200
