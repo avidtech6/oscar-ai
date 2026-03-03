@@ -27,7 +27,7 @@
 	
 	.main-content {
 		flex: 1;
-		margin-left: 256px;
+		margin-left: 280px;
 		transition: margin-left 0.3s ease;
 		display: flex;
 		flex-direction: column;
@@ -35,7 +35,7 @@
 	}
 	
 	.main-content.collapsed {
-		margin-left: 64px;
+		margin-left: 80px;
 	}
 	
 	.content-wrapper {
