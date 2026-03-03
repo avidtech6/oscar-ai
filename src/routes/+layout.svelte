@@ -13,7 +13,7 @@
 		<TopNav />
 		
 		<div class="content-wrapper">
-			{@render children()}
+			<slot />
 		</div>
 	</div>
 </div>

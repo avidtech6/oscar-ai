@@ -1,18 +1,21 @@
 <script lang="ts">
   import { page } from '$app/stores'
+  import { browser } from '$app/environment'
   import { authActions } from '$lib/stores/auth/auth'
-  
+
   let email = ''
   let loading = false
   let error = ''
   let success = false
-  
+
   // Get redirect URL from query params
   let redirectTo = '/unlock'
-  
+
   $: {
-    const params = new URLSearchParams($page.url.search)
-    redirectTo = params.get('redirectTo') || '/unlock'
+    if (browser) {
+      const params = new URLSearchParams($page.url.search)
+      redirectTo = params.get('redirectTo') || '/unlock'
+    }
   }
   
   async function handleSubmit(e: Event) {

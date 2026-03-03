@@ -1,3 +1,3 @@
-// Disable SSR for static deployment to avoid __data.json requests
-export const ssr = false;
+// Enable SSR for proper layout rendering
+export const ssr = true;
 export const prerender = true;
