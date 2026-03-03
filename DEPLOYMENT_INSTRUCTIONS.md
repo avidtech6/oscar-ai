@@ -68,9 +68,18 @@ npm run dev
 - ✅ **Cloudflare Pages SPA Configuration** (static/_redirects, static/_headers)
 - ✅ **Static Adapter with Fallback** (svelte.config.js)
 - ✅ **Build‑System Repaired** (missing exports, Svelte 5 syntax, dependency overrides)
+- ✅ **Build Output Directory Rule** (enforced `build` directory, never `dist`)
 
 ## Cloudflare Pages Deployment
 The project is configured for Cloudflare Pages with a single‑page application (SPA) fallback.
+
+### Build Output Directory Rule
+**Enforced permanently:** Cloudflare Pages must deploy the SvelteKit adapter‑static output folder named `build`. Never use `dist`. The configuration ensures:
+- `cloudflare-pages.config.json` specifies `buildOutputDirectory: "build"`
+- `vite.config.js` explicitly sets `build.outDir: "build"`
+- `svelte.config.js` uses `@sveltejs/adapter-static` which defaults to `build`
+
+If Cloudflare Pages fails with “Output directory dist not found”, verify these files and correct any references to `dist`.
 
 ### Deployment Steps
 1. **Connect GitHub repository** to Cloudflare Pages.
@@ -83,6 +92,7 @@ The project is configured for Cloudflare Pages with a single‑page application 
 
 ### Configuration Files
 - `cloudflare-pages.config.json` – Build configuration
+- `vite.config.js` – Vite build configuration with explicit `outDir: "build"`
 - `static/_redirects` – SPA routing (all routes → index.html)
 - `static/_headers` – Security headers
 - `svelte.config.js` – Static adapter with `fallback: 'index.html'`
