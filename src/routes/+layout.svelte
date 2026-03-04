@@ -2,8 +2,22 @@
 	import '../app.css';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import TopNav from '$lib/components/TopNav.svelte';
+	import GlobalAssistantBar from '$lib/assistant/GlobalAssistantBar.svelte';
+	import AssistantPanel from '$lib/assistant/AssistantPanel.svelte';
+	import { onMount } from 'svelte';
+	import { initializeSyncEngine } from '$lib/storage/syncEngine';
 	
 	let sidebarCollapsed = false;
+
+	onMount(async () => {
+		// Initialize sync engine for auto-save timer
+		try {
+			await initializeSyncEngine();
+			console.log('Sync engine initialized');
+		} catch (error) {
+			console.error('Failed to initialize sync engine:', error);
+		}
+	});
 </script>
 
 <div class="app-layout">
@@ -16,6 +30,12 @@
 			<slot />
 		</div>
 	</div>
+
+	<!-- Global Assistant Bar (bottom) -->
+	<GlobalAssistantBar />
+
+	<!-- Assistant Panel (floating) -->
+	<AssistantPanel />
 </div>
 
 <style>

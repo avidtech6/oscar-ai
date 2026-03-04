@@ -1,0 +1,342 @@
+{
+  "lastScan": "2026-03-04T11:18:02.393Z",
+  "phases": {
+    "1": {
+      "name": "Report Type Registry",
+      "requiredFiles": [
+        "src/lib/intelligence/registry/ReportTypeRegistry.ts",
+        "src/lib/intelligence/registry/ReportTypeDefinition.ts",
+        "src/lib/intelligence/registry/builtins/BS5837.ts",
+        "src/lib/intelligence/registry/builtins/AIA.ts",
+        "src/lib/intelligence/registry/builtins/AMS.ts",
+        "src/lib/intelligence/registry/builtins/ConditionReport.ts",
+        "src/lib/intelligence/registry/builtins/SafetyReport.ts",
+        "src/lib/intelligence/registry/builtins/MortgageReport.ts",
+        "src/lib/intelligence/registry/builtins/CustomReport.ts"
+      ],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "2": {
+      "name": "Report Decompiler Engine",
+      "requiredFiles": [
+        "src/lib/intelligence/decompiler/ReportDecompiler.ts",
+        "src/lib/intelligence/decompiler/DecompiledReport.ts",
+        "src/lib/intelligence/decompiler/detectors/detectHeadings.ts",
+        "src/lib/intelligence/decompiler/detectors/detectSections.ts",
+        "src/lib/intelligence/decompiler/detectors/detectLists.ts",
+        "src/lib/intelligence/decompiler/detectors/detectTables.ts",
+        "src/lib/intelligence/decompiler/detectors/detectMetadata.ts",
+        "src/lib/intelligence/decompiler/detectors/detectTerminology.ts",
+        "src/lib/intelligence/decompiler/detectors/detectComplianceMarkers.ts",
+        "src/lib/intelligence/decompiler/detectors/detectAppendices.ts"
+      ],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "3": {
+      "name": "Report Schema Mapper",
+      "requiredFiles": [
+        "src/lib/intelligence/schema-mapper/ReportSchemaMapper.ts",
+        "src/lib/intelligence/schema-mapper/SchemaMappingResult.ts",
+        "src/lib/intelligence/schema-mapper/mappers/mapSectionsToSchema.ts",
+        "src/lib/intelligence/schema-mapper/mappers/mapTerminology.ts",
+        "src/lib/intelligence/schema-mapper/mappers/detectMissingSections.ts",
+        "src/lib/intelligence/schema-mapper/mappers/detectExtraSections.ts",
+        "src/lib/intelligence/schema-mapper/mappers/detectSchemaGaps.ts"
+      ],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "4": {
+      "name": "Schema Updater Engine",
+      "requiredFiles": [
+        "src/lib/intelligence/schema-updater/SchemaUpdaterEngine.ts",
+        "src/lib/intelligence/schema-updater/SchemaUpdateAction.ts",
+        "src/lib/intelligence/schema-updater/actions/applyAIGuidanceUpdate.ts",
+        "src/lib/intelligence/schema-updater/actions/applyComplianceRuleUpdate.ts",
+        "src/lib/intelligence/schema-updater/actions/applyFieldUpdate.ts",
+        "src/lib/intelligence/schema-updater/actions/applyReportTypeUpdate.ts",
+        "src/lib/intelligence/schema-updater/actions/applySectionUpdate.ts",
+        "src/lib/intelligence/schema-updater/actions/applyTemplateUpdate.ts",
+        "src/lib/intelligence/schema-updater/actions/applyTerminologyUpdate.ts"
+      ],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "5": {
+      "name": "Report Style Learner",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "6": {
+      "name": "Report Classification Engine",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "7": {
+      "name": "Report Self‑Healing Engine",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "8": {
+      "name": "Report Template Generator",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "9": {
+      "name": "Report Compliance Validator",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "10": {
+      "name": "Report Reproduction Tester",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "11": {
+      "name": "Report Type Expansion Framework",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "12": {
+      "name": "AI Reasoning Integration for Reports",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "13": {
+      "name": "User Workflow Learning for Reports",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "14": {
+      "name": "Final Integration & Validation",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "15": {
+      "name": "HTML Rendering & Visual Reproduction Engine",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "16": {
+      "name": "Direct PDF Parsing & Layout Extractor",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "17": {
+      "name": "Content Intelligence & Blog Engine",
+      "requiredFiles": [],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "18": {
+      "name": "Unified Multi‑Device Editor & Supabase Integration",
+      "requiredFiles": [
+        "src/lib/intelligence/unified-editor/Editor.ts",
+        "src/lib/intelligence/unified-editor/BlockModel.ts",
+        "src/lib/intelligence/unified-editor/FormattingToolbar.ts",
+        "src/lib/intelligence/unified-editor/MobileToolbar.ts",
+        "src/lib/intelligence/unified-editor/DesktopToolbar.ts",
+        "src/lib/intelligence/unified-editor/HTMLSanitiser.ts",
+        "src/lib/intelligence/unified-editor/PreviewEngine.ts",
+        "src/lib/intelligence/unified-editor/MetadataPanel.ts",
+        "src/lib/intelligence/unified-editor/GalleryPanel.ts",
+        "src/lib/intelligence/unified-editor/CopilotPanel.ts",
+        "src/lib/intelligence/supabase/SupabaseClient.ts",
+        "src/lib/intelligence/supabase/AuthManager.ts",
+        "src/lib/intelligence/supabase/SyncEngine.ts",
+        "src/lib/intelligence/supabase/StorageManager.ts",
+        "src/lib/intelligence/supabase/RealtimeManager.ts",
+        "src/lib/intelligence/supabase/ConflictResolver.ts",
+        "src/lib/intelligence/supabase/AdminControls.ts",
+        "src/lib/intelligence/local-first/LocalDB.ts",
+        "src/lib/intelligence/local-first/LocalBackup.ts",
+        "src/lib/intelligence/local-first/LocalSyncQueue.ts",
+        "src/lib/intelligence/local-first/OfflineMode.ts",
+        "src/lib/intelligence/types/EditorContent.ts",
+        "src/lib/intelligence/types/Metadata.ts",
+        "src/lib/intelligence/types/GalleryItem.ts",
+        "src/lib/intelligence/types/UserAccount.ts",
+        "src/lib/intelligence/types/SyncState.ts",
+        "src/lib/intelligence/integration/Phase15Integration.ts",
+        "src/lib/intelligence/integration/Phase17Integration.ts",
+        "src/lib/intelligence/integration/Phase19Preparation.ts",
+        "src/lib/intelligence/tests/editor-tests.ts",
+        "src/lib/intelligence/tests/sync-tests.ts",
+        "src/lib/intelligence/tests/storage-tests.ts",
+        "src/lib/intelligence/tests/auth-tests.ts",
+        "src/lib/intelligence/tests/offline-tests.ts"
+      ],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "19": {
+      "name": "Unified Intelligence Orchestration Layer",
+      "requiredFiles": [
+        "src/lib/intelligence/unified-orchestration/OrchestrationKernel.ts",
+        "src/lib/intelligence/unified-orchestration/TaskRouter.ts",
+        "src/lib/intelligence/unified-orchestration/LifecycleManager.ts",
+        "src/lib/intelligence/unified-orchestration/IntelligenceContext.ts",
+        "src/lib/intelligence/unified-orchestration/ErrorBoundary.ts",
+        "src/lib/intelligence/unified-orchestration/CapabilityRegistry.ts",
+        "src/lib/intelligence/unified-orchestration/RuntimeGuards.ts"
+      ],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "20": {
+      "name": "Full System Testing & Debugging",
+      "requiredFiles": [
+        "src/lib/intelligence/testing/Phase20TestPlan.md",
+        "src/lib/intelligence/testing/SystemTestingEngine.ts",
+        "src/lib/intelligence/testing/DebuggingTools.ts"
+      ],
+      "missingFiles": [],
+      "missingDirectories": []
+    },
+    "21": {
+      "name": "Global Assistant Intelligence Layer",
+      "requiredFiles": [
+        "src/lib/assistant/GlobalAssistantBar.svelte",
+        "src/lib/assistant/AssistantPanel.svelte",
+        "src/lib/assistant/ContextChips.svelte",
+        "src/lib/assistant/SmartHints.svelte",
+        "src/lib/assistant/MicroCues.svelte",
+        "src/lib/assistant/AssistantModeManager.ts",
+        "src/lib/assistant/ContextualChatHistory.ts",
+        "src/lib/assistant/ModalAttachedAssistant.svelte",
+        "src/lib/assistant/MultiSelectAIActions.ts",
+        "src/lib/assistant/OneBubbleConfirmation.svelte",
+        "src/lib/assistant/AssistantEventBus.ts",
+        "src/lib/assistant/AssistantStore.ts",
+        "src/lib/assistant/AssistantTypes.ts"
+      ],
+      "missingFiles": [
+        "src/lib/assistant/GlobalAssistantBar.svelte",
+        "src/lib/assistant/AssistantPanel.svelte",
+        "src/lib/assistant/ContextChips.svelte",
+        "src/lib/assistant/SmartHints.svelte",
+        "src/lib/assistant/MicroCues.svelte",
+        "src/lib/assistant/AssistantModeManager.ts",
+        "src/lib/assistant/ContextualChatHistory.ts",
+        "src/lib/assistant/ModalAttachedAssistant.svelte",
+        "src/lib/assistant/MultiSelectAIActions.ts",
+        "src/lib/assistant/OneBubbleConfirmation.svelte",
+        "src/lib/assistant/AssistantEventBus.ts",
+        "src/lib/assistant/AssistantStore.ts",
+        "src/lib/assistant/AssistantTypes.ts"
+      ],
+      "missingDirectories": []
+    }
+  },
+  "files": {
+    "required": [],
+    "existing": [
+      "src/lib/intelligence/registry/builtins/BS5837.ts",
+      "src/lib/intelligence/registry/builtins/AIA.ts",
+      "src/lib/intelligence/registry/builtins/AMS.ts",
+      "src/lib/intelligence/registry/builtins/ConditionReport.ts",
+      "src/lib/intelligence/registry/builtins/SafetyReport.ts",
+      "src/lib/intelligence/registry/builtins/MortgageReport.ts",
+      "src/lib/intelligence/registry/builtins/CustomReport.ts",
+      "src/lib/intelligence/unified-editor/PreviewEngine.ts",
+      "src/lib/intelligence/unified-editor/MetadataPanel.ts",
+      "src/lib/intelligence/unified-editor/GalleryPanel.ts",
+      "src/lib/intelligence/unified-editor/CopilotPanel.ts",
+      "src/lib/intelligence/supabase/SupabaseClient.ts",
+      "src/lib/intelligence/supabase/AuthManager.ts",
+      "src/lib/intelligence/supabase/SyncEngine.ts",
+      "src/lib/intelligence/supabase/StorageManager.ts",
+      "src/lib/intelligence/supabase/RealtimeManager.ts",
+      "src/lib/intelligence/supabase/ConflictResolver.ts",
+      "src/lib/intelligence/supabase/AdminControls.ts",
+      "src/lib/intelligence/local-first/LocalDB.ts",
+      "src/lib/intelligence/local-first/LocalBackup.ts",
+      "src/lib/intelligence/local-first/LocalSyncQueue.ts",
+      "src/lib/intelligence/local-first/OfflineMode.ts",
+      "src/lib/intelligence/types/Metadata.ts",
+      "src/lib/intelligence/types/GalleryItem.ts",
+      "src/lib/intelligence/types/UserAccount.ts",
+      "src/lib/intelligence/types/SyncState.ts",
+      "src/lib/intelligence/integration/Phase15Integration.ts",
+      "src/lib/intelligence/integration/Phase17Integration.ts",
+      "src/lib/intelligence/integration/Phase19Preparation.ts",
+      "src/lib/intelligence/tests/editor-tests.ts",
+      "src/lib/intelligence/tests/sync-tests.ts",
+      "src/lib/intelligence/tests/storage-tests.ts",
+      "src/lib/intelligence/tests/auth-tests.ts",
+      "src/lib/intelligence/tests/offline-tests.ts",
+      "src/lib/intelligence/unified-orchestration/OrchestrationKernel.ts",
+      "src/lib/intelligence/unified-orchestration/TaskRouter.ts",
+      "src/lib/intelligence/unified-orchestration/LifecycleManager.ts",
+      "src/lib/intelligence/unified-orchestration/IntelligenceContext.ts",
+      "src/lib/intelligence/unified-orchestration/ErrorBoundary.ts",
+      "src/lib/intelligence/unified-orchestration/CapabilityRegistry.ts",
+      "src/lib/intelligence/unified-orchestration/RuntimeGuards.ts",
+      "src/lib/intelligence/testing/Phase20TestPlan.md",
+      "src/lib/intelligence/testing/SystemTestingEngine.ts",
+      "src/lib/intelligence/testing/DebuggingTools.ts"
+    ],
+    "missing": [],
+    "corrupted": [],
+    "verified": [
+      "src/lib/intelligence/registry/builtins/BS5837.ts",
+      "src/lib/intelligence/registry/builtins/AIA.ts",
+      "src/lib/intelligence/registry/builtins/AMS.ts",
+      "src/lib/intelligence/registry/builtins/ConditionReport.ts",
+      "src/lib/intelligence/registry/builtins/SafetyReport.ts",
+      "src/lib/intelligence/registry/builtins/MortgageReport.ts",
+      "src/lib/intelligence/registry/builtins/CustomReport.ts",
+      "src/lib/intelligence/unified-editor/PreviewEngine.ts",
+      "src/lib/intelligence/unified-editor/MetadataPanel.ts",
+      "src/lib/intelligence/unified-editor/GalleryPanel.ts",
+      "src/lib/intelligence/unified-editor/CopilotPanel.ts",
+      "src/lib/intelligence/supabase/SupabaseClient.ts",
+      "src/lib/intelligence/supabase/AuthManager.ts",
+      "src/lib/intelligence/supabase/SyncEngine.ts",
+      "src/lib/intelligence/supabase/StorageManager.ts",
+      "src/lib/intelligence/supabase/RealtimeManager.ts",
+      "src/lib/intelligence/supabase/ConflictResolver.ts",
+      "src/lib/intelligence/supabase/AdminControls.ts",
+      "src/lib/intelligence/local-first/LocalDB.ts",
+      "src/lib/intelligence/local-first/LocalBackup.ts",
+      "src/lib/intelligence/local-first/LocalSyncQueue.ts",
+      "src/lib/intelligence/local-first/OfflineMode.ts",
+      "src/lib/intelligence/types/Metadata.ts",
+      "src/lib/intelligence/types/GalleryItem.ts",
+      "src/lib/intelligence/types/UserAccount.ts",
+      "src/lib/intelligence/types/SyncState.ts",
+      "src/lib/intelligence/integration/Phase15Integration.ts",
+      "src/lib/intelligence/integration/Phase17Integration.ts",
+      "src/lib/intelligence/integration/Phase19Preparation.ts",
+      "src/lib/intelligence/tests/editor-tests.ts",
+      "src/lib/intelligence/tests/sync-tests.ts",
+      "src/lib/intelligence/tests/storage-tests.ts",
+      "src/lib/intelligence/tests/auth-tests.ts",
+      "src/lib/intelligence/tests/offline-tests.ts",
+      "src/lib/intelligence/unified-orchestration/OrchestrationKernel.ts",
+      "src/lib/intelligence/unified-orchestration/TaskRouter.ts",
+      "src/lib/intelligence/unified-orchestration/LifecycleManager.ts",
+      "src/lib/intelligence/unified-orchestration/IntelligenceContext.ts",
+      "src/lib/intelligence/unified-orchestration/ErrorBoundary.ts",
+      "src/lib/intelligence/unified-orchestration/CapabilityRegistry.ts",
+      "src/lib/intelligence/unified-orchestration/RuntimeGuards.ts",
+      "src/lib/intelligence/testing/Phase20TestPlan.md",
+      "src/lib/intelligence/testing/SystemTestingEngine.ts",
+      "src/lib/intelligence/testing/DebuggingTools.ts"
+    ]
+  }
+}

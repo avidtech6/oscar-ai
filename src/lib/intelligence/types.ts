@@ -108,6 +108,8 @@ export interface ReportTypeDefinition {
 	complianceRules: string[];
 	/** AI guidance notes */
 	aiGuidance: string[];
+	/** Terminology (domain‑specific terms) */
+	terminology?: string[];
 	/** Version number */
 	version: string;
 	/** Creation timestamp */

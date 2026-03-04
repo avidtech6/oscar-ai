@@ -158,3 +158,75 @@ export const intelligence = {
 
 // Export Report Type Registry (Phase 1)
 export { reportTypeRegistry } from './registry/ReportTypeRegistry';
+
+// Export Report Decompiler Engine (Phase 2)
+export { ReportDecompiler, decompiledReportStorage } from './decompiler';
+
+// Export Report Schema Mapper (Phase 3)
+export { ReportSchemaMapper, schemaMappingStorage } from './schema-mapper';
+
+// Export Schema Updater Engine (Phase 4)
+export { SchemaUpdaterEngine } from './schema-updater';
+
+// Export Report Style Learner (Phase 5)
+export { ReportStyleLearner } from './style-learner';
+
+// Export Report Classification Engine (Phase 6)
+export { ReportClassificationEngine } from './classification';
+
+// Export Report Self‑Healing Engine (Phase 7)
+export { ReportSelfHealingEngine } from './self-healing';
+
+// Export Report Template Generator (Phase 8)
+export { ReportTemplateGenerator } from './template-generator';
+
+// Export Report Compliance Validator (Phase 9)
+export { ReportComplianceValidator } from './compliance/ReportComplianceValidator';
+
+// Export Report Reproduction Tester (Phase 10)
+export { ReportReproductionTester } from './reproduction';
+
+// Export Report Type Expansion Framework (Phase 11)
+export { ReportTypeExpansionEngine } from './expansion';
+
+// Export Report AI Reasoning Integration (Phase 12)
+export { ReportAIReasoningEngine } from './report-reasoning';
+
+// Export User Workflow Learning Engine (Phase 13)
+export { UserWorkflowLearningEngine } from './workflow-learning';
+
+// Export Report Intelligence System (Phase 14)
+export { ReportIntelligenceSystem, SystemIntegrationValidator } from './orchestrator';
+
+// Export Visual Rendering Engine (Phase 15)
+export { VisualRenderingEngine } from './visual-rendering';
+
+// Export PDF Parsing & Layout Extraction Engine (Phase 16)
+export { PDFParser } from './pdf-parsing';
+
+// Export Content Intelligence Engine (Phase 17)
+export { ContentIntelligenceEngine } from './content-intelligence/ContentIntelligenceEngine';
+
+// Export Unified Editor (Phase 18)
+export { UnifiedEditor } from './unified-editor/Editor';
+
+// Export Unified Intelligence Orchestration Layer (Phase 19)
+export { OrchestrationKernel } from './unified-orchestration/OrchestrationKernel';
+
+// Export System Testing Engine (Phase 20)
+export { SystemTestingEngine } from './testing/SystemTestingEngine';
+
+// Export Global Assistant Intelligence Layer (Phase 21)
+export { AssistantStore, AssistantEventBus, AssistantModeManager } from '../assistant';
+
+// Export Media Intelligence Layer (Phase 22)
+export { MediaIngestionPipeline } from './media/MediaIngestionPipeline';
+
+// Export AI Layout Engine (Phase 23)
+export { AILayoutEngine } from './layout/AILayoutEngine';
+
+// Export Document Intelligence Layer (Phase 24)
+export { DocumentIntelligenceLayer } from './document/DocumentIntelligenceLayer';
+
+// Export Workflow Intelligence Layer (Phase 25)
+export { WorkflowIntelligenceLayer } from './workflow/WorkflowIntelligenceLayer';

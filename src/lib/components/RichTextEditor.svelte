@@ -11,8 +11,8 @@
 		value = target.innerHTML;
 	}
 	
-	function formatText(command: string, value?: string) {
-		document.execCommand(command, false, value);
+	function formatText(command: string, valueParam?: string) {
+		document.execCommand(command, false, valueParam);
 		const editor = document.querySelector('.editor-content') as HTMLDivElement;
 		if (editor) {
 			value = editor.innerHTML;

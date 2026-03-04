@@ -1,0 +1,17 @@
+[
+  {
+    "id": "example_decompiled_report_1",
+    "content": "This is an example decompiled report stored for reference.",
+    "structure": {
+      "headingCount": 5,
+      "sectionCount": 3,
+      "listCount": 2,
+      "tableCount": 1,
+      "appendixCount": 1
+    },
+    "timestamps": {
+      "createdAt": "2025-03-02T12:00:00.000Z",
+      "updatedAt": "2025-03-02T12:00:00.000Z"
+    }
+  }
+]

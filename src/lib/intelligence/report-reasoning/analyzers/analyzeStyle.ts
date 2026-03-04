@@ -1,0 +1,1 @@
+export function analyzeStyle(input: any) { return { insights: [], questions: [] }; }
