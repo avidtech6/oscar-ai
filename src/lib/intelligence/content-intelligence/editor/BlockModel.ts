@@ -76,42 +76,7 @@ export function blockToHTML(block: Block): string {
 		case 'heading3':
 			return `<h3>${escapeHTML(block.text)}</h3>`;
 		case 'bulletList':
-			return `<ul>${block.listItems.map(item => `<li>${escapeHTML(item)}</li>`).join('')}</ul>`;
-		case 'numberedList':
-			return `<ol>${block.listItems.map(item => `<li>${escapeHTML(item)}</li>`).join('')}</ol>`;
-		case 'quote':
-			return `<blockquote>${escapeHTML(block.text)}</blockquote>`;
-		case 'image':
-			if (!block.imageUrl) return '';
-			return `<figure><img src="${block.imageUrl}" alt="${block.imageAlt || ''}" /><figcaption>${escapeHTML(block.text)}</figcaption></figure>`;
-		case 'video':
-			if (!block.videoUrl) return '';
-			return `<video controls src="${block.videoUrl}">${escapeHTML(block.text)}</video>`;
-		case 'divider':
-			return '<hr />';
-		case 'code':
-			const lang = block.metadata.language || 'plaintext';
-			return `<pre><code class="language-${lang}">${escapeHTML(block.text)}</code></pre>`;
-		default:
-			return '';
-	}
-}
-
-/**
- * Convert an array of blocks to a complete HTML document.
- */
-export function blocksToHTML(blocks: Block[]): string {
-	return blocks.map(block => blockToHTML(block)).join('\n');
-}
-
-/**
- * Parse HTML into blocks (simplified).
- */
-export function htmlToBlocks(html: string): Block[] {
-	// This is a placeholder implementation; a real parser would be more complex.
-	const blocks: Block[] = [];
-	const parser = new DOMParser();
-	const doc = parser.parseFromString(html, 'text/html');
+			return `<ul>${block.listItems.map(item => `<li>${escapeHTML(item)}</li>`).'/text/html';
 	doc.body.childNodes.forEach(node => {
 		if (node.nodeType === Node.ELEMENT_NODE) {
 			const el = node as HTMLElement;

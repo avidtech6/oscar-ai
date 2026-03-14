@@ -1,6 +1,6 @@
 /**
  * Style Profile (Phase 5)
- * 
+ *
  * Represents a user's writing style, tone, structure, formatting preferences, and report‑specific habits.
  */
 
@@ -20,6 +20,10 @@ export interface StyleProfile {
 	createdAt: Date;
 	updatedAt: Date;
 	version: string;
+	timestamps: {
+		created: Date;
+		updated: Date;
+	};
 }
 
 /**
@@ -54,6 +58,10 @@ export function createStyleProfile(
 		confidenceScore,
 		createdAt: now,
 		updatedAt: now,
-		version: '1.0.0'
+		version: '1.0.0',
+		timestamps: {
+			created: now,
+			updated: now
+		}
 	};
 }

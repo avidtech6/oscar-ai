@@ -229,4 +229,4 @@ export { AILayoutEngine } from './layout/AILayoutEngine';
 export { DocumentIntelligenceLayer } from './document/DocumentIntelligenceLayer';
 
 // Export Workflow Intelligence Layer (Phase 25)
-export { WorkflowIntelligenceLayer } from './workflow/WorkflowIntelligenceLayer';
+export { WorkflowIntelligenceLayerCore as WorkflowIntelligenceLayer } from './workflow';

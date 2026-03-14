@@ -1,102 +1,30 @@
 // Biometric store for state management
-import { writable, derived, get } from 'svelte/store'
+import { writable, get } from 'svelte/store'
 import { browser } from '$app/environment'
-import { BiometricManager, BIOMETRIC_STORAGE_KEYS, BiometricError, BIOMETRIC_CONFIG } from '$lib/auth/biometric'
+import { BiometricManager, BiometricError } from '$lib/auth/biometric'
 import { authStore } from './auth'
-
-// Biometric state interface
-export interface BiometricState {
-  isSupported: boolean
-  isAvailable: boolean
-  isEnrolled: boolean
-  isLocked: boolean
-  lockedUntil: number | null
-  failedAttempts: number
-  lastUsed: number | null
-  biometricType: 'fingerprint' | 'face' | 'iris' | 'unknown'
-  isEnabled: boolean
-}
-
-// Initial state
-const initialState: BiometricState = {
-  isSupported: false,
-  isAvailable: false,
-  isEnrolled: false,
-  isLocked: false,
-  lockedUntil: null,
-  failedAttempts: 0,
-  lastUsed: null,
-  biometricType: 'unknown',
-  isEnabled: false
-}
+import {
+  type BiometricState,
+  initialBiometricState,
+  BIOMETRIC_STORAGE_KEYS,
+  BIOMETRIC_CONFIG
+} from './biometricStoreTypes'
+import { loadBiometricState, saveBiometricStateToStorage } from './biometricStoreHelpers'
 
 // Create the store
 const createBiometricStore = () => {
-  const { subscribe, set, update } = writable<BiometricState>(initialState)
+  const { subscribe, set, update } = writable<BiometricState>(initialBiometricState)
 
   // Load state from localStorage and check capabilities
   const loadState = async () => {
     if (!browser) return
-
-    try {
-      // Check support and availability
-      const isSupported = BiometricManager.isSupported()
-      const isAvailable = isSupported ? await BiometricManager.isPlatformAuthenticatorAvailable() : false
-      const biometricType = isAvailable ? await BiometricManager.getBiometricType() : 'unknown'
-      
-      // Load from localStorage
-      const isEnrolled = localStorage.getItem(BIOMETRIC_STORAGE_KEYS.IS_ENROLLED) === 'true'
-      const failedAttempts = parseInt(localStorage.getItem(BIOMETRIC_STORAGE_KEYS.FAILED_ATTEMPTS) || '0')
-      const lockedUntil = localStorage.getItem(BIOMETRIC_STORAGE_KEYS.LOCKED_UNTIL)
-      const lastUsed = localStorage.getItem(BIOMETRIC_STORAGE_KEYS.LAST_USED)
-      
-      const now = Date.now()
-      const isLocked = lockedUntil ? parseInt(lockedUntil) > now : false
-      const isEnabled = isEnrolled && !isLocked
-
-      set({
-        isSupported,
-        isAvailable,
-        isEnrolled,
-        isLocked,
-        lockedUntil: lockedUntil ? parseInt(lockedUntil) : null,
-        failedAttempts,
-        lastUsed: lastUsed ? parseInt(lastUsed) : null,
-        biometricType,
-        isEnabled
-      })
-    } catch (error) {
-      console.error('Failed to load biometric state:', error)
-      set({
-        ...initialState,
-        isSupported: false,
-        isAvailable: false
-      })
-    }
+    const loaded = await loadBiometricState()
+    set({ ...initialBiometricState, ...loaded })
   }
 
   // Save state to localStorage
   const saveToStorage = (state: BiometricState) => {
-    if (!browser) return
-
-    try {
-      localStorage.setItem(BIOMETRIC_STORAGE_KEYS.IS_ENROLLED, state.isEnrolled.toString())
-      localStorage.setItem(BIOMETRIC_STORAGE_KEYS.FAILED_ATTEMPTS, state.failedAttempts.toString())
-      
-      if (state.lockedUntil) {
-        localStorage.setItem(BIOMETRIC_STORAGE_KEYS.LOCKED_UNTIL, state.lockedUntil.toString())
-      } else {
-        localStorage.removeItem(BIOMETRIC_STORAGE_KEYS.LOCKED_UNTIL)
-      }
-      
-      if (state.lastUsed) {
-        localStorage.setItem(BIOMETRIC_STORAGE_KEYS.LAST_USED, state.lastUsed.toString())
-      } else {
-        localStorage.removeItem(BIOMETRIC_STORAGE_KEYS.LAST_USED)
-      }
-    } catch (error) {
-      console.error('Failed to save biometric state to storage:', error)
-    }
+    saveBiometricStateToStorage(state)
   }
 
   // Initialize
@@ -342,50 +270,16 @@ const createBiometricStore = () => {
 
 export const biometricStore = createBiometricStore()
 
-// Derived stores
-export const biometricIsSupported = derived(biometricStore, $bio => $bio.isSupported)
-export const biometricIsAvailable = derived(biometricStore, $bio => $bio.isAvailable)
-export const biometricIsEnrolled = derived(biometricStore, $bio => $bio.isEnrolled)
-export const biometricIsLocked = derived(biometricStore, $bio => $bio.isLocked)
-export const biometricIsEnabled = derived(biometricStore, $bio => $bio.isEnabled)
-export const biometricType = derived(biometricStore, $bio => $bio.biometricType)
-export const biometricIcon = derived(biometricStore, $bio => BiometricManager.getBiometricIcon($bio.biometricType))
-export const biometricLabel = derived(biometricStore, $bio => BiometricManager.getBiometricLabel($bio.biometricType))
-
-// Helper to check if biometrics should be shown
-export const shouldShowBiometrics = derived(
-  [biometricStore],
-  ([$bio]) => {
-    if (!browser) return false
-    
-    if (!$bio.isEnrolled) return false
-    if ($bio.isLocked) return true
-    
-    // Check if last authentication was recent (within session duration)
-    if ($bio.lastUsed) {
-      const sessionExpired = Date.now() - $bio.lastUsed > BIOMETRIC_CONFIG.SESSION_DURATION
-      return sessionExpired
-    }
-    
-    return true
-  }
-)
-
-// Combined auth requirement (PIN or biometrics)
-export const shouldShowAuth = derived(
-  [biometricStore],
-  ([$bio]) => {
-    if (!browser) return false
-    
-    if (!$bio.isEnrolled) return false
-    if ($bio.isLocked) return true
-    
-    // Check if last authentication was recent (within session duration)
-    if ($bio.lastUsed) {
-      const sessionExpired = Date.now() - $bio.lastUsed > BIOMETRIC_CONFIG.SESSION_DURATION
-      return sessionExpired
-    }
-    
-    return true
-  }
-)
+// Re-export derived stores from separate module
+export {
+  biometricIsSupported,
+  biometricIsAvailable,
+  biometricIsEnrolled,
+  biometricIsLocked,
+  biometricIsEnabled,
+  biometricType,
+  biometricIcon,
+  biometricLabel,
+  shouldShowBiometrics,
+  shouldShowAuth
+} from './biometricStoreDerived'

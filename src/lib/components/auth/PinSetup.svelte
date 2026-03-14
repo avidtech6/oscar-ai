@@ -1,6 +1,9 @@
 <script lang="ts">
   import { PinManager } from '$lib/auth/pin'
   import { pinStore } from '$lib/stores/auth/pin'
+  import PinInputField from './PinInputField.svelte'
+  import PinStrengthIndicator from './PinStrengthIndicator.svelte'
+  import PinNumberPad from './PinNumberPad.svelte'
   
   export let onComplete: (pin: string) => void = () => {}
   export let onCancel: () => void = () => {}
@@ -95,28 +98,6 @@
       loading = false
     }
   }
-  
-  // Get strength color
-  function getStrengthColor(): string {
-    switch (strengthCategory) {
-      case 'weak': return 'bg-red-500'
-      case 'fair': return 'bg-yellow-500'
-      case 'good': return 'bg-blue-500'
-      case 'strong': return 'bg-green-500'
-      default: return 'bg-gray-300'
-    }
-  }
-  
-  // Get strength label
-  function getStrengthLabel(): string {
-    switch (strengthCategory) {
-      case 'weak': return 'Weak'
-      case 'fair': return 'Fair'
-      case 'good': return 'Good'
-      case 'strong': return 'Strong'
-      default: return 'None'
-    }
-  }
 </script>
 
 <div class="pin-setup">
@@ -136,125 +117,43 @@
   {/if}
   
   <div class="pin-inputs mb-6">
-    <div class="mb-4">
-      <label for="pin-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        Enter PIN
-      </label>
-      <div class="relative">
-        <input
-          id="pin-input"
-          type="password"
-          bind:value={pin}
-          on:input={(e) => handlePinInput(e.currentTarget.value)}
-          maxlength="6"
-          placeholder="••••"
-          class="w-full px-4 py-3 text-2xl text-center tracking-widest font-mono bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-          disabled={loading}
-        />
-        <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <span class="text-sm text-gray-500 dark:text-gray-400">
-            {pin.length}/6
-          </span>
-        </div>
-      </div>
-      
-      <!-- PIN strength indicator -->
-      {#if pin}
-        <div class="mt-3">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Strength: {getStrengthLabel()}
-            </span>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
-              {strength}%
-            </span>
-          </div>
-          <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              class="h-full {getStrengthColor()} transition-all duration-300"
-              style="width: {strength}%"
-            ></div>
-          </div>
-          {#if strengthCategory === 'weak'}
-            <p class="text-xs text-red-600 dark:text-red-400 mt-1">
-              Avoid common patterns like 1234 or repeated digits.
-            </p>
-          {/if}
-        </div>
-      {/if}
-    </div>
+    <PinInputField
+      id="pin-input"
+      label="Enter PIN"
+      bind:value={pin}
+      onInput={handlePinInput}
+      {loading}
+      maxLength={6}
+      placeholder="••••"
+    >
+      <PinStrengthIndicator {pin} {strength} {strengthCategory} />
+    </PinInputField>
     
-    <div>
-      <label for="confirm-pin-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        Confirm PIN
-      </label>
-      <div class="relative">
-        <input
-          id="confirm-pin-input"
-          type="password"
-          bind:value={confirmPin}
-          on:input={(e) => handleConfirmPinInput(e.currentTarget.value)}
-          maxlength="6"
-          placeholder="••••"
-          class="w-full px-4 py-3 text-2xl text-center tracking-widest font-mono bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-          disabled={loading}
-        />
-        <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <span class="text-sm text-gray-500 dark:text-gray-400">
-            {confirmPin.length}/6
-          </span>
-        </div>
-      </div>
+    <PinInputField
+      id="confirm-pin-input"
+      label="Confirm PIN"
+      bind:value={confirmPin}
+      onInput={handleConfirmPinInput}
+      {loading}
+      maxLength={6}
+      placeholder="••••"
+    >
       {#if confirmPin && pin !== confirmPin}
         <p class="text-xs text-red-600 dark:text-red-400 mt-1">
           PINs do not match
         </p>
       {/if}
-    </div>
+    </PinInputField>
   </div>
   
   <!-- Number pad -->
-  <div class="number-pad mb-6">
-    <div class="grid grid-cols-3 gap-3">
-      {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as num}
-        <button
-          type="button"
-          on:click={() => handleNumberClick(num)}
-          disabled={loading}
-          class="aspect-square flex items-center justify-center text-2xl font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {num}
-        </button>
-      {/each}
-      
-      <button
-        type="button"
-        on:click={handleClear}
-        disabled={loading}
-        class="aspect-square flex items-center justify-center text-sm font-medium bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        Clear
-      </button>
-      
-      <button
-        type="button"
-        on:click={() => handleNumberClick(0)}
-        disabled={loading}
-        class="aspect-square flex items-center justify-center text-2xl font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        0
-      </button>
-      
-      <button
-        type="button"
-        on:click={handleBackspace}
-        disabled={loading}
-        class="aspect-square flex items-center justify-center text-sm font-medium bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        ⌫
-      </button>
-    </div>
-  </div>
+  <PinNumberPad
+    {loading}
+    isLocked={false}
+    {handleNumberClick}
+    {handleClear}
+    {handleBackspace}
+  />
   
   <!-- PIN guidelines -->
   <div class="guidelines mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">

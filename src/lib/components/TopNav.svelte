@@ -2,6 +2,10 @@
 	import { page } from '$app/stores';
 	import { navigating } from '$app/stores';
 	import SyncStatus from './SyncStatus.svelte';
+	import TopNavBreadcrumb from './topnav/TopNavBreadcrumb.svelte';
+	import TopNavSearch from './topnav/TopNavSearch.svelte';
+	import TopNavNotifications from './topnav/TopNavNotifications.svelte';
+	import TopNavUserMenu from './topnav/TopNavUserMenu.svelte';
 
 	export let user = {
 		name: 'Arborist User',
@@ -30,35 +34,30 @@
 	function markAllAsRead() {
 		notifications = notifications.map(n => ({ ...n, unread: false }));
 	}
+
+	function toggleNotifications() {
+		showNotifications = !showNotifications;
+		if (showNotifications) showUserMenu = false;
+	}
+
+	function toggleUserMenu() {
+		showUserMenu = !showUserMenu;
+		if (showUserMenu) showNotifications = false;
+	}
+
+	function closeAllDropdowns() {
+		showNotifications = false;
+		showUserMenu = false;
+	}
 </script>
 
 <header class="top-nav">
 	<div class="nav-left">
-		<div class="breadcrumb">
-			{#if $page.url.pathname === '/dashboard'}
-				<span class="current">Dashboard</span>
-			{:else if $page.url.pathname.startsWith('/reports')}
-				<a href="/dashboard">Dashboard</a> / <span class="current">Reports</span>
-			{:else if $page.url.pathname.startsWith('/notes')}
-				<a href="/dashboard">Dashboard</a> / <span class="current">Notes</span>
-			{:else}
-				<a href="/dashboard">Dashboard</a> / <span class="current">{$page.url.pathname.split('/')[1] || 'Page'}</span>
-			{/if}
-		</div>
+		<TopNavBreadcrumb />
 	</div>
 	
 	<div class="nav-center">
-		<form onsubmit={handleSearch} class="search-form">
-			<input
-				type="search"
-				placeholder="Search reports, notes, or intelligence..."
-				bind:value={searchQuery}
-				aria-label="Search"
-			/>
-			<button type="submit" aria-label="Search">
-				🔍
-			</button>
-		</form>
+		<TopNavSearch {searchQuery} onSearch={handleSearch} />
 	</div>
 	
 	<div class="nav-right">
@@ -68,7 +67,7 @@
 				<SyncStatus />
 			</div>
 			
-			<button class="nav-button" onclick={() => showNotifications = !showNotifications} aria-label="Notifications">
+			<button class="nav-button" on:click={toggleNotifications} aria-label="Notifications">
 				🔔
 				{#if notifications.some(n => n.unread)}
 					<span class="badge">{notifications.filter(n => n.unread).length}</span>
@@ -79,50 +78,25 @@
 				❓
 			</button>
 			
-			<button class="nav-button" onclick={() => showUserMenu = !showUserMenu} aria-label="User menu">
+			<button class="nav-button" on:click={toggleUserMenu} aria-label="User menu">
 				<span class="user-avatar">{user.avatar}</span>
 				<span class="user-name">{user.name}</span>
 			</button>
 		</div>
 		
 		{#if showNotifications}
-			<div class="dropdown notifications-dropdown">
-				<div class="dropdown-header">
-					<h3>Notifications</h3>
-					<button onclick={markAllAsRead} class="mark-read">Mark all as read</button>
-				</div>
-				<div class="dropdown-content">
-					{#if notifications.length === 0}
-						<p class="empty">No notifications</p>
-					{:else}
-						{#each notifications as notification}
-							<div class="notification-item {notification.unread ? 'unread' : ''}">
-								<div class="notification-text">{notification.text}</div>
-								<div class="notification-time">{notification.time}</div>
-							</div>
-						{/each}
-					{/if}
-				</div>
-			</div>
+			<TopNavNotifications
+				{notifications}
+				markAllAsRead={markAllAsRead}
+				onClose={closeAllDropdowns}
+			/>
 		{/if}
 		
 		{#if showUserMenu}
-			<div class="dropdown user-dropdown">
-				<div class="user-info">
-					<div class="user-avatar-large">{user.avatar}</div>
-					<div>
-						<div class="user-name-large">{user.name}</div>
-						<div class="user-role">{user.role}</div>
-					</div>
-				</div>
-				<div class="dropdown-content">
-					<a href="/profile" class="dropdown-item">👤 Profile</a>
-					<a href="/settings" class="dropdown-item">⚙️ Settings</a>
-					<a href="/help" class="dropdown-item">📚 Help & Documentation</a>
-					<hr />
-					<a href="/logout" class="dropdown-item logout">🚪 Sign out</a>
-				</div>
-			</div>
+			<TopNavUserMenu
+				{user}
+				onClose={closeAllDropdowns}
+			/>
 		{/if}
 	</div>
 </header>
@@ -132,14 +106,10 @@
 		class="dropdown-backdrop"
 		role="button"
 		tabindex="0"
-		onclick={() => {
-			showNotifications = false;
-			showUserMenu = false;
-		}}
-		onkeydown={(e) => {
+		on:click={closeAllDropdowns}
+		on:keydown={(e) => {
 			if (e.key === 'Enter' || e.key === ' ') {
-				showNotifications = false;
-				showUserMenu = false;
+				closeAllDropdowns();
 			}
 		}}
 	></div>
@@ -173,58 +143,6 @@
 	.nav-right {
 		justify-content: flex-end;
 		position: relative;
-	}
-	
-	.breadcrumb {
-		font-size: 0.875rem;
-		color: #6b7280;
-	}
-	
-	.breadcrumb a {
-		color: #3b82f6;
-		text-decoration: none;
-	}
-	
-	.breadcrumb a:hover {
-		text-decoration: underline;
-	}
-	
-	.breadcrumb .current {
-		color: #111827;
-		font-weight: 500;
-	}
-	
-	.search-form {
-		position: relative;
-		width: 100%;
-		max-width: 400px;
-	}
-	
-	.search-form input {
-		width: 100%;
-		padding: 0.5rem 1rem 0.5rem 2.5rem;
-		border: 1px solid #d1d5db;
-		border-radius: 9999px;
-		font-size: 0.875rem;
-		outline: none;
-		transition: border-color 0.2s ease;
-	}
-	
-	.search-form input:focus {
-		border-color: #3b82f6;
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-	}
-	
-	.search-form button {
-		position: absolute;
-		left: 0.75rem;
-		top: 50%;
-		transform: translateY(-50%);
-		background: none;
-		border: none;
-		font-size: 1rem;
-		color: #6b7280;
-		cursor: pointer;
 	}
 	
 	.nav-actions {
@@ -281,129 +199,6 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0 4px;
-	}
-	
-	.dropdown {
-		position: absolute;
-		top: calc(100% + 8px);
-		right: 0;
-		background: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-		min-width: 320px;
-		z-index: 100;
-		overflow: hidden;
-	}
-	
-	.notifications-dropdown {
-		right: 100px;
-	}
-	
-	.user-dropdown {
-		right: 0;
-	}
-	
-	.dropdown-header {
-		padding: 1rem;
-		border-bottom: 1px solid #e5e7eb;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-	
-	.dropdown-header h3 {
-		font-size: 1rem;
-		font-weight: 600;
-		margin: 0;
-		color: #111827;
-	}
-	
-	.mark-read {
-		font-size: 0.75rem;
-		color: #3b82f6;
-		background: none;
-		border: none;
-		cursor: pointer;
-		padding: 0;
-	}
-	
-	.dropdown-content {
-		max-height: 400px;
-		overflow-y: auto;
-	}
-	
-	.notification-item {
-		padding: 1rem;
-		border-bottom: 1px solid #f3f4f6;
-	}
-	
-	.notification-item.unread {
-		background: #f0f9ff;
-	}
-	
-	.notification-item:last-child {
-		border-bottom: none;
-	}
-	
-	.notification-text {
-		font-size: 0.875rem;
-		color: #111827;
-		margin-bottom: 0.25rem;
-	}
-	
-	.notification-time {
-		font-size: 0.75rem;
-		color: #6b7280;
-	}
-	
-	.empty {
-		padding: 2rem 1rem;
-		text-align: center;
-		color: #6b7280;
-		font-size: 0.875rem;
-		margin: 0;
-	}
-	
-	.user-info {
-		padding: 1rem;
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		border-bottom: 1px solid #e5e7eb;
-	}
-	
-	.user-avatar-large {
-		font-size: 2rem;
-	}
-	
-	.user-name-large {
-		font-weight: 600;
-		color: #111827;
-	}
-	
-	.user-role {
-		font-size: 0.875rem;
-		color: #6b7280;
-	}
-	
-	.dropdown-item {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem 1rem;
-		color: #374151;
-		text-decoration: none;
-		font-size: 0.875rem;
-		transition: background 0.2s ease;
-	}
-	
-	.dropdown-item:hover {
-		background: #f9fafb;
-	}
-	
-	.dropdown-item.logout {
-		color: #ef4444;
 	}
 	
 	.dropdown-backdrop {

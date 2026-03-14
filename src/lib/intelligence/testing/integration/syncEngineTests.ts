@@ -5,8 +5,9 @@
  * Uses mocks for browser and cloud dependencies.
  */
 
-import { SyncEngine, DEFAULT_SYNC_CONFIG } from '$lib/storage/syncEngine';
-import type { SyncResult, SyncStatus } from '$lib/storage/syncEngine';
+import { SyncEngine } from '$lib/storage/syncEngine';
+import { DEFAULT_SYNC_CONFIG } from '$lib/storage/syncEngineTypes';
+import type { SyncResult, SyncStatus } from '$lib/storage/syncEngineTypes';
 
 export interface TestResult {
 	id: string;

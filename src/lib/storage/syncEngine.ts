@@ -1,66 +1,13 @@
 // Sync Engine - Main orchestrator for offline sync and cloud merge
 import { browser } from '$app/environment'
-import { TABLES, storeRecord, updateRecord, deleteRecord, getRecord, getAllRecords } from './localEncrypted'
-import { createSyncMetadata, updateSyncMetadata, markAsSynced, markAsConflicted, resolveConflict, needsSync, SYNC_CONFIG, type SyncMetadata } from './syncMetadata'
-import { syncQueueManager, addToQueue, getPendingItems, processPendingItems } from './syncQueue'
-import { cloudStorageManager, syncToCloud, syncFromCloud, checkCloudConnectivity, getCloudStorageStats } from './supabaseCloud'
-
-// Sync engine configuration
-export interface SyncEngineConfig {
-  autoSyncEnabled: boolean
-  autoSyncInterval: number
-  conflictResolutionStrategy: 'simple' | 'intelligent'
-  maxRetryAttempts: number
-  batchSize: number
-}
-
-// Default configuration
-export const DEFAULT_SYNC_CONFIG: SyncEngineConfig = {
-  autoSyncEnabled: true,
-  autoSyncInterval: SYNC_CONFIG.AUTO_SYNC_INTERVAL,
-  conflictResolutionStrategy: SYNC_CONFIG.CONFLICT_RESOLUTION_STRATEGY,
-  maxRetryAttempts: SYNC_CONFIG.MAX_RETRY_ATTEMPTS,
-  batchSize: SYNC_CONFIG.BATCH_SIZE
-}
-
-// Sync status
-export interface SyncStatus {
-  isSyncing: boolean
-  lastSyncTime: number | null
-  connectivity: {
-    connected: boolean
-    authenticated: boolean
-    latency: number | null
-  }
-  queueStats: {
-    pending: number
-    processing: number
-    failed: number
-    completed: number
-  }
-  cloudStats: {
-    totalRecords: number
-    totalSize: number
-    lastSync: string | null
-  }
-  localStats: {
-    totalRecords: number
-    byTable: Record<string, number>
-  }
-}
-
-// Sync result
-export interface SyncResult {
-  success: boolean
-  syncedRecords: number
-  failedRecords: number
-  conflictedRecords: number
-  newRecords: number
-  updatedRecords: number
-  deletedRecords: number
-  errors: string[]
-  duration: number
-}
+import { TABLES, storeRecord, updateRecord, deleteRecord, getRecord } from './localEncrypted'
+import { createSyncMetadata, markAsSynced, type SyncMetadata } from './syncMetadata'
+import { syncQueueManager, processPendingItems } from './syncQueue'
+import { syncToCloud, syncFromCloud, checkCloudConnectivity, getCloudStorageStats } from './supabaseCloud'
+import { DEFAULT_SYNC_CONFIG, type SyncEngineConfig, type SyncStatus, type SyncResult } from './syncEngineTypes'
+import { syncLocalToCloud, syncCloudToLocal } from './syncEngineOperations'
+import { getRecordsNeedingSync, getCloudRecordsForTable } from './syncEngineData'
+import { getQueueStats, getLocalStats } from './syncEngineStats'
 
 // Sync Engine class
 export class SyncEngine {
@@ -197,194 +144,27 @@ export class SyncEngine {
 
   // Sync local records to cloud
   private async syncLocalToCloud(): Promise<Omit<SyncResult, 'newRecords' | 'deletedRecords'>> {
-    const result: Omit<SyncResult, 'newRecords' | 'deletedRecords'> = {
-      success: true,
-      syncedRecords: 0,
-      failedRecords: 0,
-      conflictedRecords: 0,
-      updatedRecords: 0,
-      errors: [],
-      duration: 0
-    }
-
-    const startTime = Date.now()
-
-    try {
-      // Get all local records that need sync
-      const recordsToSync = await this.getRecordsNeedingSync()
-
-      for (const { table, recordId, data, metadata } of recordsToSync) {
-        try {
-          const syncResult = await syncToCloud(table, recordId, data, metadata)
-
-          if (syncResult.success) {
-            result.syncedRecords++
-            
-            if (syncResult.conflict) {
-              result.conflictedRecords++
-              
-              // Update local with resolved data if there was a conflict
-              if (syncResult.resolvedData) {
-                await updateRecord(table, recordId, syncResult.resolvedData)
-                result.updatedRecords++
-              }
-            } else {
-              result.updatedRecords++
-            }
-
-            // Mark as synced in local metadata
-            const updatedMetadata = markAsSynced(metadata)
-            // TODO: Store updated metadata
-          } else {
-            result.failedRecords++
-            result.errors.push(`Failed to sync ${table}/${recordId}`)
-          }
-        } catch (error: any) {
-          result.failedRecords++
-          result.errors.push(`Error syncing ${table}/${recordId}: ${error.message}`)
-          console.error(`Error syncing ${table}/${recordId}:`, error)
-        }
-      }
-
-      result.success = result.failedRecords === 0
-    } catch (error: any) {
-      result.success = false
-      result.errors.push(`Sync to cloud failed: ${error.message}`)
-    }
-
-    result.duration = Date.now() - startTime
-    return result
+    return syncLocalToCloud(
+      getRecordsNeedingSync,
+      syncToCloud,
+      updateRecord,
+      markAsSynced
+    )
   }
 
   // Sync cloud records to local
   private async syncCloudToLocal(): Promise<Pick<SyncResult, 'success' | 'syncedRecords' | 'failedRecords' | 'conflictedRecords' | 'newRecords' | 'updatedRecords' | 'deletedRecords' | 'errors' | 'duration'>> {
-    const result: Pick<SyncResult, 'success' | 'syncedRecords' | 'failedRecords' | 'conflictedRecords' | 'newRecords' | 'updatedRecords' | 'deletedRecords' | 'errors' | 'duration'> = {
-      success: true,
-      syncedRecords: 0,
-      failedRecords: 0,
-      conflictedRecords: 0,
-      newRecords: 0,
-      updatedRecords: 0,
-      deletedRecords: 0,
-      errors: [],
-      duration: 0
-    }
-
-    const startTime = Date.now()
-
-    try {
-      // For each table, get cloud records and sync them
-      for (const table of Object.values(TABLES)) {
-        try {
-          const cloudRecords = await this.getCloudRecordsForTable(table)
-
-          for (const cloudRecord of cloudRecords) {
-            try {
-              // Get local record if it exists
-              const localData = await getRecord(table, cloudRecord.id)
-              let localMetadata: SyncMetadata | null = null
-
-              if (localData) {
-                // Create metadata for local data
-                localMetadata = await createSyncMetadata(table, cloudRecord.id, localData)
-              }
-
-              const syncResult = await syncFromCloud(
-                table,
-                cloudRecord.id,
-                localData || {},
-                localMetadata || await createSyncMetadata(table, cloudRecord.id, {})
-              )
-
-              if (syncResult.success) {
-                result.syncedRecords++
-
-                if (syncResult.conflict) {
-                  result.conflictedRecords++
-                }
-
-                if (!localData) {
-                  // New record from cloud
-                  await storeRecord(table, cloudRecord.id, syncResult.data!)
-                  result.newRecords++
-                } else if (syncResult.source !== 'local') {
-                  // Updated record from cloud
-                  await updateRecord(table, cloudRecord.id, syncResult.data!)
-                  result.updatedRecords++
-                }
-              } else {
-                result.failedRecords++
-                result.errors.push(`Failed to sync ${table}/${cloudRecord.id} from cloud`)
-              }
-            } catch (error: any) {
-              result.failedRecords++
-              result.errors.push(`Error syncing ${table}/${cloudRecord.id} from cloud: ${error.message}`)
-              console.error(`Error syncing ${table}/${cloudRecord.id} from cloud:`, error)
-            }
-          }
-        } catch (error: any) {
-          result.errors.push(`Error fetching cloud records for table ${table}: ${error.message}`)
-          console.error(`Error fetching cloud records for table ${table}:`, error)
-        }
-      }
-
-      result.success = result.failedRecords === 0
-    } catch (error: any) {
-      result.success = false
-      result.errors.push(`Sync from cloud failed: ${error.message}`)
-    }
-
-    result.duration = Date.now() - startTime
-    return result
+    return syncCloudToLocal(
+      Object.values(TABLES),
+      getCloudRecordsForTable,
+      getRecord,
+      createSyncMetadata,
+      syncFromCloud,
+      storeRecord,
+      updateRecord
+    )
   }
 
-  // Get local records that need sync
-  private async getRecordsNeedingSync(): Promise<Array<{
-    table: string
-    recordId: string
-    data: any
-    metadata: SyncMetadata
-  }>> {
-    const records: Array<{
-      table: string
-      recordId: string
-      data: any
-      metadata: SyncMetadata
-    }> = []
-
-    // For each table, get all records
-    for (const table of Object.values(TABLES)) {
-      try {
-        const tableRecords = await getAllRecords(table)
-
-        for (const record of tableRecords) {
-          // Create metadata for the record
-          const metadata = await createSyncMetadata(table, record.id, record.data)
-
-          // Check if record needs sync
-          if (needsSync(metadata)) {
-            records.push({
-              table,
-              recordId: record.id,
-              data: record.data,
-              metadata
-            })
-          }
-        }
-      } catch (error) {
-        console.error(`Error getting records from table ${table}:`, error)
-      }
-    }
-
-    return records
-  }
-
-  // Get cloud records for a table
-  private async getCloudRecordsForTable(table: string): Promise<any[]> {
-    // This would fetch from cloud
-    // For now, return empty array
-    return []
-  }
 
   // Get current sync status
   async getStatus(): Promise<SyncStatus> {
@@ -419,11 +199,11 @@ export class SyncEngine {
       const [connectivity, cloudStats, queueStats] = await Promise.all([
         checkCloudConnectivity(),
         getCloudStorageStats(),
-        this.getQueueStats()
+        getQueueStats()
       ])
 
       // Get local stats
-      const localStats = await this.getLocalStats()
+      const localStats = await getLocalStats()
 
       return {
         isSyncing: this.isSyncing,
@@ -462,61 +242,6 @@ export class SyncEngine {
     }
   }
 
-  // Get queue statistics
-  private async getQueueStats(): Promise<{
-    pending: number
-    processing: number
-    failed: number
-    completed: number
-  }> {
-    try {
-      const pendingItems = await getPendingItems()
-      // For now, return simplified stats
-      return {
-        pending: pendingItems.length,
-        processing: 0,
-        failed: 0,
-        completed: 0
-      }
-    } catch (error) {
-      console.error('Error getting queue stats:', error)
-      return {
-        pending: 0,
-        processing: 0,
-        failed: 0,
-        completed: 0
-      }
-    }
-  }
-
-  // Get local storage statistics
-  private async getLocalStats(): Promise<{
-    totalRecords: number
-    byTable: Record<string, number>
-  }> {
-    const byTable: Record<string, number> = {}
-    let totalRecords = 0
-
-    try {
-      for (const table of Object.values(TABLES)) {
-        try {
-          const records = await getAllRecords(table)
-          byTable[table] = records.length
-          totalRecords += records.length
-        } catch (error) {
-          console.error(`Error getting records from table ${table}:`, error)
-          byTable[table] = 0
-        }
-      }
-    } catch (error) {
-      console.error('Error getting local stats:', error)
-    }
-
-    return {
-      totalRecords,
-      byTable
-    }
-  }
 
   // Add sync status listener
   addListener(listener: (status: SyncStatus) => void): void {
@@ -576,41 +301,59 @@ export class SyncEngine {
   }
 }
 
-// Singleton instance
-export const syncEngine = new SyncEngine()
+// Singleton instance (lazy initialization)
+let syncEngineInstance: SyncEngine | null = null
+
+function getSyncEngine(): SyncEngine {
+  if (!syncEngineInstance) {
+    syncEngineInstance = new SyncEngine()
+  }
+  return syncEngineInstance
+}
 
 // Export convenience functions
 export async function initializeSyncEngine(config?: Partial<SyncEngineConfig>): Promise<void> {
+  const engine = getSyncEngine()
   if (config) {
-    syncEngine.updateConfig(config)
+    engine.updateConfig(config)
   }
-  return syncEngine.initialize()
+  return engine.initialize()
 }
 
 export async function triggerSync(): Promise<SyncResult> {
-  return syncEngine.syncAll()
+  const engine = getSyncEngine()
+  return engine.syncAll()
 }
 
 export async function getSyncStatus(): Promise<SyncStatus> {
-  return syncEngine.getStatus()
+  const engine = getSyncEngine()
+  return engine.getStatus()
 }
 
 export function addSyncListener(listener: (status: SyncStatus) => void): void {
-  syncEngine.addListener(listener)
+  const engine = getSyncEngine()
+  engine.addListener(listener)
 }
 
 export function removeSyncListener(listener: (status: SyncStatus) => void): void {
-  syncEngine.removeListener(listener)
+  const engine = getSyncEngine()
+  engine.removeListener(listener)
 }
 
 export function updateSyncConfig(config: Partial<SyncEngineConfig>): void {
-  syncEngine.updateConfig(config)
+  const engine = getSyncEngine()
+  engine.updateConfig(config)
 }
 
 export function getSyncConfig(): SyncEngineConfig {
-  return syncEngine.getConfig()
+  const engine = getSyncEngine()
+  return engine.getConfig()
 }
 
 export function destroySyncEngine(): void {
-  syncEngine.destroy()
+  const engine = getSyncEngine()
+  engine.destroy()
 }
+
+// Export the getSyncEngine function for external use
+export { getSyncEngine }

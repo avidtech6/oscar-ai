@@ -8,13 +8,13 @@ export const load: LayoutServerLoad = async ({ cookies, url }: { cookies: any; u
   const publicRoutes = ['/login', '/auth/callback', '/recovery', '/unlock']
   const isPublicRoute = publicRoutes.some(route => url.pathname.startsWith(route))
 
-  // Check if auth should be bypassed (development mode)
-  if (shouldBypassAuth()) {
-    console.log('[DEV] Auth bypass enabled')
+  // ALWAYS bypass authentication in development mode
+  if (import.meta.env.DEV) {
+    console.log('[DEV] Authentication completely bypassed for development')
     return {
       session: null,
       user: null,
-      isAuthenticated: false,
+      isAuthenticated: true, // Pretend user is authenticated
       isPublicRoute
     }
   }
@@ -26,7 +26,7 @@ export const load: LayoutServerLoad = async ({ cookies, url }: { cookies: any; u
     return {
       session: null,
       user: null,
-      isAuthenticated: false,
+      isAuthenticated: true, // Allow static build
       isPublicRoute
     }
   }

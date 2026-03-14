@@ -1,8 +1,21 @@
-/**
- * Report Reproduction Tester (Phase 10)
- * 
- * Validates whether the system can reproduce a report.
- */
+// Simple browser-compatible event emitter
+const createEventEmitter = () => ({
+  events: {},
+  on(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  },
+  off(event, callback) {
+    if (!this.events[event]) return;
+    this.events[event] = this.events[event].filter(cb => cb !== callback);
+  },
+  emit(event, data) {
+    if (!this.events[event]) return;
+    this.events[event].forEach(callback => callback(data));
+  }
+});
 
 import { EventEmitter } from '../events';
 import { reportTypeRegistry } from '../registry/ReportTypeRegistry';
@@ -20,17 +33,15 @@ import { compareStyle } from './comparators/compareStyle';
 import { computeSimilarityScore } from './comparators/computeSimilarityScore';
 import { runEndToEndTest } from './testers/runEndToEndTest';
 import { generateRegeneratedReport } from './testers/generateRegeneratedReport';
-import { writeFileSync, readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import type { DecompiledReport } from '../decompiler/DecompiledReport';
 import type { SchemaMappingResult } from '../schema-mapper/SchemaMappingResult';
 import type { ReportTemplate } from '../template-generator/ReportTemplate';
 import type { StyleProfile } from '../style-learner/StyleProfile';
 
-const STORAGE_PATH = join(process.cwd(), 'workspace', 'reproduction-tests.json');
+const STORAGE_KEY = 'reproduction-tests';
 
 export class ReportReproductionTester {
-	private eventEmitter = new EventEmitter();
+	private eventEmitter = createEventEmitter();
 	private results: ReproductionTestResult[] = [];
 
 	constructor() {
@@ -141,17 +152,17 @@ export class ReportReproductionTester {
 	}
 
 	/**
-	 * Load results from disk
+	 * Load results from localStorage
 	 */
 	private load(): void {
-		if (!existsSync(STORAGE_PATH)) {
-			this.results = [];
-			return;
-		}
-
 		try {
-			const data = readFileSync(STORAGE_PATH, 'utf-8');
-			const parsed = JSON.parse(data);
+			const stored = localStorage.getItem(STORAGE_KEY);
+			if (!stored) {
+				this.results = [];
+				return;
+			}
+
+			const parsed = JSON.parse(stored);
 			// Convert date strings
 			this.results = parsed.map((r: any) => ({
 				...r,
@@ -165,12 +176,12 @@ export class ReportReproductionTester {
 	}
 
 	/**
-	 * Save results to disk
+	 * Save results to localStorage
 	 */
 	private save(): void {
 		try {
 			const data = JSON.stringify(this.results, null, 2);
-			writeFileSync(STORAGE_PATH, data, 'utf-8');
+			localStorage.setItem(STORAGE_KEY, data);
 		} catch (err) {
 			console.error('Failed to save reproduction test results:', err);
 		}

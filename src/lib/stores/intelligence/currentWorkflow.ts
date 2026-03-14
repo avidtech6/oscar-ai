@@ -1,98 +1,15 @@
 /**
  * Current Workflow Store
- * 
+ *
  * Tracks the current workflow being executed, including steps,
  * progress, intelligence layer references, and state.
  */
 
-import { writable, derived } from 'svelte/store';
-import type { WorkflowDefinition, WorkflowStep } from '../../intelligence/types';
-
-export interface CurrentWorkflow {
-	/** Workflow ID */
-	id: string;
-	/** Workflow name */
-	name: string;
-	/** Workflow definition from intelligence layer */
-	definition?: WorkflowDefinition;
-	/** Current step number */
-	currentStep: number;
-	/** Steps completed */
-	completedSteps: number[];
-	/** Step states */
-	stepStates: Record<number, StepState>;
-	/** Input data */
-	inputs: Record<string, any>;
-	/** Output data */
-	outputs: Record<string, any>;
-	/** Intelligence layer references */
-	intelligence: {
-		phaseReferences: number[];
-		workflowType: string;
-		reasoningTrace: string[];
-	};
-	/** Metadata */
-	metadata: {
-		startedAt: Date;
-		lastUpdated: Date;
-		estimatedCompletion: Date;
-		duration: number; // in seconds
-	};
-	/** UI state */
-	ui: {
-		isRunning: boolean;
-		isPaused: boolean;
-		hasErrors: boolean;
-		showDetails: boolean;
-		activeTab: 'steps' | 'inputs' | 'outputs' | 'intelligence';
-	};
-}
-
-export interface StepState {
-	/** Step number */
-	step: number;
-	/** Status */
-	status: 'pending' | 'running' | 'completed' | 'error' | 'skipped';
-	/** Start time */
-	startedAt?: Date;
-	/** Completion time */
-	completedAt?: Date;
-	/** Error message if any */
-	error?: string;
-	/** Output from step */
-	output?: any;
-	/** Intelligence references */
-	intelligenceReferences: number[];
-}
-
-const initialState: CurrentWorkflow = {
-	id: '',
-	name: '',
-	definition: undefined,
-	currentStep: 0,
-	completedSteps: [],
-	stepStates: {},
-	inputs: {},
-	outputs: {},
-	intelligence: {
-		phaseReferences: [],
-		workflowType: '',
-		reasoningTrace: []
-	},
-	metadata: {
-		startedAt: new Date(),
-		lastUpdated: new Date(),
-		estimatedCompletion: new Date(Date.now() + 3600000), // 1 hour from now
-		duration: 0
-	},
-	ui: {
-		isRunning: false,
-		isPaused: false,
-		hasErrors: false,
-		showDetails: false,
-		activeTab: 'steps'
-	}
-};
+import { writable } from 'svelte/store';
+import type { WorkflowDefinition } from '../../intelligence/types';
+import type { CurrentWorkflow, StepState } from './currentWorkflowTypes';
+import { initialState } from './currentWorkflowTypes';
+export { workflowProgress, stepStatus, workflowIntelligence, workflowUIState } from './currentWorkflowDerived';
 
 function createCurrentWorkflowStore() {
 	const { subscribe, set, update } = writable<CurrentWorkflow>(initialState);
@@ -320,48 +237,3 @@ function createCurrentWorkflowStore() {
 }
 
 export const currentWorkflow = createCurrentWorkflowStore();
-
-/** Derived store for workflow progress */
-export const workflowProgress = derived(currentWorkflow, $workflow => {
-	const totalSteps = $workflow.definition?.steps.length || 0;
-	const completedSteps = $workflow.completedSteps.length;
-	const progress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
-	
-	return {
-		totalSteps,
-		completedSteps,
-		progress,
-		currentStep: $workflow.currentStep,
-		remainingSteps: totalSteps - completedSteps,
-		isComplete: completedSteps === totalSteps && totalSteps > 0,
-		estimatedTimeRemaining: totalSteps > 0 
-			? ($workflow.metadata.duration / completedSteps) * (totalSteps - completedSteps)
-			: 0
-	};
-});
-
-/** Derived store for step status */
-export const stepStatus = derived(currentWorkflow, $workflow => {
-	const steps = $workflow.definition?.steps || [];
-	return steps.map(step => ({
-		step: step.step,
-		action: step.action,
-		status: $workflow.stepStates[step.step]?.status || 'pending',
-		startedAt: $workflow.stepStates[step.step]?.startedAt,
-		completedAt: $workflow.stepStates[step.step]?.completedAt,
-		error: $workflow.stepStates[step.step]?.error,
-		phaseReference: step.phaseReference
-	}));
-});
-
-/** Derived store for intelligence references */
-export const workflowIntelligence = derived(currentWorkflow, $workflow => ({
-	phaseCount: $workflow.intelligence.phaseReferences.length,
-	phases: $workflow.intelligence.phaseReferences,
-	reasoningTraceLength: $workflow.intelligence.reasoningTrace.length,
-	lastReasoning: $workflow.intelligence.reasoningTrace[$workflow.intelligence.reasoningTrace.length - 1] || 'No reasoning yet',
-	workflowType: $workflow.intelligence.workflowType
-}));
-
-/** Derived store for UI state */
-export const workflowUIState = derived(currentWorkflow, $workflow => $workflow.ui);

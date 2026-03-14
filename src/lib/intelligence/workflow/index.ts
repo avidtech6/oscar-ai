@@ -14,7 +14,7 @@ export * from './MultiDocumentWorkflowEngine';
 export * from './WorkflowAwareContextMode';
 export * from './WorkflowAwareChatMode';
 export * from './WorkflowEventModel';
-export * from './WorkflowIntelligenceLayer';
+export * from './WorkflowIntelligenceLayerCore';
 
 // Default export: the main orchestrator
-export { WorkflowIntelligenceLayer as default } from './WorkflowIntelligenceLayer';
+export { WorkflowIntelligenceLayerCore as default } from './WorkflowIntelligenceLayerCore';

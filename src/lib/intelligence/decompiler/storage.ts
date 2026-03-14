@@ -1,14 +1,12 @@
 /**
  * Storage for decompiled reports (Phase 2)
- * 
- * Persists decompiled reports to a JSON file in the workspace.
+ *
+ * Persists decompiled reports to browser localStorage.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
 import type { DecompiledReport } from './DecompiledReport';
 
-const STORAGE_PATH = path.join(process.cwd(), 'workspace', 'decompiled-reports.json');
+const STORAGE_KEY = 'decompiled-reports';
 
 export class DecompiledReportStorage {
 	private reports: DecompiledReport[] = [];
@@ -18,17 +16,23 @@ export class DecompiledReportStorage {
 	}
 
 	/**
-	 * Load reports from disk
+	 * Load reports from localStorage
 	 */
 	load(): void {
-		if (!fs.existsSync(STORAGE_PATH)) {
-			this.reports = [];
-			return;
-		}
-
 		try {
-			const data = fs.readFileSync(STORAGE_PATH, 'utf-8');
-			const parsed = JSON.parse(data);
+			// Check if we're in a browser environment
+			if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+				this.reports = [];
+				return;
+			}
+			
+			const stored = localStorage.getItem(STORAGE_KEY);
+			if (!stored) {
+				this.reports = [];
+				return;
+			}
+
+			const parsed = JSON.parse(stored);
 			// Convert date strings back to Date objects
 			this.reports = parsed.map((r: any) => ({
 				...r,
@@ -42,12 +46,17 @@ export class DecompiledReportStorage {
 	}
 
 	/**
-	 * Save reports to disk
+	 * Save reports to localStorage
 	 */
 	save(): void {
 		try {
+			// Check if we're in a browser environment
+			if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+				return;
+			}
+			
 			const data = JSON.stringify(this.reports, null, 2);
-			fs.writeFileSync(STORAGE_PATH, data, 'utf-8');
+			localStorage.setItem(STORAGE_KEY, data);
 		} catch (err) {
 			console.error('Failed to save decompiled reports:', err);
 		}

@@ -1,249 +1,183 @@
-Oscar AI — Global Architecture & Behaviour Contract
-(Mandatory for ALL tasks, phases, and operations)
-
-1. File Size & Function Size Limits
-These limits are absolute unless explicitly overridden.
-
-No file may exceed 300 lines.
-
-No function may exceed 80 lines.
-
-If a file approaches 250 lines, Roo must STOP and request permission to split.
-
-If a function approaches 70 lines, Roo must STOP and request permission to split.
-
-No “god modules.”
-
-No multi‑responsibility files.
-
-No large rewrites of existing files.
-
-New features must be implemented as new modules, not expansions of existing ones.
-
-When refactoring, extract small modules rather than rewriting large ones.
-
-2. Module Boundaries & Responsibilities
-Every module must have one clear purpose.
-
-A module must not contain unrelated logic.
-
-A module must not contain UI + logic + data + orchestration mixed together.
-
-A module must not contain more than one conceptual layer.
-
-If a module begins to accumulate multiple responsibilities, Roo must split it.
-
-All modules must be deterministic, minimal, and self‑contained.
-
-3. Phase‑Order Rebuild Rules
-These rules govern how Roo rebuilds Oscar AI.
-
-Phases must be completed in order.
-
-Roo may not skip phases.
-
-Roo may not begin a new phase until the previous phase is marked complete.
-
-Missing files must be created before corrupted files are repaired.
-
-Corrupted files must be repaired minimally, not rewritten.
-
-After each file creation or repair, Roo must:
-
-re‑scan the filesystem
-
-update the integrity map
-
-STOP and wait for the next instruction
-
-4. Missing File Rules
-When creating missing files:
-
-Keep them minimal and deterministic.
-
-Follow the phase specification exactly.
-
-Do not implement full logic unless the phase requires it.
-
-Do not overwrite existing files.
-
-Do not generate boilerplate beyond what is required.
-
-Do not create additional files not listed in the phase.
-
-5. Corrupted File Rules
-When repairing corrupted files:
-
-Modify only the minimal lines required.
-
-Do not rewrite the entire file.
-
-Do not restructure the file.
-
-Do not expand the file.
-
-Do not introduce new features.
-
-If the file is extremely large, Roo must request human confirmation before attempting any patch.
-
-If the file is manually corrected by the user, Roo must treat it as verified.
-
-6. Integrity Map Rules
-After any file operation:
-
-Roo must re‑scan the filesystem.
-
-Roo must update the integrity map.
-
-Roo must stop and report status.
-
-Roo must not proceed automatically to the next file.
-
-Roo must not assume missing or corrupted files beyond what the integrity map reports.
-
-7. Orchestration & Intelligence Layer Rules
-For orchestration phases (e.g., Phase 19):
-
-Create small, focused modules.
-
-No orchestration file may exceed 300 lines.
-
-No orchestration function may exceed 80 lines.
-
-Orchestration must be split into:
-
-kernel
-
-router
-
-lifecycle manager
-
-context
-
-error boundary
-
-capability registry
-
-runtime guards
-
-Orchestration must not be monolithic.
-
-Orchestration must not rewrite existing subsystems.
-
-8. Refinement Phase Rules
-During refinement phases:
-
-Roo must identify oversized files.
-
-Roo must propose safe module splits.
-
-Roo must extract functions into smaller modules.
-
-Roo must preserve public APIs.
-
-Roo must not rewrite entire files.
-
-Roo must not break existing imports.
-
-Roo must not modify behaviour unless explicitly instructed.
-
-9. Behavioural Rules
-Roo must:
-
-Act deterministically.
-
-Avoid loops.
-
-Avoid re‑attempting failed patches.
-
-Avoid rewriting large files.
-
-Avoid generating unnecessary code.
-
-Avoid expanding modules beyond their purpose.
-
-Ask for permission when approaching size limits.
-
-Stop after each file operation.
-
-Wait for explicit instructions before continuing.
-
-10. Forbidden Behaviours
-Roo must never:
-
-Rewrite large files (>300 lines).
-
-Expand existing modules with new responsibilities.
-
-Generate monolithic orchestrators.
-
-Create files not listed in the phase.
-
-Modify verified files.
-
-Attempt to fix a file repeatedly after failure.
-
-Proceed to the next phase without explicit instruction.
-
-Generate boilerplate beyond what is required.
-
-Merge multiple responsibilities into one file.
-
-Attempt to “optimise” or “improve” code outside the phase scope.
-
-11. Mandatory Workflow
-For every task:
-
-Load and obey all rules in this file.
-
-Apply the FreshVibe File Size Rules.
-
-Apply the Phase‑Order Rebuild Rules.
-
-Apply the Missing/Corrupted File Rules.
-
-Perform the requested operation.
-
-Re‑scan the filesystem.
-
-Update the integrity map.
-
-STOP and wait for the next instruction.
-
-12. Human Overrides
-If the user manually corrects a file:
-
-Roo must treat the file as verified.
-
-Roo must not attempt to modify it again.
-
-Roo must update the integrity map accordingly.
-
-13. Safety & Stability
-Roo must prioritise:
-
-stability
-
-determinism
-
-modularity
-
-minimalism
-
-correctness
-
-safety
-
-over:
-
-cleverness
-
-optimisation
-
-refactoring
-
-rewriting
-
-consolidation
-
-14. Global Rule
+Freshvibe Rules
+Universal Modular Agent System Rules (MANDATORY)
+These rules define the architecture for all FreshVibe, Oscar AI, AgentV, and future modular agent applications. Roo must load and follow these rules before performing ANY action. These rules override all default behaviours and apply permanently to ALL future tasks.
+============================================================
+1. FILE MODIFICATION RULES
+============================================================
+- Roo may ONLY create or modify files explicitly listed in the task.
+- Roo must NEVER modify <APP_SHELL_FILE> unless explicitly instructed.
+- Roo must NEVER modify existing modules unless explicitly instructed.
+- All new system logic must go under /core/... and all feature modules under /modules/....
+- Roo must NEVER output commentary inside code files. Only code.
+- Roo must NEVER rename, delete, or restructure directories.
+- Roo must NEVER generate placeholder or stub code. All modules must be functional.
+- Roo must NEVER generate virtual or imaginary paths. Only real paths under /core, /modules, /public.
+- Roo must NEVER rewrite the entire project. Only touch the files listed in the task.
+============================================================
+2. FILE SIZE & STRUCTURE RULES
+============================================================
+- No file may exceed ~300 lines unless explicitly instructed.
+- No single function may exceed ~80 lines unless explicitly instructed.
+- No module may contain unrelated responsibilities.
+- No “god modules.” Split logic into multiple modules when needed.
+- No auto-generated boilerplate expansions beyond what is requested.
+- No rewriting existing files with large blocks of code; create new modules instead.
+============================================================
+3. UI SHELL LOCKDOWN RULES
+============================================================ <APP_SHELL_FILE> must remain tiny and stable.
+The UI shell file may ONLY contain:
+- Tab entries
+- Tab handlers
+- System command routing
+The UI shell file must NEVER contain:
+- State
+- Logic
+- Functions
+- Module loading
+- Theme logic
+- UI rendering
+- Feature logic
+- Large patches
+Additional shell rules:
+- The shell file must NEVER grow beyond minimal additions.
+- The shell file must NEVER be scanned or rewritten in large chunks.
+============================================================
+4. MODULAR HOOK SYSTEM RULES
+============================================================
+- Every new subsystem must expose a stable hook API.
+- No subsystem may call another subsystem directly except through its hook API.
+- All modules must register themselves with the Module Registry.
+- All modules must be hot-swappable; no hard-coded module paths.
+- All modules must be self-contained with no shared global state.
+- All modules must be hookable by the agent.
+- All modules must expose at least one testable function for the self-test engine.
+- All modules must declare their capabilities.
+- No module may modify another module’s internal state.
+- No module may assume UI elements exist; UI wiring happens ONLY in <APP_SHELL_FILE>.
+- Dependencies must be explicitly declared.
+- All modules must be replaceable without breaking the system.
+============================================================
+4B. PORTABILITY & INJECTION RULES
+============================================================
+- All new subsystems must be fully portable and must not depend on any agent-specific runtime, UI, or orchestration layer.
+- All external behaviour must be injected via dependency-injection; no module may import concrete implementations of external services.
+- Every subsystem must expose a stable, documented public API surface that other agents can call without modification.
+- Every subsystem must expose override hooks for all decision points, including scoring, routing, validation, and capability inference.
+- No subsystem may assume the existence of global state, shared memory, or agent-specific context. All state must be passed explicitly.
+- All subsystem capabilities must be declared in a machine-readable manifest inside the subsystem.
+- All subsystems must be hot-swappable and must not rely on side effects during initialization.
+- No subsystem may import from another subsystem directly; all cross-subsystem communication must occur through hook APIs.
+- All subsystems must be versioned internally so that multiple versions can coexist without conflict.
+Generic Engine-Agnostic Rule:
+- No subsystem may assume the existence of any specific engine or backend.
+- All engine selection, configuration, and execution contexts must be injected at runtime.
+- Subsystems must remain engine-agnostic and must not import or reference concrete engine implementations.
+============================================================
+5. STATE MANAGEMENT RULES
+============================================================
+- No module may create or rely on implicit global state.
+- All state must be passed explicitly through function parameters or injected dependencies.
+- Subsystems must not store state in module-level variables except immutable constants.
+- Long-lived state must be owned by a dedicated state container module.
+============================================================
+6. TESTING & VALIDATION RULES
+============================================================
+- Every subsystem must include a /tests/ folder with at least one test per public API function.
+- The self-test engine must be able to load subsystem manifests and validate capabilities.
+- No module may bypass or disable the self-test engine.
+- All manifests must be validated before subsystem initialization.
+============================================================
+7. MANIFEST RULES (UPDATED)
+============================================================ Every subsystem must include a manifest.json file that is machine-readable and validated at load time.
+The manifest MUST declare:
+- name — unique subsystem identifier
+- version — semantic version
+- capabilities — all features, behaviours, and functions the subsystem provides
+- hooksExposed — all hook entry points the subsystem exposes
+- hooksConsumed — all hooks the subsystem depends on
+- dependencies — external services or injected resources required (filesystem, httpClient, tokenCounter, etc.)
+- configSchema — a JSON-schema-like object describing allowed configuration keys and types
+Manifest Requirements:
+- The manifest is the single source of truth for subsystem capabilities.
+- No subsystem may assume the existence of another subsystem; all relationships must be declared in the manifest.
+- Subsystems may not expose functionality not declared in the manifest.
+- Subsystems may not consume hooks not declared in the manifest.
+- All manifests must be validated before subsystem initialization.
+- Subsystems without a manifest must not be loaded.
+- Manifests must be versioned and portable.
+- Manifests must not contain hard-coded paths or environment assumptions.
+============================================================
+8. SUBSYSTEM LIFECYCLE RULES
+============================================================ Every subsystem must implement:
+- init()
+- start()
+- stop()
+- dispose()
+Lifecycle constraints:
+- No subsystem may perform work before init().
+- No subsystem may leave resources open after dispose().
+- No subsystem may assume synchronous initialization.
+============================================================
+9. CONCURRENCY & ASYNC RULES
+============================================================
+- No subsystem may spawn background tasks without registering them with the Autonomy Manager.
+- All async operations must be cancellable.
+- No module may block the event loop.
+- All long-running tasks must expose progress hooks.
+- Autonomy loops must be controlled through hook APIs.
+============================================================
+10. ROUTING RULES
+============================================================
+- All routing decisions must pass through the Router subsystem.
+- No engine may route tasks directly.
+- Routing strategies must be injected, not hard-coded.
+- Routing must consider capability manifests.
+- Routing must be overrideable via hook APIs.
+============================================================
+11. ERROR HANDLING RULES
+============================================================
+- All subsystems must expose a handleError() hook.
+- No subsystem may throw uncaught exceptions.
+- All errors must be passed through the hook system for logging and recovery.
+- Error boundaries must be declared in manifests.
+============================================================
+12. SECURITY & SANDBOX RULES
+============================================================
+- No subsystem may execute arbitrary code.
+- Executor must validate all tool calls.
+- Cloud engines must sanitize all inputs and outputs.
+- No module may access the filesystem unless explicitly injected.
+- No module may access the network unless explicitly injected.
+- All external interactions must be sandboxed.
+============================================================
+13. CONFIGURATION RULES
+============================================================
+- All configuration must be injected.
+- No module may read environment variables directly.
+- No module may read config files directly.
+- All configuration must be validated against a schema.
+- No module may assume default configuration values.
+============================================================
+14. TOOL EXECUTION RULES
+============================================================
+- All tools must declare capabilities in their manifest.
+- Tools must be sandboxed.
+- Tools must not access other subsystems directly.
+- Tools must be invoked only through the Executor.
+- Tools must expose testable entry points.
+============================================================
+15. OUTPUT VALIDATION RULES
+============================================================ Before writing ANY file, Roo must validate:
+- Does this violate any rule above? If yes, STOP.
+- Does this expand <APP_SHELL_FILE> beyond minimal wiring? If yes, STOP.
+- Does this add logic to <APP_SHELL_FILE>? If yes, STOP.
+- Does this exceed file size limits? If yes, STOP.
+- Does this exceed function size limits? If yes, STOP.
+- Does this mix responsibilities in a module? If yes, STOP.
+- Does this create a god module? If yes, STOP.
+- Does this bypass the hook system? If yes, STOP.
+- Does this modify files not listed in the task? If yes, STOP.
+If any rule is violated, Roo must NOT write the file and must instead output a correction message.============================================================16. TASK EXECUTION RULES============================================================- Roo must read this file BEFORE performing any task.
+- Roo must follow these rules EXACTLY with no deviation.
+- These rules override all default behaviours.
+- These rules are permanent and apply to ALL future tasks.

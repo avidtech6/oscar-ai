@@ -1,23 +1,33 @@
-/**
- * Report Template Generator (Phase 8)
- * 
- * Generates structured templates for any report type.
- */
-
-import { EventEmitter } from '../events';
 import { reportTypeRegistry } from '../registry/ReportTypeRegistry';
 import { generateTemplate } from './generators/generateTemplate';
 import { regenerateTemplate } from './generators/regenerateTemplate';
 import { versionTemplate } from './generators/versionTemplate';
-import { writeFileSync, readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+
+// Simple browser-compatible event emitter
+const createEventEmitter = () => ({
+  events: {} as Record<string, ((data: any) => void)[]>,
+  on(event: string, callback: (data: any) => void) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  },
+  off(event: string, callback: (data: any) => void) {
+    if (!this.events[event]) return;
+    this.events[event] = this.events[event].filter(cb => cb !== callback);
+  },
+  emit(event: string, data: any) {
+    if (!this.events[event]) return;
+    this.events[event].forEach(callback => callback(data));
+  }
+});
 import type { ReportTemplate } from './ReportTemplate';
 import type { StyleProfile } from '../style-learner/StyleProfile';
 
-const STORAGE_PATH = join(process.cwd(), 'workspace', 'report-templates.json');
+const STORAGE_PATH = '/report-templates.json';
 
 export class ReportTemplateGenerator {
-	private eventEmitter = new EventEmitter();
+	private eventEmitter = createEventEmitter();
 	private templates: ReportTemplate[] = [];
 
 	constructor() {
@@ -109,13 +119,8 @@ export class ReportTemplateGenerator {
 	 * Load templates from disk
 	 */
 	private load(): void {
-		if (!existsSync(STORAGE_PATH)) {
-			this.templates = [];
-			return;
-		}
-
 		try {
-			const data = readFileSync(STORAGE_PATH, 'utf-8');
+			const data = localStorage.getItem(STORAGE_PATH) || '[]';
 			const parsed = JSON.parse(data);
 			// Convert date strings
 			this.templates = parsed.map((t: any) => ({
@@ -135,7 +140,7 @@ export class ReportTemplateGenerator {
 	private save(): void {
 		try {
 			const data = JSON.stringify(this.templates, null, 2);
-			writeFileSync(STORAGE_PATH, data, 'utf-8');
+			localStorage.setItem(STORAGE_PATH, data);
 		} catch (err) {
 			console.error('Failed to save report templates:', err);
 		}

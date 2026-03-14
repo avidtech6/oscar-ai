@@ -1,8 +1,21 @@
-/**
- * Report Self‑Healing Engine (Phase 7)
- * 
- * Detects missing components, contradictions, and generates healing actions.
- */
+// Simple browser-compatible event emitter
+const createEventEmitter = () => ({
+  events: {},
+  on(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  },
+  off(event, callback) {
+    if (!this.events[event]) return;
+    this.events[event] = this.events[event].filter(cb => cb !== callback);
+  },
+  emit(event, data) {
+    if (!this.events[event]) return;
+    this.events[event].forEach(callback => callback(data));
+  }
+});
 
 import { EventEmitter } from '../events';
 import type { DecompiledReport } from '../decompiler/DecompiledReport';
@@ -13,13 +26,10 @@ import { reportTypeRegistry } from '../registry/ReportTypeRegistry';
 import { SchemaUpdaterEngine } from '../schema-updater/SchemaUpdaterEngine';
 import { generateHealingActions } from './generators/generateHealingActions';
 import { type SelfHealingAction, SelfHealingActionType, Severity } from './SelfHealingAction';
-import { writeFileSync, readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-
-const STORAGE_PATH = join(process.cwd(), 'workspace', 'self-healing-actions.json');
+const STORAGE_KEY = 'self-healing-actions';
 
 export class ReportSelfHealingEngine {
-	private eventEmitter = new EventEmitter();
+	private eventEmitter = createEventEmitter();
 	private actions: SelfHealingAction[] = [];
 	private schemaUpdater = new SchemaUpdaterEngine();
 
@@ -153,17 +163,17 @@ export class ReportSelfHealingEngine {
 	}
 
 	/**
-	 * Load actions from disk
+	 * Load actions from localStorage
 	 */
 	private load(): void {
-		if (!existsSync(STORAGE_PATH)) {
-			this.actions = [];
-			return;
-		}
-
 		try {
-			const data = readFileSync(STORAGE_PATH, 'utf-8');
-			const parsed = JSON.parse(data);
+			const stored = localStorage.getItem(STORAGE_KEY);
+			if (!stored) {
+				this.actions = [];
+				return;
+			}
+
+			const parsed = JSON.parse(stored);
 			// Convert date strings
 			this.actions = parsed.map((a: any) => ({
 				...a,
@@ -177,12 +187,12 @@ export class ReportSelfHealingEngine {
 	}
 
 	/**
-	 * Save actions to disk
+	 * Save actions to localStorage
 	 */
 	private save(): void {
 		try {
 			const data = JSON.stringify(this.actions, null, 2);
-			writeFileSync(STORAGE_PATH, data, 'utf-8');
+			localStorage.setItem(STORAGE_KEY, data);
 		} catch (err) {
 			console.error('Failed to save self‑healing actions:', err);
 		}

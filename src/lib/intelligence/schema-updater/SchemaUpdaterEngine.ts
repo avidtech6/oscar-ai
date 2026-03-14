@@ -1,8 +1,21 @@
-/**
- * Schema Updater Engine (Phase 4)
- * 
- * Continuously improves schemas based on mapping results and user feedback.
- */
+// Simple browser-compatible event emitter
+const createEventEmitter = () => ({
+  events: {},
+  on(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  },
+  off(event, callback) {
+    if (!this.events[event]) return;
+    this.events[event] = this.events[event].filter(cb => cb !== callback);
+  },
+  emit(event, data) {
+    if (!this.events[event]) return;
+    this.events[event].forEach(callback => callback(data));
+  }
+});
 
 import { EventEmitter } from '../events';
 import type { SchemaMappingResult } from '../schema-mapper/SchemaMappingResult';
@@ -15,13 +28,10 @@ import { applyComplianceRuleUpdate } from './actions/applyComplianceRuleUpdate';
 import { applyTemplateUpdate } from './actions/applyTemplateUpdate';
 import { applyAIGuidanceUpdate } from './actions/applyAIGuidanceUpdate';
 import { applyReportTypeUpdate } from './actions/applyReportTypeUpdate';
-import { writeFileSync, readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-
-const STORAGE_PATH = join(process.cwd(), 'workspace', 'schema-updates.json');
+const STORAGE_KEY = 'schema-updates';
 
 export class SchemaUpdaterEngine {
-	private eventEmitter = new EventEmitter();
+	private eventEmitter = createEventEmitter();
 	private updateActions: SchemaUpdateAction[] = [];
 
 	constructor() {
@@ -163,29 +173,29 @@ export class SchemaUpdaterEngine {
 	}
 
 	/**
-	 * Persist updates to disk
+	 * Persist updates to localStorage
 	 */
 	private persistUpdates(): void {
 		try {
 			const data = JSON.stringify(this.updateActions, null, 2);
-			writeFileSync(STORAGE_PATH, data, 'utf-8');
+			localStorage.setItem(STORAGE_KEY, data);
 		} catch (err) {
 			console.error('Failed to persist schema updates:', err);
 		}
 	}
 
 	/**
-	 * Load previous updates from disk
+	 * Load previous updates from localStorage
 	 */
 	private load(): void {
-		if (!existsSync(STORAGE_PATH)) {
-			this.updateActions = [];
-			return;
-		}
-
 		try {
-			const data = readFileSync(STORAGE_PATH, 'utf-8');
-			const parsed = JSON.parse(data);
+			const stored = localStorage.getItem(STORAGE_KEY);
+			if (!stored) {
+				this.updateActions = [];
+				return;
+			}
+
+			const parsed = JSON.parse(stored);
 			// Convert date strings
 			this.updateActions = parsed.map((a: any) => ({
 				...a,

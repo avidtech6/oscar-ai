@@ -12,6 +12,12 @@ export class GalleryDB {
   private ready: Promise<void>;
 
   constructor() {
+    // Check if we're in a browser environment before initializing
+    if (typeof window === 'undefined' || typeof indexedDB === 'undefined') {
+      this.ready = Promise.resolve();
+      return;
+    }
+    
     this.ready = this.init();
   }
 

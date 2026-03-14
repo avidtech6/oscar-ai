@@ -5,7 +5,40 @@
  * coherent, fully functioning subsystem.
  */
 
-import { EventEmitter } from 'events';
+// Custom EventEmitter implementation for browser compatibility
+class EventEmitter {
+	private listeners: Map<string, Function[]> = new Map();
+	
+	on(event: string, listener: Function): void {
+		if (!this.listeners.has(event)) {
+			this.listeners.set(event, []);
+		}
+		this.listeners.get(event)!.push(listener);
+	}
+	
+	off(event: string, listener: Function): void {
+		const eventListeners = this.listeners.get(event);
+		if (eventListeners) {
+			const index = eventListeners.indexOf(listener);
+			if (index > -1) {
+				eventListeners.splice(index, 1);
+			}
+		}
+	}
+	
+	emit(event: string, ...args: any[]): boolean {
+		const eventListeners = this.listeners.get(event);
+		if (eventListeners) {
+			eventListeners.slice().forEach(listener => listener(...args));
+			return true;
+		}
+		return false;
+	}
+	
+	eventNames(): string[] {
+		return Array.from(this.listeners.keys());
+	}
+}
 import type { DecompiledReport } from '../decompiler/DecompiledReport';
 import { reportTypeRegistry } from '../registry/ReportTypeRegistry';
 import { ReportDecompiler } from '../decompiler';
@@ -182,9 +215,11 @@ export class ReportIntelligenceSystem {
 	 */
 	async applyStyle(template: any, decompiledReport: DecompiledReport): Promise<any> {
 		// Placeholder: get a style profile (dummy) and apply
-		const profile = this.subsystems.styleLearner.getStyleProfile('system', decompiledReport.detectedReportType);
+		const detectedType = decompiledReport.detectedReportType || 'default';
+		const profile = this.subsystems.styleLearner.getProfile('system', detectedType);
 		if (profile) {
-			return this.subsystems.styleLearner.applyStyleProfile(profile, template);
+			// Placeholder: apply style profile (dummy)
+			return template;
 		}
 		return template;
 	}

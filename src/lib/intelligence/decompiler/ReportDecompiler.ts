@@ -1,12 +1,21 @@
-/**
- * Report Decompiler Engine (Phase 2)
- * 
- * Ingests raw report content and extracts structured components:
- * - Sections and subsections
- * - Lists, tables, appendices
- * - Metadata, terminology, compliance markers
- * - Structure map
- */
+// Simple browser-compatible event emitter
+const createEventEmitter = () => ({
+  events: {},
+  on(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  },
+  off(event, callback) {
+    if (!this.events[event]) return;
+    this.events[event] = this.events[event].filter(cb => cb !== callback);
+  },
+  emit(event, data) {
+    if (!this.events[event]) return;
+    this.events[event].forEach(callback => callback(data));
+  }
+});
 
 import { EventEmitter } from '../events';
 import type { DecompiledReport, DecompiledSection } from './DecompiledReport';
@@ -21,7 +30,7 @@ import { detectComplianceMarkers } from './detectors/detectComplianceMarkers';
 import { detectAppendices } from './detectors/detectAppendices';
 
 export class ReportDecompiler {
-	private eventEmitter = new EventEmitter();
+	private eventEmitter = createEventEmitter();
 
 	/**
 	 * Ingest raw text and return a decompiled report

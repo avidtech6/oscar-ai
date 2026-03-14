@@ -58,17 +58,17 @@ export interface AssistantState {
 
 export type AssistantEvent =
   | { type: 'pageChange'; context: PageContext }
-  | { type: 'itemOpen'; itemId: string; itemType: string }
+  | { type: 'itemOpen'; itemId: string; itemType: 'note' | 'report' | 'task' | 'blogPost' }
   | { type: 'itemClose' }
-  | { type: 'selectionChange'; selectedIds: string[]; itemType: string }
-  | { type: 'modalOpen'; itemId: string; itemType: string }
+  | { type: 'selectionChange'; selectedIds: string[]; itemType: 'note' | 'report' | 'task' | 'blogPost' }
+  | { type: 'modalOpen'; itemId: string; itemType: 'note' | 'report' | 'task' | 'blogPost' }
   | { type: 'modalClose' }
   | { type: 'applyContent'; itemId: string; content: string }
   | { type: 'rewriteSection'; itemId: string; sectionId: string; content: string }
   | { type: 'insertImage'; itemId: string; imageId: string; position: number }
   | { type: 'createNote'; content: string }
   | { type: 'createTask'; content: string }
-  | { type: 'nudge'; nudgeType: string; message: string };
+  | { type: 'nudge'; message: string };
 
 export interface AssistantAction {
   name: string;

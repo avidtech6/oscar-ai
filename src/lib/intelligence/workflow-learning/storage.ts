@@ -4,11 +4,12 @@
  * Persists workflow profiles to workspace/workflow‑profiles.json.
  */
 
-import { promises as fs } from 'fs';
+
+import fs from 'fs/promises';
 import path from 'path';
 import type { WorkflowProfile } from './WorkflowProfile';
 
-const STORAGE_PATH = path.join(process.cwd(), 'workspace', 'workflow-profiles.json');
+const STORAGE_PATH = './workflow-profiles.json';
 
 export interface StoredWorkflowProfile {
 	id: string;

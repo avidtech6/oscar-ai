@@ -1,14 +1,12 @@
 /**
  * Storage for schema mapping results (Phase 3)
- * 
- * Persists mapping results to a JSON file in the workspace.
+ *
+ * Persists mapping results to browser localStorage.
  */
 
-import { writeFileSync, readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import type { SchemaMappingResult } from './SchemaMappingResult';
 
-const STORAGE_PATH = join(process.cwd(), 'workspace', 'schema-mapping-results.json');
+const STORAGE_KEY = 'schema-mapping-results';
 
 export class SchemaMappingStorage {
 	private results: SchemaMappingResult[] = [];
@@ -18,17 +16,23 @@ export class SchemaMappingStorage {
 	}
 
 	/**
-	 * Load results from disk
+	 * Load results from localStorage
 	 */
 	load(): void {
-		if (!existsSync(STORAGE_PATH)) {
-			this.results = [];
-			return;
-		}
-
 		try {
-			const data = readFileSync(STORAGE_PATH, 'utf-8');
-			const parsed = JSON.parse(data);
+			// Check if we're in a browser environment
+			if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+				this.results = [];
+				return;
+			}
+			
+			const stored = localStorage.getItem(STORAGE_KEY);
+			if (!stored) {
+				this.results = [];
+				return;
+			}
+
+			const parsed = JSON.parse(stored);
 			// Convert date strings back to Date objects
 			this.results = parsed.map((r: any) => ({
 				...r,
@@ -42,12 +46,17 @@ export class SchemaMappingStorage {
 	}
 
 	/**
-	 * Save results to disk
+	 * Save results to localStorage
 	 */
 	save(): void {
 		try {
+			// Check if we're in a browser environment
+			if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+				return;
+			}
+			
 			const data = JSON.stringify(this.results, null, 2);
-			writeFileSync(STORAGE_PATH, data, 'utf-8');
+			localStorage.setItem(STORAGE_KEY, data);
 		} catch (err) {
 			console.error('Failed to save schema mapping results:', err);
 		}

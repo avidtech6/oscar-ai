@@ -62,6 +62,9 @@
     } else {
       VoiceNotePipeline.startRecording(context).then(success => {
         isRecording = success;
+      }).catch(err => {
+        console.error('Voice recording failed:', err);
+        isRecording = false;
       });
     }
   }

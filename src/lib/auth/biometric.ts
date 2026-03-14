@@ -1,29 +1,19 @@
 // Biometric authentication manager
 // Uses WebAuthn API for passwordless authentication
 
+import { BiometricError } from './biometricErrors'
+import { BIOMETRIC_STORAGE_KEYS, BIOMETRIC_CONFIG } from './biometricConstants'
+import * as credentialHelpers from './biometricCredentialHelpers'
+import * as biometricUtils from './biometricUtils'
+
 export class BiometricManager {
   private static readonly RP_ID = window.location.hostname
   private static readonly RP_NAME = 'Oscar AI'
   private static readonly USER_DISPLAY_NAME = 'Oscar AI User'
   
-  // Check if WebAuthn is supported
-  static isSupported(): boolean {
-    return typeof window !== 'undefined' && 
-           'PublicKeyCredential' in window &&
-           typeof PublicKeyCredential === 'function' &&
-           'isUserVerifyingPlatformAuthenticatorAvailable' in PublicKeyCredential
-  }
-  
-  // Check if platform authenticator is available (Touch ID, Face ID, Windows Hello)
-  static async isPlatformAuthenticatorAvailable(): Promise<boolean> {
-    if (!this.isSupported()) return false
-    
-    try {
-      return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-    } catch {
-      return false
-    }
-  }
+  // Delegate to utility functions
+  static isSupported = biometricUtils.isSupported
+  static isPlatformAuthenticatorAvailable = biometricUtils.isPlatformAuthenticatorAvailable
   
   // Check if biometrics are enrolled
   static async isEnrolled(): Promise<boolean> {
@@ -140,89 +130,6 @@ export class BiometricManager {
     }
   }
   
-  // Get credential ID from registration
-  static getCredentialId(credential: PublicKeyCredential): string {
-    const arrayBuffer = credential.rawId
-    const uint8Array = new Uint8Array(arrayBuffer)
-    return Array.from(uint8Array)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-  }
-  
-  // Get attestation object
-  static getAttestationObject(credential: PublicKeyCredential): ArrayBuffer {
-    const response = credential.response as AuthenticatorAttestationResponse
-    return response.attestationObject
-  }
-  
-  // Get authenticator data
-  static getAuthenticatorData(credential: PublicKeyCredential): ArrayBuffer {
-    const response = credential.response as AuthenticatorAssertionResponse
-    return response.authenticatorData
-  }
-  
-  // Get signature
-  static getSignature(credential: PublicKeyCredential): ArrayBuffer {
-    const response = credential.response as AuthenticatorAssertionResponse
-    return response.signature
-  }
-  
-  // Get client data JSON
-  static getClientDataJSON(credential: PublicKeyCredential): string {
-    const response = credential.response as AuthenticatorAttestationResponse | AuthenticatorAssertionResponse
-    return new TextDecoder().decode(response.clientDataJSON)
-  }
-  
-  // Get user handle
-  static getUserHandle(credential: PublicKeyCredential): string | null {
-    const response = credential.response as AuthenticatorAssertionResponse
-    if (response.userHandle) {
-      return new TextDecoder().decode(response.userHandle)
-    }
-    return null
-  }
-  
-  // Validate authentication response
-  static async validateAuthentication(
-    credential: PublicKeyCredential,
-    expectedChallenge: Uint8Array
-  ): Promise<boolean> {
-    try {
-      const clientDataJSON = this.getClientDataJSON(credential)
-      const clientData = JSON.parse(clientDataJSON)
-      
-      // Verify challenge
-      const challengeBuffer = new Uint8Array(
-        atob(clientData.challenge).split('').map(c => c.charCodeAt(0))
-      )
-      
-      // Compare challenges
-      if (challengeBuffer.length !== expectedChallenge.length) {
-        return false
-      }
-      
-      for (let i = 0; i < challengeBuffer.length; i++) {
-        if (challengeBuffer[i] !== expectedChallenge[i]) {
-          return false
-        }
-      }
-      
-      // Verify origin
-      if (clientData.origin !== window.location.origin) {
-        return false
-      }
-      
-      // Verify type
-      if (clientData.type !== 'webauthn.get') {
-        return false
-      }
-      
-      return true
-    } catch {
-      return false
-    }
-  }
-  
   // Remove all biometric credentials
   static async removeAllCredentials(): Promise<void> {
     if (!this.isSupported()) return
@@ -237,90 +144,20 @@ export class BiometricManager {
     }
   }
   
-  // Get biometric type (fingerprint, face, etc.)
-  static async getBiometricType(): Promise<'fingerprint' | 'face' | 'iris' | 'unknown'> {
-    if (!this.isSupported()) return 'unknown'
-    
-    try {
-      // Check platform
-      const platform = navigator.platform.toLowerCase()
-      
-      if (platform.includes('mac') || platform.includes('iphone') || platform.includes('ipad')) {
-        // Check for Touch ID or Face ID
-        const hasPlatformAuth = await this.isPlatformAuthenticatorAvailable()
-        if (hasPlatformAuth) {
-          // iOS/macOS with biometrics
-          return 'fingerprint' // Could be Face ID on newer devices
-        }
-      } else if (platform.includes('win')) {
-        // Windows Hello
-        return 'fingerprint' // Could be face or iris
-      } else if (platform.includes('android')) {
-        // Android biometrics
-        return 'fingerprint'
-      }
-      
-      return 'unknown'
-    } catch {
-      return 'unknown'
-    }
-  }
+  // Delegate to credential helpers
+  static getCredentialId = credentialHelpers.getCredentialId
+  static getAttestationObject = credentialHelpers.getAttestationObject
+  static getAuthenticatorData = credentialHelpers.getAuthenticatorData
+  static getSignature = credentialHelpers.getSignature
+  static getClientDataJSON = credentialHelpers.getClientDataJSON
+  static getUserHandle = credentialHelpers.getUserHandle
   
-  // Get biometric icon based on type
-  static getBiometricIcon(type: 'fingerprint' | 'face' | 'iris' | 'unknown'): string {
-    switch (type) {
-      case 'fingerprint':
-        return '👆'
-      case 'face':
-        return '👤'
-      case 'iris':
-        return '👁️'
-      default:
-        return '🔒'
-    }
-  }
-  
-  // Get biometric label based on type
-  static getBiometricLabel(type: 'fingerprint' | 'face' | 'iris' | 'unknown'): string {
-    switch (type) {
-      case 'fingerprint':
-        return 'Touch ID / Fingerprint'
-      case 'face':
-        return 'Face ID / Facial Recognition'
-      case 'iris':
-        return 'Iris Scanner'
-      default:
-        return 'Biometric Authentication'
-    }
-  }
+  // Delegate to utility functions
+  static validateAuthentication = biometricUtils.validateAuthentication
+  static getBiometricType = biometricUtils.getBiometricType
+  static getBiometricIcon = biometricUtils.getBiometricIcon
+  static getBiometricLabel = biometricUtils.getBiometricLabel
 }
 
-// Biometric errors
-export class BiometricError extends Error {
-  constructor(
-    message: string,
-    public code: 'NOT_SUPPORTED' | 'USER_CANCELLED' | 'REGISTRATION_FAILED' | 
-                'AUTHENTICATION_FAILED' | 'ALREADY_REGISTERED' | 'NO_CREDENTIALS' |
-                'VALIDATION_FAILED' | 'UNKNOWN_ERROR'
-  ) {
-    super(message)
-    this.name = 'BiometricError'
-  }
-}
-
-// Local storage keys for biometric metadata
-export const BIOMETRIC_STORAGE_KEYS = {
-  IS_ENROLLED: 'biometric_is_enrolled',
-  CREDENTIAL_ID: 'biometric_credential_id',
-  USER_ID: 'biometric_user_id',
-  LAST_USED: 'biometric_last_used',
-  FAILED_ATTEMPTS: 'biometric_failed_attempts',
-  LOCKED_UNTIL: 'biometric_locked_until'
-} as const
-
-// Biometric configuration
-export const BIOMETRIC_CONFIG = {
-  MAX_FAILED_ATTEMPTS: 5,
-  LOCKOUT_DURATION: 5 * 60 * 1000, // 5 minutes
-  SESSION_DURATION: 30 * 60 * 1000 // 30 minutes
-} as const
+// Re-export constants and errors for backward compatibility
+export { BiometricError, BIOMETRIC_STORAGE_KEYS, BIOMETRIC_CONFIG }

@@ -14,7 +14,6 @@ export class VoiceNotePipeline {
 
   static async startRecording(context: MediaContext): Promise<boolean> {
     if (this.isRecording) {
-      console.warn('Voice note recording already in progress');
       return false;
     }
 
@@ -31,40 +30,44 @@ export class VoiceNotePipeline {
       };
 
       this.mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-        const result = await MediaIngestionPipeline.ingest(audioBlob, {
-          ...context,
-          tags: [...(context.tags || []), 'voice-note', 'recorded'],
-        }, {
-          autoTag: true,
-          emitNudge: true,
-          storeInGallery: true,
-          generateThumbnail: false,
-        });
+        try {
+          const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+          const result = await MediaIngestionPipeline.ingest(audioBlob, {
+            ...context,
+            tags: [...(context.tags || []), 'voice-note', 'recorded'],
+          }, {
+            autoTag: true,
+            emitNudge: true,
+            storeInGallery: true,
+            generateThumbnail: false,
+          });
 
-        if (result.success && result.mediaId) {
-          // Mark as voice note in gallery
-          const media = await galleryDB.getMedia(result.mediaId);
-          if (media) {
-            const voiceNote: VoiceNote = {
-              ...media,
-              type: 'audio',
-              transcription: undefined,
-              transcriptionStatus: 'pending',
-            };
-            // Update gallery with voice note metadata
-            await galleryDB.updateMedia(voiceNote.id, {
-              metadata: {
-                ...voiceNote.metadata,
-                transcription: voiceNote.transcription,
-                transcriptionStatus: voiceNote.transcriptionStatus,
-              },
-            });
-            mediaEventBus.emit('voiceNoteAdded', { audio: voiceNote, context });
+          if (result.success && result.mediaId) {
+            // Mark as voice note in gallery
+            const media = await galleryDB.getMedia(result.mediaId);
+            if (media) {
+              const voiceNote: VoiceNote = {
+                ...media,
+                type: 'audio',
+                transcription: undefined,
+                transcriptionStatus: 'pending',
+              };
+              // Update gallery with voice note metadata
+              await galleryDB.updateMedia(voiceNote.id, {
+                metadata: {
+                  ...voiceNote.metadata,
+                  transcription: voiceNote.transcription,
+                  transcriptionStatus: voiceNote.transcriptionStatus,
+                },
+              });
+              mediaEventBus.emit('voiceNoteAdded', { audio: voiceNote, context });
+            }
           }
+        } catch (err) {
+          console.error('Voice note processing failed:', err);
+        } finally {
+          this.cleanup();
         }
-
-        this.cleanup();
       };
 
       this.mediaRecorder.start();

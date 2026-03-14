@@ -5,11 +5,12 @@
  * Each entry includes insights, questions, actions, and timestamps.
  */
 
-import { promises as fs } from 'fs';
+
+import fs from 'fs/promises';
 import path from 'path';
 import type { ReasoningOutput } from './ReportAIReasoningEngine';
 
-const STORAGE_PATH = path.join(process.cwd(), 'workspace', 'reasoning-results.json');
+const STORAGE_PATH = './reasoning-results.json';
 
 export interface StoredReasoningResult {
 	id: string;
