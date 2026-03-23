@@ -17,6 +17,7 @@ import { getReportTypeDefinition, getWorkflowDefinition, getSchemaMapping } from
 import { getIntelligenceCapabilities, getArchitectureSummaries } from './apiCapabilities';
 import { validateReportStructure } from './apiValidation';
 import { getReasoningTrace } from './apiReasoning';
+import { intelligenceContext } from '../stores/intelligence/intelligenceContext';
 
 // Re-export all functions
 export { initializeIntelligence, getPhase, listPhases, searchBlueprint, getReportTypes, getWorkflowDefinitions, getSchemaMappings, summarizePhase, generateReport, explainDecision, getIntelligenceStatus };
@@ -24,6 +25,25 @@ export { getReportTypeDefinition, getWorkflowDefinition, getSchemaMapping };
 export { getIntelligenceCapabilities, getArchitectureSummaries };
 export { validateReportStructure };
 export { getReasoningTrace };
+
+// Export mock data functionality
+export function shouldUseMockData(): boolean {
+	let mockData = false;
+	intelligenceContext.subscribe($context => {
+		mockData = $context.preferences.mockData;
+	});
+	return mockData;
+}
+
+export function setMockDataPreference(enabled: boolean): void {
+	intelligenceContext.update(state => ({
+		...state,
+		preferences: {
+			...state.preferences,
+			mockData: enabled
+		}
+	}));
+}
 
 // Default export for backward compatibility
 export default {
@@ -46,3 +66,29 @@ export default {
 	validateReportStructure,
 	getReasoningTrace
 };
+
+// Mock data generation function for testing and development
+export function generateMockData(input: Record<string, any> = {}): Record<string, any> {
+	if (!shouldUseMockData()) {
+		return input;
+	}
+
+	const mockData = {
+		timestamp: new Date().toISOString(),
+		environment: 'development',
+		mode: 'mock',
+		data: {
+			...input,
+			generated: true,
+			mockId: `mock_${Date.now()}`,
+			sampleData: [
+				{ id: 1, name: 'Sample Item 1', value: Math.random() * 100 },
+				{ id: 2, name: 'Sample Item 2', value: Math.random() * 100 },
+				{ id: 3, name: 'Sample Item 3', value: Math.random() * 100 }
+			]
+		}
+	};
+
+	console.log('Mock data generated:', mockData);
+	return mockData;
+}

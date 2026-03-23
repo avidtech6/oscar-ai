@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { intelligenceContext } from '$lib/stores/intelligence/intelligenceContext';
 
 	let darkMode = false;
 	let notifications = true;
 	let autoSave = true;
+	let mockData = false;
 	let language = 'en';
 	let fontSize = 'medium';
 
@@ -15,9 +17,28 @@
 	};
 
 	function saveSettings() {
-		console.log('Settings saved:', { darkMode, notifications, autoSave, language, fontSize });
+		// Update the intelligence context with mock data preference
+		intelligenceContext.update(state => ({
+			...state,
+			preferences: {
+				...state.preferences,
+				mockData
+			}
+		}));
+		
+		// Update the intelligence API with the new mock data preference
+		import('$lib/intelligence/api').then(({ setMockDataPreference }) => {
+			setMockDataPreference(mockData);
+		});
+		
+		console.log('Settings saved:', { darkMode, notifications, autoSave, mockData, language, fontSize });
 		alert('Settings saved successfully!');
 	}
+
+	// Initialize mockData from intelligence context on page load
+	intelligenceContext.subscribe($context => {
+		mockData = $context.preferences.mockData;
+	});
 </script>
 
 <div class="page">
@@ -75,6 +96,16 @@
 				</div>
 				<label class="toggle">
 					<input type="checkbox" bind:checked={autoSave} />
+					<span class="slider"></span>
+				</label>
+			</div>
+			<div class="setting">
+				<div class="setting-label">
+					<strong>Mock Data</strong>
+					<p>Enable or disable mock data generation for testing and development.</p>
+				</div>
+				<label class="toggle">
+					<input type="checkbox" bind:checked={mockData} />
 					<span class="slider"></span>
 				</label>
 			</div>
@@ -162,11 +193,83 @@
 	.page {
 		padding: 2rem;
 	}
+
+	/* Mobile responsiveness */
+	@media (max-width: 768px) {
+		.page {
+			padding: 1rem;
+		}
+
+		h1 {
+			font-size: 2rem;
+		}
+
+		.subtitle {
+			font-size: 1rem;
+		}
+
+		.content-grid {
+			grid-template-columns: 1fr;
+			gap: 1.5rem;
+		}
+
+		.card {
+			padding: 1.5rem;
+		}
+
+		.card h2 {
+			font-size: 1.25rem;
+			margin-bottom: 1rem;
+		}
+
+		.profile-section {
+			flex-direction: column;
+			text-align: center;
+			gap: 1rem;
+		}
+
+		.avatar-large {
+			font-size: 2.5rem;
+		}
+
+		.setting {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.75rem;
+		}
+
+		.security-item {
+			flex-direction: column;
+			text-align: center;
+			gap: 0.75rem;
+		}
+
+		.storage-actions {
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+
+		.btn {
+			padding: 0.5rem 1rem;
+			font-size: 0.875rem;
+		}
+
+		.btn-small {
+			font-size: 0.625rem;
+			padding: 0.25rem 0.5rem;
+		}
+
+		.form-group input,
+		.form-group select {
+			padding: 0.5rem;
+			font-size: 0.75rem;
+		}
+	}
 	h1 {
-		font-size: 2.5rem;
-		font-weight: 700;
-		color: #111827;
-		margin-bottom: 0.5rem;
+	  font-size: 2.5rem;
+	  font-weight: 700;
+	  color: #111827;
+	  margin-bottom: 0.5rem;
 	}
 	.subtitle {
 		color: #6b7280;

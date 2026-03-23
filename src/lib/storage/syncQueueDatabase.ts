@@ -1,23 +1,23 @@
-// Sync queue database operations (IndexedDB)
+// Sync queue database operations - Layer 2 Presentation
+// Core logic extracted to Layer 1 for purity and reusability
+
 import { browser } from '$app/environment'
 import { SYNC_CONFIG } from './syncMetadata'
+import type { QueueItem } from './layer1/syncQueueDatabaseCore'
+import {
+  initQueueDatabaseCore,
+  getQueueDatabaseInstanceCore,
+  createQueueItemCore,
+  addQueueItemCore,
+  getPendingQueueItemsCore,
+  getFailedQueueItemsCore,
+  updateQueueItemStatusCore,
+  deleteQueueItemCore
+} from './layer1/syncQueueDatabaseCore'
+import { calculateQueueStats } from './layer1/syncQueueDatabaseCoreStats'
+import { generateQueueId } from './layer1/syncQueueDatabaseCoreUtils'
 
-// Queue item interface
-export interface QueueItem {
-  id: string
-  operation: 'create' | 'update' | 'delete'
-  table: string
-  recordId: string
-  data?: any
-  attempts: number
-  lastAttempt: number | null
-  status: 'pending' | 'processing' | 'failed' | 'completed'
-  error?: string
-  createdAt: number
-  updatedAt: number
-}
-
-// Queue storage in IndexedDB
+// Queue configuration
 const QUEUE_DB_NAME = 'oscar_ai_sync_queue'
 const QUEUE_DB_VERSION = 1
 const QUEUE_STORE_NAME = 'queue_items'
@@ -30,39 +30,21 @@ async function initQueueDB(): Promise<IDBDatabase> {
     throw new Error('Sync queue requires browser environment')
   }
   
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(QUEUE_DB_NAME, QUEUE_DB_VERSION)
-    
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => {
-      queueDB = request.result
-      resolve(queueDB)
-    }
-    
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result
-      
-      if (!db.objectStoreNames.contains(QUEUE_STORE_NAME)) {
-        const store = db.createObjectStore(QUEUE_STORE_NAME, { keyPath: 'id' })
-        store.createIndex('status', 'status')
-        store.createIndex('createdAt', 'createdAt')
-        store.createIndex('table_record', ['table', 'recordId'])
-      }
-    }
-  })
+  const config = {
+    dbName: QUEUE_DB_NAME,
+    version: QUEUE_DB_VERSION,
+    storeName: QUEUE_STORE_NAME
+  }
+  
+  return initQueueDatabaseCore(config)
 }
 
 // Get queue database instance
 async function getQueueDB(): Promise<IDBDatabase> {
   if (!queueDB) {
-    queueDB = await initQueueDB()
+    queueDB = await getQueueDatabaseInstanceCore(initQueueDB)
   }
   return queueDB
-}
-
-// Generate queue item ID
-function generateQueueId(): string {
-  return `queue_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
 // Add item to queue
@@ -76,31 +58,11 @@ export async function addToQueue(
     throw new Error('Sync queue requires browser environment')
   }
   
-  const now = Date.now()
-  const item: QueueItem = {
-    id: generateQueueId(),
-    operation,
-    table,
-    recordId,
-    data,
-    attempts: 0,
-    lastAttempt: null,
-    status: 'pending',
-    createdAt: now,
-    updatedAt: now
-  }
-  
   const db = await getQueueDB()
   
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([QUEUE_STORE_NAME], 'readwrite')
-    const store = transaction.objectStore(QUEUE_STORE_NAME)
-    
-    const request = store.put(item)
-    
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(item)
-  })
+  // Delegate to Layer 1 pure core logic
+  const item = await createQueueItemCore(operation, table, recordId, data, generateQueueId)
+  return addQueueItemCore(db, QUEUE_STORE_NAME, item)
 }
 
 // Get pending items
@@ -111,22 +73,8 @@ export async function getPendingItems(limit: number = SYNC_CONFIG.BATCH_SIZE): P
   
   const db = await getQueueDB()
   
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([QUEUE_STORE_NAME], 'readonly')
-    const store = transaction.objectStore(QUEUE_STORE_NAME)
-    const index = store.index('status')
-    
-    const request = index.getAll('pending')
-    
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => {
-      const items = request.result as QueueItem[]
-      // Sort by createdAt (oldest first)
-      items.sort((a, b) => a.createdAt - b.createdAt)
-      // Apply limit
-      resolve(items.slice(0, limit))
-    }
-  })
+  // Delegate to Layer 1 pure core logic
+  return getPendingQueueItemsCore(db, QUEUE_STORE_NAME, limit)
 }
 
 // Get failed items
@@ -137,21 +85,8 @@ export async function getFailedItems(): Promise<QueueItem[]> {
   
   const db = await getQueueDB()
   
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([QUEUE_STORE_NAME], 'readonly')
-    const store = transaction.objectStore(QUEUE_STORE_NAME)
-    const index = store.index('status')
-    
-    const request = index.getAll('failed')
-    
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => {
-      const items = request.result as QueueItem[]
-      // Sort by lastAttempt (oldest first)
-      items.sort((a, b) => (a.lastAttempt || 0) - (b.lastAttempt || 0))
-      resolve(items)
-    }
-  })
+  // Delegate to Layer 1 pure core logic
+  return getFailedQueueItemsCore(db, QUEUE_STORE_NAME)
 }
 
 // Update item status
@@ -166,38 +101,8 @@ export async function updateItemStatus(
   
   const db = await getQueueDB()
   
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([QUEUE_STORE_NAME], 'readwrite')
-    const store = transaction.objectStore(QUEUE_STORE_NAME)
-    
-    const getRequest = store.get(itemId)
-    
-    getRequest.onerror = () => reject(getRequest.error)
-    getRequest.onsuccess = () => {
-      const item = getRequest.result as QueueItem
-      if (!item) {
-        reject(new Error(`Queue item ${itemId} not found`))
-        return
-      }
-      
-      item.status = status
-      item.updatedAt = Date.now()
-      
-      if (status === 'processing') {
-        item.attempts += 1
-        item.lastAttempt = Date.now()
-      }
-      
-      if (error) {
-        item.error = error
-      }
-      
-      const putRequest = store.put(item)
-      
-      putRequest.onerror = () => reject(putRequest.error)
-      putRequest.onsuccess = () => resolve()
-    }
-  })
+  // Delegate to Layer 1 pure core logic
+  return updateQueueItemStatusCore(db, QUEUE_STORE_NAME, itemId, status, error)
 }
 
 // Remove item from queue
@@ -208,15 +113,8 @@ export async function removeFromQueue(itemId: string): Promise<void> {
   
   const db = await getQueueDB()
   
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([QUEUE_STORE_NAME], 'readwrite')
-    const store = transaction.objectStore(QUEUE_STORE_NAME)
-    
-    const request = store.delete(itemId)
-    
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve()
-  })
+  // Delegate to Layer 1 pure core logic
+  return deleteQueueItemCore(db, QUEUE_STORE_NAME, itemId)
 }
 
 // Queue statistics
@@ -244,21 +142,7 @@ export async function getQueueStats(): Promise<{
     request.onsuccess = () => {
       const items = request.result as QueueItem[]
       
-      const stats = {
-        total: items.length,
-        pending: items.filter(item => item.status === 'pending').length,
-        processing: items.filter(item => item.status === 'processing').length,
-        failed: items.filter(item => item.status === 'failed').length,
-        completed: items.filter(item => item.status === 'completed').length,
-        oldestPending: null as number | null
-      }
-      
-      // Find oldest pending item
-      const pendingItems = items.filter(item => item.status === 'pending')
-      if (pendingItems.length > 0) {
-        const oldest = Math.min(...pendingItems.map(item => item.createdAt))
-        stats.oldestPending = oldest
-      }
+      const stats = calculateQueueStats(items)
       
       resolve(stats)
     }
@@ -284,7 +168,7 @@ export async function clearCompletedItems(olderThan: number = 7 * 24 * 60 * 60 *
     request.onerror = () => reject(request.error)
     request.onsuccess = async () => {
       const items = request.result as QueueItem[]
-      const oldItems = items.filter(item => item.updatedAt < cutoffTime)
+      const oldItems = items.filter(item => item.createdAt < cutoffTime)
       
       let deleted = 0
       for (const item of oldItems) {

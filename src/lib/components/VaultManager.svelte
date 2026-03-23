@@ -203,5 +203,13 @@
 <style>
 	.vault-manager {
 		font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+		background: var(--background);
+		min-height: 100vh;
+	}
+
+	@media (max-width: 768px) {
+		.vault-manager {
+			padding: 1rem;
+		}
 	}
 </style>

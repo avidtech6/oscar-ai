@@ -1,0 +1,298 @@
+/**
+ * HTML Renderer Engine
+ * 
+ * This engine generates HTML from structured report content while maintaining
+ * visual fidelity to original documents and supporting responsive design.
+ * 
+ * PHASE 15 — HTML Rendering & Visual Reproduction Engine
+ * Required Systems: Visual Rendering System
+ */
+
+import type { RenderOptions, RenderResult, RenderProgress } from './render-options.js';
+
+/**
+ * HTML Renderer class for generating HTML from structured content
+ */
+export class HTMLRenderer {
+  /** Configuration options */
+  private options: RenderOptions;
+  
+  /** Progress callback */
+  private onProgress?: (progress: number, message: string) => void;
+  
+  /** Error callback */
+  private onError?: (error: Error) => void;
+  
+  /**
+   * Create a new HTML renderer
+   */
+  constructor(options: RenderOptions) {
+    this.options = { ...options };
+    this.onProgress = options.onProgress;
+    this.onError = options.onError;
+  }
+  
+  /**
+   * Generate HTML from structured report content
+   * 
+   * @param content - Structured content to render
+   * @returns Promise resolving to render result
+   */
+  public async render(content: any): Promise<RenderResult> {
+    const startTime = performance.now();
+    this.emitProgress(0, 'Initializing HTML renderer');
+    
+    try {
+      // Validate input
+      if (!content || typeof content !== 'object') {
+        throw new Error('Invalid content provided');
+      }
+      
+      this.emitProgress(20, 'Processing document structure');
+      
+      // Generate HTML structure
+      const html = await this.generateHTML(content);
+      
+      this.emitProgress(80, 'Finalizing HTML output');
+      
+      // Apply styling and formatting
+      const styledHTML = await this.applyStyling(html);
+      
+      this.emitProgress(95, 'Generating metadata');
+      
+      // Calculate metadata
+      const metadata = this.calculateMetadata(styledHTML);
+      
+      this.emitProgress(100, 'Rendering completed');
+      
+      const renderTime = performance.now() - startTime;
+      
+      return {
+        documentId: this.options.documentId,
+        content: styledHTML,
+        contentType: 'html',
+        fileSize: new Blob([styledHTML]).size,
+        renderTime,
+        success: true,
+        metadata,
+        timestamp: new Date()
+      };
+      
+    } catch (error) {
+      this.emitProgress(100, 'Rendering failed');
+      
+      if (this.onError) {
+        this.onError(error instanceof Error ? error : new Error(String(error)));
+      }
+      
+      return {
+        documentId: this.options.documentId,
+        content: '',
+        contentType: 'html',
+        fileSize: 0,
+        renderTime: performance.now() - startTime,
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date()
+      };
+    }
+  }
+  
+  /**
+   * Generate HTML from structured content
+   */
+  private async generateHTML(content: any): Promise<string> {
+    // Minimal functional implementation for HTML generation
+    const { documentId, mode, responsive, includeNavigation } = this.options;
+    
+    let html = '';
+    
+    // HTML5 doctype and basic structure
+    html += `<!DOCTYPE html>\n<html lang="en">\n`;
+    
+    // Head section
+    html += `<head>\n`;
+    html += `  <meta charset="UTF-8">\n`;
+    html += `  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n`;
+    html += `  <title>${this.options.metadata?.title || documentId}</title>\n`;
+    
+    // Basic CSS for responsive design
+    if (responsive) {
+      html += `  <style>\n`;
+      html += `    body { font-family: ${this.options.fontSettings?.family || 'Arial, sans-serif'}; font-size: ${this.options.fontSettings?.size || 12}px; line-height: ${this.options.fontSettings?.lineHeight || 1.5}; }\n`;
+      html += `    .container { max-width: ${this.options.viewportWidth || 1200}px; margin: 0 auto; padding: 20px; }\n`;
+      html += `    @media (max-width: 768px) { .container { padding: 10px; } }\n`;
+      html += `  </style>\n`;
+    }
+    
+    html += `</head>\n`;
+    
+    // Body section
+    html += `<body>\n`;
+    
+    // Navigation if enabled
+    if (includeNavigation) {
+      html += `  <nav class="navigation">\n`;
+      html += `    <a href="#top">Top</a> | <a href="#content">Content</a> | <a href="#footer">Footer</a>\n`;
+      html += `  </nav>\n`;
+    }
+    
+    // Main content
+    html += `  <div id="top" class="container">\n`;
+    
+    // Process content structure
+    if (content.sections) {
+      for (const section of content.sections) {
+        html += this.renderSection(section);
+      }
+    } else {
+      // Fallback: render content as text
+      html += `    <div class="content">\n`;
+      html += `      <p>${(content as any).content || ''}</p>\n`;
+      html += `    </div>\n`;
+    }
+    
+    html += `  </div>\n`;
+    
+    // Footer
+    html += `  <footer id="footer">\n`;
+    html += `    <p>Generated by Oscar AI - Document ID: ${documentId}</p>\n`;
+    html += `    <p>Rendered in ${mode} mode</p>\n`;
+    html += `  </footer>\n`;
+    
+    html += `</body>\n</html>`;
+    
+    return html;
+  }
+  
+  /**
+   * Render a section of content
+   */
+  private renderSection(section: any): string {
+    let html = `    <section class="section" id="section-${section.id || Math.random().toString(36).substr(2, 9)}">\n`;
+    
+    if (section.title) {
+      html += `      <h2>${section.title}</h2>\n`;
+    }
+    
+    if (section.content) {
+      html += `      <div class="content">\n`;
+      html += `        <p>${section.content}</p>\n`;
+      html += `      </div>\n`;
+    }
+    
+    if (section.subsections) {
+      for (const subsection of section.subsections) {
+        html += this.renderSubsection(subsection);
+      }
+    }
+    
+    html += `    </section>\n`;
+    return html;
+  }
+  
+  /**
+   * Render a subsection
+   */
+  private renderSubsection(subsection: any): string {
+    let html = `        <div class="subsection">\n`;
+    
+    if (subsection.title) {
+      html += `          <h3>${subsection.title}</h3>\n`;
+    }
+    
+    if (subsection.content) {
+      html += `          <p>${subsection.content}</p>\n`;
+    }
+    
+    html += `        </div>\n`;
+    return html;
+  }
+  
+  /**
+   * Apply styling to HTML content
+   */
+  private async applyStyling(html: string): Promise<string> {
+    const { theme, styling } = this.options;
+    
+    // Apply theme-based styling
+    if (theme === 'dark') {
+      html = html.replace(
+        /<style>/,
+        `<style> body { background-color: #1a1a1a; color: #ffffff; } a { color: #4a9eff; } </style>`
+      );
+    } else if (theme === 'light') {
+      html = html.replace(
+        /<style>/,
+        `<style> body { background-color: #ffffff; color: #333333; } a { color: #0066cc; } </style>`
+      );
+    }
+    
+    // Apply custom CSS if provided
+    if (styling?.customCSS) {
+      html = html.replace(
+        /<\/style>/,
+        `${styling.customCSS}\n</style>`
+      );
+    }
+    
+    return html;
+  }
+  
+  /**
+   * Calculate metadata from HTML content
+   */
+  private calculateMetadata(html: string): any {
+    const wordCount = (html.match(/\b\w+\b/g) || []).length;
+    const imageCount = (html.match(/<img/gi) || []).length;
+    const linkCount = (html.match(/<a/gi) || []).length;
+    
+    return {
+      wordCount,
+      imageCount,
+      linkCount
+    };
+  }
+  
+  /**
+   * Emit progress update
+   */
+  private emitProgress(progress: number, message: string): void {
+    if (this.onProgress) {
+      this.onProgress(progress, message);
+    }
+  }
+}
+
+/**
+ * Create HTML renderer instance
+ */
+export function createHTMLRenderer(options: RenderOptions): HTMLRenderer {
+  return new HTMLRenderer(options);
+}
+
+/**
+ * Render HTML content with default options
+ */
+export async function renderHTML(content: any, options: Partial<RenderOptions> = {}): Promise<RenderResult> {
+  const renderOptions: RenderOptions = {
+    documentId: options.documentId || `doc-${Date.now()}`,
+    mode: options.mode || 'html',
+    viewportWidth: options.viewportWidth,
+    viewportHeight: options.viewportHeight,
+    responsive: options.responsive ?? true,
+    includeNavigation: options.includeNavigation ?? true,
+    accessibility: options.accessibility ?? true,
+    theme: options.theme || 'auto',
+    fontSettings: options.fontSettings,
+    pageLayout: options.pageLayout,
+    images: options.images,
+    styling: options.styling,
+    metadata: options.metadata,
+    onProgress: options.onProgress,
+    onError: options.onError
+  };
+  
+  const renderer = createHTMLRenderer(renderOptions);
+  return renderer.render(content);
+}

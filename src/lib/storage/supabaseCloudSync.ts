@@ -1,6 +1,6 @@
 // Supabase Cloud Sync and Conflict Resolution
 import { browser } from '$app/environment'
-import type { SyncMetadata } from './syncMetadata'
+import type { SyncMetadata } from './layer1/syncMetadataCoreTypes'
 import { generateHash, simpleMerge, intelligentMerge, SYNC_CONFIG } from './syncMetadata'
 import { addToQueue } from './syncQueue'
 import { uploadToCloud, downloadFromCloud } from './supabaseCloudCrud'
@@ -189,8 +189,7 @@ export async function syncFromCloud(
         data: resolved.data,
         metadata: resolved.metadata,
         conflict: true,
-        source: resolved.strategy === 'merge' ? 'merged' : 
-                resolved.strategy === 'local_wins' ? 'local' : 'cloud'
+        source: resolved.strategy === 'merge' ? 'merged' : 'cloud'
       }
     }
   } catch (error: any) {

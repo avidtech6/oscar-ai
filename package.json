@@ -1,9 +1,9 @@
 {
   "name": "oscar-ai-v2",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite dev",
+    "dev": "vite dev > vite.log 2>&1",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

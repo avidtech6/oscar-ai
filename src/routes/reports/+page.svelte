@@ -4,6 +4,7 @@
 	import ReportsStats from '$lib/components/ReportsStats.svelte';
 	import ReportCard from '$lib/components/ReportCard.svelte';
 	import ExportMenu from '$lib/components/export/ExportMenu.svelte';
+	import DocumentExplorer from '$lib/components/DocumentExplorer.svelte';
 	import { exportManager } from '$lib/export/exportManager';
 	import './reports.css';
 
@@ -12,6 +13,7 @@
 	let searchQuery = $state('');
 	let selectedType = $state('all');
 	let selectedStatus = $state('all');
+	let showDocumentExplorer = $state(false);
 
 	let reports = [
 		{ 

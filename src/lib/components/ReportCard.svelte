@@ -72,13 +72,19 @@
 
 <style>
 	.report-card {
-		background: white;
+		background: var(--background);
 		border-radius: 12px;
 		overflow: hidden;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 		display: flex;
 		flex-direction: column;
-		border-top: 4px solid #3b82f6;
+		border-top: 4px solid var(--primary);
+		transition: all 0.2s ease;
+	}
+	
+	.report-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 	}
 	
 	.report-card.status-draft {
@@ -102,7 +108,7 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1rem 1.5rem;
-		border-bottom: 1px solid #f3f4f6;
+		border-bottom: 1px solid var(--border);
 	}
 	
 	.report-type-badge {
@@ -174,14 +180,14 @@
 	.report-title {
 		font-size: 1.125rem;
 		font-weight: 600;
-		color: #111827;
+		color: var(--text);
 		margin: 0 0 0.75rem 0;
 		line-height: 1.4;
 	}
 	
 	.report-description {
 		font-size: 0.875rem;
-		color: #6b7280;
+		color: var(--text-secondary);
 		margin: 0 0 1rem 0;
 		line-height: 1.5;
 	}
@@ -202,13 +208,13 @@
 	.meta-label {
 		font-size: 0.75rem;
 		font-weight: 500;
-		color: #374151;
+		color: var(--text-secondary);
 		min-width: 60px;
 	}
 	
 	.meta-value {
 		font-size: 0.875rem;
-		color: #111827;
+		color: var(--text);
 	}
 	
 	.report-tags {
@@ -219,24 +225,25 @@
 	
 	.tag {
 		font-size: 0.75rem;
-		color: #6b7280;
-		background: #f9fafb;
+		color: var(--text-secondary);
+		background: var(--background-hover);
 		padding: 0.25rem 0.5rem;
-		border-radius: 4px;
+		border-radius: 6px;
+		border: 1px solid var(--border);
 	}
 	
 	.report-card-actions {
 		padding: 1rem 1.5rem;
-		border-top: 1px solid #f3f4f6;
+		border-top: 1px solid var(--border);
 		display: flex;
 		gap: 0.5rem;
 	}
 	
 	.btn-action {
 		flex: 1;
-		background: #f9fafb;
-		color: #374151;
-		border: 1px solid #e5e7eb;
+		background: var(--background);
+		color: var(--text);
+		border: 1px solid var(--border);
 		border-radius: 6px;
 		padding: 0.5rem;
 		font-size: 0.875rem;
@@ -250,7 +257,43 @@
 	}
 	
 	.btn-action:hover {
-		background: white;
-		border-color: #9ca3af;
+		background: var(--background-hover);
+		border-color: var(--primary);
+		transform: translateY(-1px);
+		box-shadow: 0 2px 4px rgba(79, 70, 229, 0.1);
+	}
+	
+	@media (max-width: 768px) {
+		.report-card {
+			margin-bottom: 1rem;
+		}
+		
+		.report-card-header {
+			padding: 0.75rem 1rem;
+		}
+		
+		.report-card-body {
+			padding: 1rem;
+		}
+		
+		.report-card-actions {
+			padding: 0.75rem 1rem;
+			gap: 0.25rem;
+		}
+		
+		.btn-action {
+			padding: 0.375rem;
+			font-size: 0.75rem;
+		}
+		
+		.meta-item {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.25rem;
+		}
+		
+		.meta-label {
+			min-width: auto;
+		}
 	}
 </style>

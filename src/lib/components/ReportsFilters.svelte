@@ -54,22 +54,34 @@
 
 <style>
 	.filters-section {
-		background: white;
+		background: var(--background);
 		border-radius: 12px;
 		padding: 1.5rem;
 		margin-bottom: 1.5rem;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+		border: 1px solid var(--border);
+		transition: all 0.2s ease;
+	}
+	
+	.filters-section:hover {
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 	}
 	
 	.search-box {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		background: #f9fafb;
-		border: 1px solid #e5e7eb;
+		background: var(--background-hover);
+		border: 1px solid var(--border);
 		border-radius: 8px;
 		padding: 0.75rem 1rem;
 		margin-bottom: 1.5rem;
+		transition: all 0.2s ease;
+	}
+	
+	.search-box:hover {
+		border-color: var(--primary);
+		box-shadow: 0 2px 4px rgba(79, 70, 229, 0.1);
 	}
 	
 	.search-box input {
@@ -78,11 +90,11 @@
 		border: none;
 		outline: none;
 		font-size: 0.875rem;
-		color: #111827;
+		color: var(--text);
 	}
 	
 	.search-box input::placeholder {
-		color: #9ca3af;
+		color: var(--text-secondary);
 	}
 	
 	.filter-controls {
@@ -98,24 +110,45 @@
 		display: block;
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: #374151;
+		color: var(--text-secondary);
 		margin-bottom: 0.5rem;
 	}
 	
 	.filter-group select {
 		width: 100%;
 		padding: 0.5rem 0.75rem;
-		border: 1px solid #d1d5db;
+		border: 1px solid var(--border);
 		border-radius: 6px;
-		background: white;
+		background: var(--background);
 		font-size: 0.875rem;
-		color: #111827;
+		color: var(--text);
 		outline: none;
 		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+	
+	.filter-group select:hover {
+		border-color: var(--primary);
 	}
 	
 	.filter-group select:focus {
-		border-color: #3b82f6;
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+	}
+	
+	@media (max-width: 768px) {
+		.filters-section {
+			padding: 1rem;
+			margin-bottom: 1rem;
+		}
+		
+		.filter-controls {
+			flex-direction: column;
+			gap: 1rem;
+		}
+		
+		.search-box {
+			margin-bottom: 1rem;
+		}
 	}
 </style>

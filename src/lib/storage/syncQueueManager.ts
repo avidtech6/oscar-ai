@@ -1,4 +1,5 @@
-// Sync queue manager class
+// Sync queue manager class - Layer 2 Presentation
+// Core logic extracted to Layer 1 for purity and reusability
 import { browser } from '$app/environment'
 import { SYNC_CONFIG } from './syncMetadata'
 import { processPendingItems, getQueueStats, checkQueueHealth } from './syncQueueProcessor'

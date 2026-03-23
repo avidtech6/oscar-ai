@@ -1,6 +1,12 @@
-// Statistics functions for sync engine
+// Statistics functions for sync engine - Layer 2 Presentation
 import { TABLES, getAllRecords } from './localEncrypted'
 import { getPendingItems } from './syncQueue'
+import {
+  calculateQueueStatisticsCore,
+  calculateLocalStatisticsCore,
+  calculateSyncHealthStatsCore,
+  generateSyncReportCore
+} from './layer1/syncEngineStatsCore'
 
 export async function getQueueStats(): Promise<{
   pending: number
@@ -10,13 +16,8 @@ export async function getQueueStats(): Promise<{
 }> {
   try {
     const pendingItems = await getPendingItems()
-    // For now, return simplified stats
-    return {
-      pending: pendingItems.length,
-      processing: 0,
-      failed: 0,
-      completed: 0
-    }
+    // Delegate to Layer 1 pure core logic
+    return calculateQueueStatisticsCore(pendingItems)
   } catch (error) {
     console.error('Error getting queue stats:', error)
     return {
@@ -50,8 +51,6 @@ export async function getLocalStats(): Promise<{
     console.error('Error getting local stats:', error)
   }
 
-  return {
-    totalRecords,
-    byTable
-  }
+  // Delegate to Layer 1 pure core logic
+  return calculateLocalStatisticsCore(byTable)
 }

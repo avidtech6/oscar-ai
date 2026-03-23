@@ -29,6 +29,7 @@ export interface ExtendedIntelligenceContext extends IntelligenceContext {
 		autoSearch: boolean;
 		highlightPhaseReferences: boolean;
 		showReasoningTrace: boolean;
+		mockData: boolean;
 		defaultView: 'dashboard' | 'reports' | 'notes' | 'intelligence';
 		theme: 'light' | 'dark' | 'system';
 	};
@@ -60,6 +61,7 @@ const initialState: ExtendedIntelligenceContext = {
 		autoSearch: true,
 		highlightPhaseReferences: true,
 		showReasoningTrace: true,
+		mockData: false,
 		defaultView: 'dashboard',
 		theme: 'system'
 	},

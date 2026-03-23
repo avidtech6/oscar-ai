@@ -1,11 +1,18 @@
 /**
- * Intelligence API: Definition getters
- * 
+ * Intelligence API: Definition getters - Layer 2 Presentation
+ *
  * Placeholder implementations for report type, workflow, and schema mapping definitions.
+ *
+ * NOTE: Core implementation has been extracted to Layer 1 Core for purity.
+ * This file now re-exports the Layer 1 implementation to maintain compatibility.
  */
 
 import { getIntelligenceEngine } from './engine';
 import type { ReportTypeDefinition, WorkflowDefinition, SchemaMapping } from './types';
+import { createIntelligenceDefinitionsCore, type IntelligenceDefinitionsCore } from './layer1/intelligenceDefinitionsCore';
+
+// Create core definitions instance
+const definitionsCore: IntelligenceDefinitionsCore = createIntelligenceDefinitionsCore();
 
 /**
  * Get detailed report type definition
@@ -13,28 +20,7 @@ import type { ReportTypeDefinition, WorkflowDefinition, SchemaMapping } from './
  */
 export async function getReportTypeDefinition(reportType: string): Promise<ReportTypeDefinition | undefined> {
 	const engine = await getIntelligenceEngine();
-	const reportTypes = await engine.getReportTypes();
-	
-	if (!reportTypes.includes(reportType)) {
-		return undefined;
-	}
-	
-	// Placeholder implementation
-	// In real implementation, this would parse detailed definition from Phase 1
-	return {
-		id: reportType.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-		name: reportType,
-		description: `Definition for ${reportType} from Phase 1: Report Type Registry`,
-		requiredSections: ['Introduction', 'Findings', 'Recommendations', 'Conclusion'],
-		optionalSections: ['Appendices', 'References', 'Glossary'],
-		conditionalSections: ['Risk Assessment', 'Cost Analysis', 'Timeline'],
-		dependencies: ['BS5837:2012 Tree Survey'],
-		complianceRules: ['Must follow industry standards', 'Must include risk assessment'],
-		aiGuidance: ['Use structured sections', 'Include visual aids where appropriate'],
-		version: '1.0.0',
-		createdAt: new Date(),
-		updatedAt: new Date()
-	};
+	return definitionsCore.getReportTypeDefinition(engine, reportType);
 }
 
 /**
@@ -42,59 +28,17 @@ export async function getReportTypeDefinition(reportType: string): Promise<Repor
  * (Placeholder - in real implementation would parse from Phase 13/25)
  */
 export async function getWorkflowDefinition(workflowName: string): Promise<WorkflowDefinition | undefined> {
-	// Placeholder implementation
-	// In real implementation, this would parse from Phase 13 or 25
-	return {
-		id: workflowName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-		name: workflowName,
-		description: `Workflow definition from intelligence layer`,
-		steps: [
-			{
-				step: 1,
-				action: 'Analyze input requirements',
-				requires: ['Input data', 'Report type'],
-				produces: ['Requirements analysis'],
-				estimatedTime: '5 minutes',
-				phaseReference: 13
-			},
-			{
-				step: 2,
-				action: 'Select appropriate template',
-				requires: ['Requirements analysis'],
-				produces: ['Template selection'],
-				estimatedTime: '2 minutes',
-				phaseReference: 8
-			},
-			{
-				step: 3,
-				action: 'Apply schema mappings',
-				requires: ['Template selection', 'Input data'],
-				produces: ['Mapped data'],
-				estimatedTime: '10 minutes',
-				phaseReference: 3
-			},
-			{
-				step: 4,
-				action: 'Generate report',
-				requires: ['Mapped data'],
-				produces: ['Draft report'],
-				estimatedTime: '15 minutes',
-				phaseReference: 8
-			},
-			{
-				step: 5,
-				action: 'Validate compliance',
-				requires: ['Draft report'],
-				produces: ['Validated report'],
-				estimatedTime: '5 minutes',
-				phaseReference: 9
-			}
-		],
-		inputs: ['Input data', 'Report type', 'User preferences'],
-		outputs: ['Validated report', 'Compliance certificate', 'Metadata'],
-		dependencies: ['Report Type Registry', 'Schema Mapper', 'Compliance Validator'],
-		phaseReference: 13
-	};
+	const engine = await getIntelligenceEngine();
+	return definitionsCore.getWorkflowDefinition(engine, workflowName);
+}
+
+/**
+ * Get detailed schema mapping definition
+ * (Placeholder - in real implementation would parse from Phase 3)
+ */
+export async function getSchemaMappingDefinition(mappingId: string): Promise<SchemaMapping | undefined> {
+	const engine = await getIntelligenceEngine();
+	return definitionsCore.getSchemaMappingDefinition(engine, mappingId);
 }
 
 /**

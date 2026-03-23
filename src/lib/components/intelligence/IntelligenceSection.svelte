@@ -1,12 +1,13 @@
 <script lang="ts">
+	import { intelligenceStore } from '$lib/assistant/IntelligenceStore';
+	
 	export let title: string;
-	export let expanded: boolean = true;
+	export let sectionKey: keyof typeof intelligenceStore.sectionExpanded;
 	export let description: string = '';
 	
-	let isExpanded = expanded;
-	
 	function toggle() {
-		isExpanded = !isExpanded;
+		intelligenceStore.toggleSection(sectionKey);
+		dispatch('toggle');
 	}
 </script>
 
@@ -14,11 +15,11 @@
 	<div class="section-header" on:click={toggle}>
 		<h2>{title}</h2>
 		<button class="toggle-button">
-			{isExpanded ? '−' : '+'}
+			{$intelligenceStore.sectionExpanded[sectionKey] ? '−' : '+'}
 		</button>
 	</div>
 	
-	{#if isExpanded}
+	{#if $intelligenceStore.sectionExpanded[sectionKey]}
 		<div class="section-content">
 			{#if description}
 				<p class="section-description">{description}</p>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { intelligence } from '$lib/intelligence';
+	import { intelligenceStore } from '$lib/assistant/IntelligenceStore';
 	import IntelligencePanelHeader from './intelligence/IntelligencePanelHeader.svelte';
 	import IntelligencePanelSearch from './intelligence/IntelligencePanelSearch.svelte';
 	import IntelligencePanelTabs from './intelligence/IntelligencePanelTabs.svelte';
@@ -8,15 +9,11 @@
 	import IntelligenceReportsGrid from './intelligence/IntelligenceReportsGrid.svelte';
 	import IntelligenceIntegrationView from './intelligence/IntelligenceIntegrationView.svelte';
 
-	export let title = 'Intelligence Layer';
+	export let title = 'Oscar AI Intelligence Layer';
 	export let expanded = false;
 	export let showPhaseFiles = true;
 	export let showWorkflows = true;
 	export let showReports = true;
-
-	let activeTab: 'phases' | 'workflows' | 'reports' | 'integration' = 'phases';
-	let selectedPhase: string | null = null;
-	let searchQuery = '';
 
 	const tabs = [
 		{ id: 'phases', label: 'Phase Files', icon: '📚' },
@@ -72,78 +69,87 @@
 			'PHASE_24': 'Document Intelligence Layer - Document processing intelligence',
 			'PHASE_25': 'Workflow Intelligence Layer - Workflow optimization',
 			'PHASE_26': 'Final System Integration - Final build preparation',
+			'PHASE_27.5': 'Extended Intelligence Core - Advanced AI capabilities',
+			'PHASE_28': 'Quantum Computing Integration - Quantum-powered intelligence',
+			'PHASE_29': 'Blockchain Intelligence - Distributed intelligence layer',
+			'PHASE_30': 'Advanced Analytics Engine - Predictive and prescriptive analytics',
+			'PHASE_31': 'Neural Network Intelligence - Deep learning integration',
+			'PHASE_32': 'Cognitive Computing - Human-like reasoning',
+			'PHASE_33': 'Autonomous Systems - Self-optimizing intelligence',
+			'PHASE_34.5': 'Final Intelligence Integration - Complete system alignment',
 		};
-		return descriptions[phaseId] || 'Intelligence phase';
+		return descriptions[phaseId] || 'Oscar AI Intelligence Phase';
 	}
 
 	function getPhaseStatus(phaseId: string): 'active' | 'inactive' | 'pending' {
-		// Simple logic: first 10 phases active, others pending
-		const phaseNum = parseInt(phaseId.split('_')[1]);
+		// Enhanced logic: Extended Intelligence phases also active
+		const phaseNum = parseFloat(phaseId.split('_')[1]);
 		if (phaseNum <= 10) return 'active';
-		if (phaseNum <= 20) return 'inactive';
+		if (phaseNum >= 27.5 && phaseNum <= 34.5) return 'active';
+		if (phaseNum <= 26) return 'inactive';
 		return 'pending';
 	}
 
 	function filteredPhases() {
 		const phases = intelligence.getPhaseFiles();
-		if (!searchQuery) return phases;
+		if (!$intelligenceStore.searchQuery) return phases;
 		
-		return phases.filter(phase => 
-			phase.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			phase.description.toLowerCase().includes(searchQuery.toLowerCase())
+		return phases.filter(phase =>
+			phase.name.toLowerCase().includes($intelligenceStore.searchQuery.toLowerCase()) ||
+			phase.description.toLowerCase().includes($intelligenceStore.searchQuery.toLowerCase())
 		);
 	}
 
 	function handleToggleExpand() {
-		expanded = !expanded;
+		$intelligenceStore.toggleExpand();
 	}
 
 	function handleTabChange(id: string) {
-		activeTab = id as 'phases' | 'workflows' | 'reports' | 'integration';
+		$intelligenceStore.setActiveTab(id as 'phases' | 'workflows' | 'reports' | 'integration');
 	}
 
 	function handleSelectPhase(id: string) {
-		selectedPhase = selectedPhase === id ? null : id;
+		$intelligenceStore.togglePhaseSelection(id);
 	}
 </script>
 
-<div class="intelligence-panel" class:focused={expanded}>
+<div class="intelligence-panel" class:focused={$intelligenceStore.expanded}>
 	<IntelligencePanelHeader
 		{title}
-		{expanded}
+		bind:expanded={$intelligenceStore.expanded}
 		onToggleExpand={handleToggleExpand}
 	/>
 	
-	{#if expanded}
+	{#if $intelligenceStore.expanded}
 		<div class="panel-content">
-			<IntelligencePanelSearch bind:searchQuery />
+			<IntelligencePanelSearch bind:searchQuery={$intelligenceStore.searchQuery} />
 			
 			<IntelligencePanelTabs
 				{tabs}
-				activeTab={activeTab}
+				activeTab={$intelligenceStore.activeTab}
 				onTabChange={handleTabChange}
 			/>
 			
 			<div class="tab-content">
-				{#if activeTab === 'phases'}
+				{#if $intelligenceStore.activeTab === 'phases'}
 					<IntelligencePhasesGrid
 						phases={filteredPhases()}
-						selectedPhase={selectedPhase}
+						selectedPhase={$intelligenceStore.selectedPhase}
 						getPhaseDescription={getPhaseDescription}
 						getPhaseStatus={getPhaseStatus}
 						onSelectPhase={handleSelectPhase}
 					/>
 					
-				{:else if activeTab === 'workflows'}
+				{:else if $intelligenceStore.activeTab === 'workflows'}
 					<IntelligenceWorkflowsList {workflows} />
 					
-				{:else if activeTab === 'reports'}
+				{:else if $intelligenceStore.activeTab === 'reports'}
 					<IntelligenceReportsGrid
 						reportEngines={reportEngines}
 						getPhaseDescription={getPhaseDescription}
 					/>
 					
-				{:else if activeTab === 'integration'}
+				{:else if $intelligenceStore.activeTab === 'integration'}
 					<IntelligenceIntegrationView
 						phaseCount={intelligence.getPhaseFiles().length}
 					/>
@@ -155,11 +161,23 @@
 
 <style>
 	.intelligence-panel {
-		background: white;
-		border: 1px solid #e5e7eb;
+		background: var(--background);
+		border: 1px solid var(--border);
 		border-radius: 8px;
 		overflow: hidden;
 		transition: all 0.3s ease;
+		position: relative;
+	}
+
+	.intelligence-panel::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background: linear-gradient(90deg, #4F46E5, #7C3AED, #EC4899);
+		opacity: 0.1;
 	}
 
 	.intelligence-panel.focused {
@@ -168,9 +186,31 @@
 
 	.panel-content {
 		padding: 1rem;
+		background: var(--background);
+		position: relative;
+	}
+
+	.panel-content::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.05) 0%, transparent 50%),
+					radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
+		pointer-events: none;
 	}
 
 	.tab-content {
 		margin-top: 1rem;
+	}
+
+	/* Responsive adjustments */
+	@media (max-width: 768px) {
+		.intelligence-panel {
+			border-radius: 6px;
+		}
+		
+		.panel-content {
+			padding: 0.75rem;
+		}
 	}
 </style>

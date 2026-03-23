@@ -8,14 +8,16 @@
 	import TopNavUserMenu from './topnav/TopNavUserMenu.svelte';
 
 	export let user = {
-		name: 'Arborist User',
-		avatar: '🌳',
-		role: 'Tree Surveyor'
+		name: 'Oscar AI Intelligence Analyst',
+		avatar: '🧠',
+		role: 'Phase Intelligence Specialist',
+		email: 'analyst@oscar-ai.com',
+		status: 'active'
 	};
 
 	let searchQuery = '';
 	let notifications = [
-		{ id: 1, text: 'New report template available', time: '2 hours ago', unread: true },
+		{ id: 1, text: 'New intelligence report available', time: '2 hours ago', unread: true },
 		{ id: 2, text: 'Schema update completed', time: '1 day ago', unread: true },
 		{ id: 3, text: 'Weekly summary ready', time: '3 days ago', unread: false }
 	];
@@ -26,7 +28,7 @@
 	function handleSearch(e: Event) {
 		e.preventDefault();
 		if (searchQuery.trim()) {
-			// In a real app, this would trigger search
+			// Trigger unified search
 			console.log('Searching for:', searchQuery);
 		}
 	}
@@ -74,7 +76,7 @@
 				{/if}
 			</button>
 			
-			<button class="nav-button" aria-label="Help">
+			<button class="nav-button" aria-label="Help" title="Ask Oscar for assistance">
 				❓
 			</button>
 			
@@ -117,8 +119,8 @@
 
 <style>
 	.top-nav {
-		background: white;
-		border-bottom: 1px solid #e5e7eb;
+		background: var(--background);
+		border-bottom: 1px solid var(--border);
 		padding: 0.75rem 1.5rem;
 		display: flex;
 		align-items: center;
@@ -128,6 +130,17 @@
 		z-index: 50;
 		height: 64px;
 		box-sizing: border-box;
+	}
+
+	.top-nav::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 2px;
+		background: linear-gradient(90deg, #4F46E5, #7C3AED, #EC4899);
+		opacity: 0.2;
 	}
 	
 	.nav-left, .nav-center, .nav-right {
@@ -147,7 +160,7 @@
 	
 	.nav-actions {
 		display: flex;
-		gap: 0.5rem;
+		gap: 0.75rem;
 		align-items: center;
 	}
 	
@@ -157,31 +170,58 @@
 	}
 	
 	.nav-button {
-		background: none;
-		border: 1px solid #e5e7eb;
-		border-radius: 6px;
-		padding: 0.5rem 0.75rem;
-		font-size: 1rem;
+		background: var(--background);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		padding: 0.5rem 1rem;
+		font-size: 0.875rem;
+		font-weight: 500;
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		transition: background 0.2s ease;
+		transition: all 0.2s ease;
 		position: relative;
+		color: var(--text);
 	}
 	
 	.nav-button:hover {
-		background: #f9fafb;
+		background: var(--background-hover);
+		border-color: var(--primary);
+		transform: translateY(-1px);
+		box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+	}
+	
+	.nav-button.active {
+		background: var(--primary);
+		color: white;
+		border-color: var(--primary);
+		box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
 	}
 	
 	.user-avatar {
-		font-size: 1.25rem;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #4F46E5, #7C3AED);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1rem;
+		font-weight: 600;
+		box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
 	}
 	
 	.user-name {
+		margin-left: 0.5rem;
 		font-size: 0.875rem;
-		font-weight: 500;
-		color: #111827;
+		font-weight: 600;
+		color: var(--text);
+		background: linear-gradient(135deg, #4F46E5, #7C3AED);
+		background-clip: text;
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
 	}
 	
 	.badge {
@@ -206,7 +246,58 @@
 		top: 0;
 		left: 0;
 		right: 0;
-		bottom: 0;
+	 bottom: 0;
 		z-index: 40;
+	}
+	
+	@media (max-width: 768px) {
+		.top-nav {
+			padding: 0.5rem 1rem;
+			height: 56px;
+		}
+		
+		.nav-actions {
+			gap: 0.5rem;
+		}
+		
+		.nav-button {
+			padding: 0.5rem 0.75rem;
+			font-size: 0.75rem;
+			min-height: 40px;
+		}
+		
+		.user-name {
+			display: none;
+		}
+		
+		.sync-status-wrapper {
+			order: 1;
+		}
+		
+		/* Hide less critical buttons on mobile */
+		button[aria-label="Help"] {
+			display: none;
+		}
+	}
+	
+	@media (max-width: 480px) {
+		.top-nav {
+			padding: 0.5rem;
+		}
+		
+		.nav-actions {
+			gap: 0.25rem;
+		}
+		
+		.nav-button {
+			padding: 0.5rem;
+			font-size: 0.625rem;
+		}
+		
+		.user-avatar {
+			width: 24px;
+			height: 24px;
+			font-size: 0.875rem;
+		}
 	}
 </style>

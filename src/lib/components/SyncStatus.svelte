@@ -102,22 +102,44 @@
 		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: 0.5rem;
+		background: var(--background);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		padding: 0.25rem 0.5rem;
+		transition: all 0.2s ease;
+	}
+
+	.sync-status-container:hover {
+		border-color: var(--primary);
+		box-shadow: 0 2px 4px rgba(79, 70, 229, 0.1);
 	}
 
 	.sync-details-button {
 		background: none;
 		border: none;
 		font-size: 0.875rem;
-		color: #6b7280;
+		color: var(--text-secondary);
 		cursor: pointer;
-		padding: 0.25rem;
-		border-radius: 4px;
-		transition: color 0.2s ease;
+		padding: 0.375rem;
+		border-radius: 6px;
+		transition: all 0.2s ease;
 	}
 
 	.sync-details-button:hover {
-		color: #374151;
-		background: #f3f4f6;
+		color: var(--primary);
+		background: rgba(79, 70, 229, 0.1);
+		transform: translateY(-1px);
+	}
+
+	@media (max-width: 768px) {
+		.sync-status-container {
+			gap: 0.25rem;
+		}
+		
+		.sync-details-button {
+			font-size: 0.75rem;
+			padding: 0.25rem;
+		}
 	}
 </style>

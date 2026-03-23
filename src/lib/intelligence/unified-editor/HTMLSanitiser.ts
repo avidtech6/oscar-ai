@@ -87,7 +87,7 @@ export class HTMLSanitiser {
             if (!allowedProtocols.includes(parsed.protocol)) return false;
             // Check file extension
             const ext = parsed.pathname.split('.').pop()?.toLowerCase();
-            const allowedExt = ['jpg', 'jpeg', png', 'gif', 'webp', 'svg'];
+            const allowedExt = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
             if (ext && !allowedExt.includes(ext)) return false;
             return true;
         } catch {

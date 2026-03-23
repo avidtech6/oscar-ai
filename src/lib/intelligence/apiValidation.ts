@@ -1,10 +1,17 @@
 /**
- * Intelligence API: Validation
- * 
+ * Intelligence API: Validation - Layer 2 Presentation
+ *
  * Validate report structure against definitions.
+ *
+ * NOTE: Core implementation has been extracted to Layer 1 Core for purity.
+ * This file now re-exports the Layer 1 implementation to maintain compatibility.
  */
 
 import { getReportTypeDefinition } from './apiDefinitions';
+import { createIntelligenceValidationCore, type IntelligenceValidationCore } from './layer1/intelligenceValidationCore';
+
+// Create core validation instance
+const validationCore: IntelligenceValidationCore = createIntelligenceValidationCore();
 
 /**
  * Validate if a report structure is compliant
@@ -20,48 +27,5 @@ export async function validateReportStructure(
 	extraSections: string[];
 }> {
 	const definition = await getReportTypeDefinition(reportType);
-	if (!definition) {
-		return {
-			valid: false,
-			errors: [`Report type "${reportType}" not found`],
-			warnings: [],
-			missingSections: [],
-			extraSections: []
-		};
-	}
-	
-	const errors: string[] = [];
-	const warnings: string[] = [];
-	const missingSections: string[] = [];
-	const extraSections: string[] = [];
-	
-	// Check required sections
-	for (const requiredSection of definition.requiredSections) {
-		if (!structure[requiredSection]) {
-			missingSections.push(requiredSection);
-			errors.push(`Missing required section: ${requiredSection}`);
-		}
-	}
-	
-	// Check for extra sections (not in required, optional, or conditional)
-	const allAllowedSections = [
-		...definition.requiredSections,
-		...definition.optionalSections,
-		...definition.conditionalSections
-	];
-	
-	for (const section in structure) {
-		if (!allAllowedSections.includes(section)) {
-			extraSections.push(section);
-			warnings.push(`Extra section found: ${section}`);
-		}
-	}
-	
-	return {
-		valid: errors.length === 0,
-		errors,
-		warnings,
-		missingSections,
-		extraSections
-	};
+	return validationCore.validateReportStructure(definition, structure);
 }

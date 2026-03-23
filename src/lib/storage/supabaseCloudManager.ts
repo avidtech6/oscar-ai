@@ -1,4 +1,4 @@
-// Supabase Cloud Storage Manager
+// Supabase Cloud Storage Manager - Layer 2 Presentation
 import { browser } from '$app/environment'
 import { getSupabaseClient, CLOUD_TABLES, type CloudRecord } from './supabaseCloudClient'
 import { uploadToCloud, downloadFromCloud, deleteFromCloud, listCloudRecords } from './supabaseCloudCrud'
@@ -6,15 +6,18 @@ import { syncToCloud, syncFromCloud } from './supabaseCloudSync'
 import { bulkUploadToCloud, bulkDownloadFromCloud } from './supabaseCloudBulk'
 import { checkCloudConnectivity, getCloudStorageStats } from './supabaseCloudConnectivity'
 import type { SyncMetadata } from './syncMetadata'
+import { CloudStorageManagerCore } from './layer1/syncCloudManagerCore'
+import type {
+  CloudStorageStats,
+  CloudConnectivityResult,
+  BulkOperationResult
+} from './layer1/syncCloudManagerTypes'
 
 export class CloudStorageManager {
-  private supabase: any = null
+  private core: CloudStorageManagerCore
   
-  private getSupabase() {
-    if (!this.supabase) {
-      this.supabase = getSupabaseClient()
-    }
-    return this.supabase
+  constructor() {
+    this.core = new CloudStorageManagerCore()
   }
   
   // Upload a record to cloud
@@ -111,15 +114,14 @@ export class CloudStorageManager {
     return getCloudStorageStats()
   }
   
-  // Get all tables
+  // Get all tables - delegates to Layer 1
   getTables(): string[] {
-    return Object.values(CLOUD_TABLES)
+    return this.core.getTables()
   }
   
-  // Check if a table is valid
+  // Check if a table is valid - delegates to Layer 1
   isValidTable(table: string): boolean {
-    const validTables = Object.values(CLOUD_TABLES)
-    return validTables.includes(table as any)
+    return this.core.isValidTable(table)
   }
 }
 

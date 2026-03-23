@@ -1,0 +1,736 @@
+{
+  "phase_matrix": {
+    "section_1_report_intelligence_core": {
+      "phases": {
+        "phase_1": {
+          "name": "Report Type Registry",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "ReportTypeRegistry class",
+            "ReportTypeDefinition interface",
+            "Built-in report types: BS5837:2012 Tree Survey, Arboricultural Impact Assessment, Arboricultural Method Statement, Tree Inspection Report, Tree Preservation Order Assessment, Tree Risk Assessment, Arboricultural Implication Assessment, Tree Survey Report, Arboricultural Survey Report"
+          ],
+          "files": [
+            "src/lib/report-intelligence/report-type-registry.ts",
+            "src/lib/report-intelligence/report-type-definitions.ts"
+          ],
+          "behaviors": [
+            "Load and manage report type definitions",
+            "Validate report structure against type schemas",
+            "Support custom report type definitions",
+            "Enforce compliance with regulatory standards"
+          ]
+        },
+        "phase_2": {
+          "name": "Report Decompiler Engine",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "ReportDecompiler class",
+            "DecompiledReport interface",
+            "StructureMap interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/report-decompiler.ts",
+            "src/lib/report-intelligence/decompiled-report.ts",
+            "src/lib/report-intelligence/structure-map.ts"
+          ],
+          "behaviors": [
+            "Extract headings, subheadings, sections, subsections",
+            "Extract lists, tables, metadata, terminology",
+            "Extract compliance markers and annotations",
+            "Generate structure map of document organization",
+            "Support multiple document formats (PDF, Word, HTML)"
+          ]
+        },
+        "phase_3": {
+          "name": "Report Schema Mapper",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "ReportSchemaMapper class",
+            "SchemaMapping interface",
+            "SectionMapping interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/report-schema-mapper.ts",
+            "src/lib/report-intelligence/schema-mapping.ts"
+          ],
+          "behaviors": [
+            "Map extracted content to report type schemas",
+            "Identify missing or incomplete sections",
+            "Reorganize content according to schema requirements",
+            "Handle conditional sections and dependencies"
+          ]
+        },
+        "phase_4": {
+          "name": "Schema Updater Engine",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "SchemaUpdaterEngine class",
+            "UpdateOperation interface",
+            "ValidationResult interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/schema-updater-engine.ts",
+            "src/lib/report-intelligence/update-operation.ts"
+          ],
+          "behaviors": [
+            "Apply schema updates to existing reports",
+            "Validate updated content against schema rules",
+            "Handle breaking changes and version migrations",
+            "Maintain audit trail of all modifications"
+          ]
+        },
+        "phase_5": {
+          "name": "Report Style Learner",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "ReportStyleLearner class",
+            "StyleProfile interface",
+            "StyleAnalysis interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/report-style-learner.ts",
+            "src/lib/report-intelligence/style-profile.ts"
+          ],
+          "behaviors": [
+            "Analyze writing style and formatting patterns",
+            "Learn terminology and phrasing preferences",
+            "Generate style profiles for different report types",
+            "Apply learned styles to new content generation"
+          ]
+        },
+        "phase_6": {
+          "name": "Report Classification Engine",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "ReportClassificationEngine class",
+            "ClassificationResult interface",
+            "ConfidenceScore interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/report-classification-engine.ts",
+            "src/lib/report-intelligence/classification-result.ts"
+          ],
+          "behaviors": [
+            "Automatically identify report types from content",
+            "Calculate confidence scores for classifications",
+            "Handle ambiguous or mixed-content reports",
+            "Support multi-label classification for complex documents"
+          ]
+        },
+        "phase_7": {
+          "name": "Report Self-Healing Engine",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "ReportSelfHealingEngine class",
+            "HealingOperation interface",
+            "HealingResult interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/report-self-healing-engine.ts",
+            "src/lib/report-intelligence/healing-operation.ts"
+          ],
+          "behaviors": [
+            "Detect and fix structural inconsistencies",
+            "Repair broken references and links",
+            "Correct formatting and layout issues",
+            "Preserve original content while fixing structure"
+          ]
+        },
+        "phase_8": {
+          "name": "Report Template Generator",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "ReportTemplateGenerator class",
+            "TemplateDefinition interface",
+            "TemplateInstance interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/report-template-generator.ts",
+            "src/lib/report-intelligence/template-definition.ts"
+          ],
+          "behaviors": [
+            "Generate templates from existing reports",
+            "Create customizable template frameworks",
+            "Support dynamic content insertion",
+            "Validate template completeness and compliance"
+          ]
+        },
+        "phase_9": {
+          "name": "Report Compliance Validator",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "ReportComplianceValidator class",
+            "ComplianceCheck interface",
+            "ComplianceResult interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/report-compliance-validator.ts",
+            "src/lib/report-intelligence/compliance-result.ts"
+          ],
+          "behaviors": [
+            "Validate reports against regulatory standards",
+            "Check for required sections and content",
+            "Verify compliance with formatting requirements",
+            "Generate compliance reports and recommendations"
+          ]
+        },
+        "phase_10": {
+          "name": "Report Reproduction Tester",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "ReportReproductionTester class",
+            "ReproductionTest interface",
+            "TestResult interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/report-reproduction-tester.ts",
+            "src/lib/report-intelligence/test-result.ts"
+          ],
+          "behaviors": [
+            "Test report generation and reproduction",
+            "Validate consistency across multiple renderings",
+            "Detect rendering artifacts and inconsistencies",
+            "Ensure visual fidelity across different formats"
+          ]
+        },
+        "phase_11": {
+          "name": "Report Type Expansion Framework",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "ReportTypeExpansionFramework class",
+            "ExpansionRule interface",
+            "ExpansionResult interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/report-type-expansion-framework.ts",
+            "src/lib/report-intelligence/expansion-rule.ts"
+          ],
+          "behaviors": [
+            "Define rules for expanding report types",
+            "Handle inheritance and composition of report types",
+            "Support conditional type expansion",
+            "Maintain type integrity during expansion"
+          ]
+        },
+        "phase_12": {
+          "name": "AI Reasoning Integration for Reports",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "AIReasoningIntegration class",
+            "ReasoningQuery interface",
+            "ReasoningResult interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/ai-reasoning-integration.ts",
+            "src/lib/report-intelligence/reasoning-query.ts"
+          ],
+          "behaviors": [
+            "Integrate LLM reasoning capabilities",
+            "Support complex analytical queries",
+            "Generate insights and recommendations",
+            "Maintain reasoning transparency and explainability"
+          ]
+        },
+        "phase_13": {
+          "name": "User Workflow Learning for Reports",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "UserWorkflowLearning class",
+            "WorkflowPattern interface",
+            "LearningResult interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/user-workflow-learning.ts",
+            "src/lib/report-intelligence/workflow-pattern.ts"
+          ],
+          "behaviors": [
+            "Learn user report creation patterns",
+            "Identify common workflows and shortcuts",
+            "Suggest workflow optimizations",
+            "Adapt to individual user preferences"
+          ]
+        },
+        "phase_14": {
+          "name": "Final Integration & Validation",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Report Intelligence System"],
+          "modules": [
+            "FinalIntegrationValidator class",
+            "IntegrationTest interface",
+            "ValidationReport interface"
+          ],
+          "files": [
+            "src/lib/report-intelligence/final-integration-validator.ts",
+            "src/lib/report-integration/validation-report.ts"
+          ],
+          "behaviors": [
+            "Validate end-to-end report processing",
+            "Test integration with other systems",
+            "Ensure data consistency and integrity",
+            "Generate comprehensive validation reports"
+          ]
+        },
+        "phase_15": {
+          "name": "HTML Rendering & Visual Reproduction Engine",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Visual Rendering System"],
+          "modules": [
+            "HTMLRenderer class",
+            "RenderOptions interface",
+            "RenderResult interface"
+          ],
+          "files": [
+            "src/lib/visual-rendering/html-renderer.ts",
+            "src/lib/visual-rendering/render-options.ts"
+          ],
+          "behaviors": [
+            "Generate HTML from structured report content",
+            "Maintain visual fidelity to original documents",
+            "Support responsive and accessible rendering",
+            "Handle complex layouts and formatting"
+          ]
+        },
+        "phase_16": {
+          "name": "Direct PDF Parsing & Layout Extractor",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Visual Rendering System"],
+          "modules": [
+            "PDFParser class",
+            "LayoutExtractor class",
+            "ParsedDocument interface"
+          ],
+          "files": [
+            "src/lib/visual-rendering/pdf-parser.ts",
+            "src/lib/visual-rendering/layout-extractor.ts"
+          ],
+          "behaviors": [
+            "Parse PDF documents directly",
+            "Extract layout and structural information",
+            "Preserve original formatting and positioning",
+            "Handle complex PDF layouts and embedded content"
+          ]
+        }
+      }
+    },
+    "section_2_cross_system_intelligence": {
+      "phases": {
+        "phase_17": {
+          "name": "Content Intelligence & Blog Engine",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Content Intelligence System"],
+          "modules": [
+            "ContentIntelligenceEngine class",
+            "BlogPostGenerator class",
+            "ContentAnalysis interface"
+          ],
+          "files": [
+            "src/lib/content-intelligence/content-engine.ts",
+            "src/lib/content-intelligence/blog-generator.ts"
+          ],
+          "behaviors": [
+            "Analyze content for SEO optimization",
+            "Generate blog posts from reports",
+            "Support content repurposing and adaptation",
+            "Maintain content quality and readability"
+          ]
+        },
+        "phase_18": {
+          "name": "Unified Multi-Device Editor & Supabase Integration",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Unified Editor System"],
+          "modules": [
+            "UnifiedEditor class",
+            "SupabaseIntegration class",
+            "DeviceSyncManager class"
+          ],
+          "files": [
+            "src/lib/unified-editor/unified-editor.ts",
+            "src/lib/unified-editor/supabase-integration.ts"
+          ],
+          "behaviors": [
+            "Provide consistent editing experience across devices",
+            "Sync content using Supabase cloud backend",
+            "Handle offline editing and conflict resolution",
+            "Support real-time collaboration features"
+          ]
+        },
+        "phase_19": {
+          "name": "Real-Time Collaboration Layer (CRDT + Presence)",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Collaboration System"],
+          "modules": [
+            "CRDTManager class",
+            "PresenceManager class",
+            "CollaborationEngine class"
+          ],
+          "files": [
+            "src/lib/collaboration/crdt-manager.ts",
+            "src/lib/collaboration/presence-manager.ts"
+          ],
+          "behaviors": [
+            "Implement CRDT for conflict-free replication",
+            "Manage user presence and cursors",
+            "Handle real-time document synchronization",
+            "Support collaborative editing without conflicts"
+          ]
+        },
+        "phase_20": {
+          "name": "Full System Testing & Debugging",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Testing System"],
+          "modules": [
+            "SystemTester class",
+            "DebugEngine class",
+            "TestReport interface"
+          ],
+          "files": [
+            "src/lib/testing/system-tester.ts",
+            "src/lib/testing/debug-engine.ts"
+          ],
+          "behaviors": [
+            "Execute comprehensive system tests",
+            "Identify and diagnose issues",
+            "Generate detailed test reports",
+            "Support automated regression testing"
+          ]
+        }
+      }
+    },
+    "section_3_the_copilot_layer": {
+      "phases": {
+        "phase_21": {
+          "name": "Global Assistant Intelligence Layer",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Global Assistant System"],
+          "modules": [
+            "GlobalAssistant class",
+            "ContextManager class",
+            "AssistantCommand interface"
+          ],
+          "files": [
+            "src/lib/global-assistant/global-assistant.ts",
+            "src/lib/global-assistant/context-manager.ts"
+          ],
+          "behaviors": [
+            "Provide unified AI assistant across all surfaces",
+            "Maintain context across interactions",
+            "Execute assistant commands and workflows",
+            "Support natural language understanding"
+          ]
+        },
+        "phase_22": {
+          "name": "Media Intelligence Layer",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Media Intelligence System"],
+          "modules": [
+            "MediaIntelligenceEngine class",
+            "ImageProcessor class",
+            "MediaManager class"
+          ],
+          "files": [
+            "src/lib/media-intelligence/media-engine.ts",
+            "src/lib/media-intelligence/image-processor.ts"
+          ],
+          "behaviors": [
+            "Process and analyze media content",
+            "Extract metadata and insights",
+            "Support image recognition and tagging",
+            "Manage media library and organization"
+          ]
+        },
+        "phase_23": {
+          "name": "AI Layout Engine",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Layout Intelligence System"],
+          "modules": [
+            "AILayoutEngine class",
+            "BlockManipulator class",
+            "LayoutOptimizer class"
+          ],
+          "files": [
+            "src/lib/layout-intelligence/ai-layout-engine.ts",
+            "src/lib/layout-intelligence/block-manipulator.ts"
+          ],
+          "behaviors": [
+            "Understand document structure and layout",
+            "Manipulate content blocks intelligently",
+            "Optimize layout for readability and presentation",
+            "Support responsive and adaptive layouts"
+          ]
+        },
+        "phase_24": {
+          "name": "Document Intelligence Layer",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Document Intelligence System"],
+          "modules": [
+            "DocumentIntelligenceEngine class",
+            "StructureAnalyzer class",
+            "ConsistencyChecker class"
+          ],
+          "files": [
+            "src/lib/document-intelligence/document-engine.ts",
+            "src/lib/document-intelligence/structure-analyzer.ts"
+          ],
+          "behaviors": [
+            "Analyze document structure and organization",
+            "Check cross-section consistency",
+            "Generate summaries and insights",
+            "Support document-level reasoning"
+          ]
+        },
+        "phase_25": {
+          "name": "Workflow Intelligence Layer",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Workflow Intelligence System"],
+          "modules": [
+            "WorkflowIntelligenceEngine class",
+            "ProjectReasoningEngine class",
+            "TaskGenerator class"
+          ],
+          "files": [
+            "src/lib/workflow-intelligence/workflow-engine.ts",
+            "src/lib/workflow-intelligence/project-reasoning.ts"
+          ],
+          "behaviors": [
+            "Manage project-level workflows",
+            "Generate tasks and actions",
+            "Support cross-document reasoning",
+            "Predict workflow outcomes and suggest optimizations"
+          ]
+        }
+      }
+    },
+    "section_4_final_consolidation": {
+      "phases": {
+        "phase_26": {
+          "name": "Final System Integration & Build Preparation",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Integration System"],
+          "modules": [
+            "SystemIntegrator class",
+            "BuildPreparer class",
+            "PerformanceOptimizer class"
+          ],
+          "files": [
+            "src/lib/integration/system-integrator.ts",
+            "src/lib/integration/build-preparer.ts"
+          ],
+          "behaviors": [
+            "Unify all intelligence subsystems",
+            "Ensure cross-system integration",
+            "Optimize performance and stability",
+            "Prepare for production deployment"
+          ]
+        }
+      }
+    },
+    "section_5_extended_intelligence_layers": {
+      "phases": {
+        "phase_27_5": {
+          "name": "Map Intelligence Layer",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Map Intelligence System"],
+          "modules": [
+            "MapIntelligenceEngine class",
+            "LocationExtractor class",
+            "MapRenderer class"
+          ],
+          "files": [
+            "src/lib/map-intelligence/map-engine.ts",
+            "src/lib/map-intelligence/location-extractor.ts"
+          ],
+          "behaviors": [
+            "Extract location data from documents",
+            "Render maps and satellite views",
+            "Support spatial analysis and queries",
+            "Integrate with geospatial data sources"
+          ]
+        },
+        "phase_28_5": {
+          "name": "AI Diagram Generator Layer",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Diagram Intelligence System"],
+          "modules": [
+            "AIDiagramGenerator class",
+            "DiagramRenderer class",
+            "DiagramEmbed class"
+          ],
+          "files": [
+            "src/lib/diagram-intelligence/diagram-generator.ts",
+            "src/lib/diagram-intelligence/diagram-renderer.ts"
+          ],
+          "behaviors": [
+            "Generate diagrams from text descriptions",
+            "Support multiple diagram types",
+            "Integrate with TipTap editor",
+            "Auto-layout and auto-label diagrams"
+          ]
+        },
+        "phase_29_5": {
+          "name": "OCR & Table Extraction Layer",
+          "status": "✅ Completed (Fully Implemented)",
+          "systems": ["OCR Intelligence System"],
+          "modules": [
+            "OCREngine class (478 lines)",
+            "TableExtractor class (328 lines)",
+            "TextCleaner class (356 lines)"
+          ],
+          "files": [
+            "src/lib/ocr-intelligence/ocr-engine.ts",
+            "src/lib/ocr-intelligence/table-extractor.ts",
+            "src/lib/ocr-intelligence/text-cleaner.ts",
+            "src/lib/ocr-intelligence/ocr-types.ts",
+            "src/lib/ocr-intelligence/index.ts"
+          ],
+          "behaviors": [
+            "Extract text from images and PDFs",
+            "Detect and extract tabular data",
+            "Clean and validate extracted text",
+            "Integrate with editor for direct insertion"
+          ]
+        },
+        "phase_30_5": {
+          "name": "AI Diagram Interpretation Layer",
+          "status": "🟡 In Progress (Execution prompt delivered; subsystem build underway)",
+          "systems": ["Diagram Intelligence System"],
+          "modules": [
+            "AIDiagramInterpreter class",
+            "ShapeDetector class",
+            "ConnectionAnalyzer class"
+          ],
+          "files": [
+            "src/lib/diagram-intelligence/diagram-interpreter.ts",
+            "src/lib/diagram-intelligence/shape-detector.ts"
+          ],
+          "behaviors": [
+            "Understand visual diagrams and flowcharts",
+            "Extract structured information from images",
+            "Generate natural language descriptions",
+            "Support diagram annotation and insight generation"
+          ]
+        },
+        "phase_31_5": {
+          "name": "Semantic Search Layer",
+          "status": "✅ Completed (Fully Implemented)",
+          "systems": ["Search Intelligence System"],
+          "modules": [
+            "SemanticSearchEngine class (663 lines)",
+            "ContentIndexer class",
+            "QueryExecutor class"
+          ],
+          "files": [
+            "src/lib/search-intelligence/semantic-search.ts",
+            "src/lib/search-intelligence/search-types.ts",
+            "src/lib/search-intelligence/index.ts"
+          ],
+          "behaviors": [
+            "Index content using vector embeddings",
+            "Execute semantic and keyword search",
+            "Support hybrid search and ranking",
+            "Provide AI-driven search enhancements"
+          ]
+        },
+        "phase_32_5": {
+          "name": "Knowledge Graph Layer",
+          "status": "✅ Completed (Fully Implemented)",
+          "systems": ["Knowledge Graph System"],
+          "modules": [
+            "EntityExtractor class (751 lines)",
+            "ConsistencyDetector class (632 lines)",
+            "KnowledgeGraphLayer class"
+          ],
+          "files": [
+            "src/lib/knowledge-graph/entity-extractor.ts",
+            "src/lib/knowledge-graph/consistency-detector.ts",
+            "src/lib/knowledge-graph/knowledge-graph-types.ts",
+            "src/lib/knowledge-graph/index.ts"
+          ],
+          "behaviors": [
+            "Extract entities and relationships",
+            "Build and maintain knowledge graphs",
+            "Detect inconsistencies across documents",
+            "Support graph-based queries and insights"
+          ]
+        },
+        "phase_33_5": {
+          "name": "Automation Layer (Triggers + Routines)",
+          "status": "✅ Completed (Fully Implemented)",
+          "systems": ["Automation System"],
+          "modules": [
+            "AutomationEngine class (722 lines)",
+            "TriggerSystem class (624 lines)",
+            "ConditionSystem class",
+            "ActionSystem class"
+          ],
+          "files": [
+            "src/lib/automation/automation-engine.ts",
+            "src/lib/automation/trigger-system.ts",
+            "src/lib/automation/automation-types.ts",
+            "src/lib/automation/index.ts"
+          ],
+          "behaviors": [
+            "Execute event-based triggers",
+            "Evaluate conditional rules",
+            "Perform automated actions",
+            "Provide safe, undoable automation"
+          ]
+        },
+        "phase_34_5": {
+          "name": "Voice Interaction Layer",
+          "status": "✅ Completed (Fully Implemented)",
+          "systems": ["Voice Interaction System"],
+          "modules": [
+            "VoiceInteractionEngine class (660 lines)",
+            "SpeechRecognizer class (343 lines)",
+            "CommandParser class (398 lines)"
+          ],
+          "files": [
+            "src/lib/voice-interaction/voice-engine.ts",
+            "src/lib/voice-interaction/speech-recognizer.ts",
+            "src/lib/voice-interaction/command-parser.ts",
+            "src/lib/voice-interaction/voice-interaction-types.ts",
+            "src/lib/voice-interaction/index.ts"
+          ],
+          "behaviors": [
+            "Capture and transcribe voice input",
+            "Parse voice commands to intents",
+            "Support voice-driven editing and navigation",
+            "Provide feedback and error handling"
+          ]
+        }
+      }
+    }
+  },
+  "build_output_size_limits": {
+    "maximum_typescript_javascript_file_size": "300 KB",
+    "maximum_svelte_component_size": "200 KB",
+    "maximum_json_file_size_generated_by_roo": "500 KB",
+    "maximum_geojson_file_generated_during_build": "1 MB",
+    "maximum_svg_diagram_generated_by_roo": "400 KB",
+    "maximum_worker_script_size": "400 KB",
+    "maximum_wasm_module_size": "4 MB",
+    "maximum_combined_bundle_size_per_phase": "1 MB",
+    "maximum_number_of_lines_per_generated_file": "2000"
+  },
+  "development_constraints": {
+    "roo_must_split_large_files_into_modules_if_limits_are_exceeded": true,
+    "roo_must_use_off_the_shelf_bundlers_and_optimizers": ["Vite", "esbuild", "Rollup"],
+    "roo_must_not_generate_custom_bundlers_custom_wasm_pipelines_or_custom_compilers": true,
+    "roo_must_automatically_optimize_or_modularize_any_file_that_exceeds_these_limits": true,
+    "roo_must_stop_and_request_architectural_clarification_if_file_cannot_be_reduced_below_limit": true
+  }
+}

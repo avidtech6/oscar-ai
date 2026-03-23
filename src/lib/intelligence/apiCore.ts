@@ -1,18 +1,25 @@
 /**
- * Core Intelligence API functions
- * 
+ * Core Intelligence API functions - Layer 2 Presentation
+ *
  * Simple wrappers around engine methods.
+ *
+ * NOTE: Core implementation has been extracted to Layer 1 Core for purity.
+ * This file now re-exports the Layer 1 implementation to maintain compatibility.
  */
 
 import { intelligenceEngine, getIntelligenceEngine } from './engine';
 import type { PhaseFile, PhaseMetadata } from './types';
+import { createIntelligenceOperationsCore, type IntelligenceOperationsCore } from './layer1/intelligenceOperationsCore';
+
+// Create core operations instance
+const operationsCore: IntelligenceOperationsCore = createIntelligenceOperationsCore();
 
 /**
  * Initialize the intelligence engine
  * Call this once at app startup
  */
 export async function initializeIntelligence(): Promise<void> {
-	await intelligenceEngine.initialize();
+	await operationsCore.initialize(intelligenceEngine);
 }
 
 /**
@@ -20,7 +27,7 @@ export async function initializeIntelligence(): Promise<void> {
  */
 export async function getPhase(phaseNumber: number): Promise<PhaseFile | undefined> {
 	const engine = await getIntelligenceEngine();
-	return engine.getPhaseFile(phaseNumber);
+	return operationsCore.getPhase(engine, phaseNumber);
 }
 
 /**
@@ -28,7 +35,7 @@ export async function getPhase(phaseNumber: number): Promise<PhaseFile | undefin
  */
 export async function listPhases(): Promise<PhaseMetadata[]> {
 	const engine = await getIntelligenceEngine();
-	return engine.getAllMetadata();
+	return operationsCore.listPhases(engine);
 }
 
 /**
@@ -36,7 +43,7 @@ export async function listPhases(): Promise<PhaseMetadata[]> {
  */
 export async function searchBlueprint(query: string): Promise<PhaseFile[]> {
 	const engine = await getIntelligenceEngine();
-	return engine.search(query);
+	return operationsCore.searchBlueprint(engine, query);
 }
 
 /**
@@ -44,7 +51,7 @@ export async function searchBlueprint(query: string): Promise<PhaseFile[]> {
  */
 export async function getReportTypes(): Promise<string[]> {
 	const engine = await getIntelligenceEngine();
-	return engine.getReportTypes();
+	return operationsCore.getReportTypes(engine);
 }
 
 /**
@@ -52,7 +59,7 @@ export async function getReportTypes(): Promise<string[]> {
  */
 export async function getWorkflowDefinitions(): Promise<string[]> {
 	const engine = await getIntelligenceEngine();
-	return engine.getWorkflowDefinitions();
+	return operationsCore.getWorkflowDefinitions(engine);
 }
 
 /**
@@ -60,7 +67,7 @@ export async function getWorkflowDefinitions(): Promise<string[]> {
  */
 export async function getSchemaMappings(): Promise<string[]> {
 	const engine = await getIntelligenceEngine();
-	return engine.getSchemaMappings();
+	return operationsCore.getSchemaMappings(engine);
 }
 
 /**
@@ -68,7 +75,7 @@ export async function getSchemaMappings(): Promise<string[]> {
  */
 export async function summarizePhase(phaseNumber: number): Promise<string> {
 	const engine = await getIntelligenceEngine();
-	return engine.summarizePhase(phaseNumber);
+	return operationsCore.summarizePhase(engine, phaseNumber);
 }
 
 /**
@@ -76,7 +83,7 @@ export async function summarizePhase(phaseNumber: number): Promise<string> {
  */
 export async function generateReport(reportType: string, input: Record<string, any>): Promise<string> {
 	const engine = await getIntelligenceEngine();
-	return engine.generateReport(reportType, input);
+	return operationsCore.generateReport(engine, reportType, input);
 }
 
 /**
@@ -84,7 +91,7 @@ export async function generateReport(reportType: string, input: Record<string, a
  */
 export async function explainDecision(path: string): Promise<string> {
 	const engine = await getIntelligenceEngine();
-	return engine.explainDecision(path);
+	return operationsCore.explainDecision(engine, path);
 }
 
 /**
@@ -99,5 +106,5 @@ export async function getIntelligenceStatus(): Promise<{
 	schemaMappings: number;
 }> {
 	const engine = await getIntelligenceEngine();
-	return engine.getStatus();
+	return operationsCore.getIntelligenceStatus(engine);
 }

@@ -1,365 +1,382 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
+	import ProjectNavigator from '$lib/components/ProjectNavigator.svelte';
+	import { exportManager } from '$lib/export/exportManager';
+
+	let searchTerm = $state('');
+	let selectedType = $state('all');
+	let selectedStatus = $state('all');
+	let showProjectNavigator = $state(true);
 
 	let projects = [
-		{ id: 1, name: 'Oak Park Tree Survey', client: 'City Council', status: 'active', progress: 75, due: 'Mar 20', budget: '$12,500' },
-		{ id: 2, name: 'Woodland Management Plan', client: 'National Trust', status: 'planning', progress: 30, due: 'Apr 15', budget: '$28,000' },
-		{ id: 3, name: 'Tree Risk Assessment - High Street', client: 'Property Developers Ltd', status: 'active', progress: 90, due: 'Mar 10', budget: '$8,200' },
-		{ id: 4, name: 'Arboricultural Impact Assessment', client: 'EcoBuild Inc', status: 'completed', progress: 100, due: 'Feb 28', budget: '$15,000' },
-		{ id: 5, name: 'Urban Canopy Study', client: 'University of Arboristics', status: 'pending', progress: 10, due: 'May 30', budget: '$42,000' }
+		{
+			id: '1',
+			name: 'Oak Park Development',
+			description: 'Comprehensive tree risk assessment and management plan for urban park redevelopment',
+			status: 'active',
+			client: 'City Council',
+			startDate: '2024-01-15',
+			endDate: '2024-06-30',
+			budget: 50000,
+			progress: 65,
+			tags: ['risk-assessment', 'urban', 'conservation'],
+			documents: [],
+			team: []
+		},
+		{
+			id: '2',
+			name: 'Highway Tree Safety',
+			description: 'Safety inspection and maintenance program for trees along highway network',
+			status: 'active',
+			client: 'Highways Agency',
+			startDate: '2024-02-01',
+			endDate: '2024-12-31',
+			budget: 120000,
+			progress: 30,
+			tags: ['highway', 'safety', 'maintenance'],
+			documents: [],
+			team: []
+		},
+		{
+			id: '3',
+			name: 'Historic Estate Conservation',
+			description: 'Conservation and preservation of trees in historic estate landscape',
+			status: 'completed',
+			client: 'National Trust',
+			startDate: '2023-09-01',
+			endDate: '2024-02-28',
+			budget: 80000,
+			progress: 100,
+			tags: ['historic', 'conservation', 'tpo'],
+			documents: [],
+			team: []
+		},
+		{
+			id: '4',
+			name: 'Construction Site Protection',
+			description: 'Tree protection and mitigation plan for residential construction project',
+			status: 'active',
+			client: 'BuildRight Ltd',
+			startDate: '2024-03-01',
+			endDate: '2024-08-31',
+			budget: 35000,
+			progress: 20,
+			tags: ['construction', 'protection', 'bs5837'],
+			documents: [],
+			team: []
+		}
 	];
 
-	let newProjectName = '';
-	let newProjectClient = '';
+	let filteredProjects = $derived(() => {
+		let filtered = projects;
 
-	function addProject() {
-		if (!newProjectName.trim() || !newProjectClient.trim()) return;
-		projects = [
-			...projects,
-			{
-				id: projects.length + 1,
-				name: newProjectName,
-				client: newProjectClient,
-				status: 'pending',
-				progress: 0,
-				due: 'TBD',
-				budget: '$0'
-			}
-		];
-		newProjectName = '';
-		newProjectClient = '';
+		if (searchTerm) {
+			filtered = filtered.filter(project =>
+				project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				project.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+			);
+		}
+
+		return filtered;
+	});
+
+	function createNewProject() {
+		console.log('Create new project');
 	}
 
-	function updateProgress(projectId: number, delta: number) {
-		projects = projects.map(p =>
-			p.id === projectId
-				? { ...p, progress: Math.max(0, Math.min(100, p.progress + delta)) }
-				: p
-		);
+	function exportProjects() {
+		console.log('Export projects');
+	}
+
+	function getStatusColor(status: string) {
+		switch (status) {
+			case 'active': return 'bg-green-100 text-green-800';
+			case 'completed': return 'bg-blue-100 text-blue-800';
+			case 'archived': return 'bg-gray-100 text-gray-800';
+			default: return 'bg-gray-100 text-gray-800';
+		}
+	}
+
+	function getProgressColor(progress: number) {
+		if (progress >= 75) return 'bg-green-500';
+		if (progress >= 50) return 'bg-yellow-500';
+		if (progress >= 25) return 'bg-orange-500';
+		return 'bg-red-500';
+	}
+
+	function formatDate(dateString: string) {
+		return new Date(dateString).toLocaleDateString('en-GB', {
+			day: '2-digit',
+			month: 'short',
+			year: 'numeric'
+		});
 	}
 </script>
 
-<div class="page">
-	<h1>Projects</h1>
-	<p class="subtitle">Manage arboricultural projects and client engagements.</p>
-
-	<div class="stats-row">
-		<div class="stat-card">
-			<div class="stat-icon">📁</div>
-			<div class="stat-content">
-				<div class="stat-value">{projects.length}</div>
-				<div class="stat-label">Total Projects</div>
-			</div>
+<main class="projects-page">
+	<div class="page-header">
+		<div>
+			<h1>Projects</h1>
+			<p class="subtitle">Manage your arboricultural projects and client work</p>
 		</div>
-		<div class="stat-card">
-			<div class="stat-icon">📈</div>
-			<div class="stat-content">
-				<div class="stat-value">{projects.filter(p => p.status === 'active').length}</div>
-				<div class="stat-label">Active</div>
-			</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-icon">💰</div>
-			<div class="stat-content">
-				<div class="stat-value">${projects.reduce((sum, p) => sum + parseInt(p.budget.replace(/[$,]/g, '')) || 0, 0).toLocaleString()}</div>
-				<div class="stat-label">Total Budget</div>
-			</div>
+		<div class="header-actions">
+			<button class="btn-secondary" onclick={exportProjects}>
+				📤 Export
+			</button>
+			<button class="btn-primary" onclick={createNewProject}>
+				➕ New Project
+			</button>
 		</div>
 	</div>
 
-	<div class="content-grid">
-		<div class="card">
-			<h2>📋 Project List</h2>
-			<div class="project-list">
-				{#each projects as project (project.id)}
-					<div class="project-item status-{project.status}">
-						<div class="project-icon">📁</div>
-						<div class="project-details">
-							<div class="project-name">{project.name}</div>
-							<div class="project-client">Client: {project.client}</div>
-							<div class="project-meta">
-								<span class="budget">{project.budget}</span>
-								<span class="due">Due: {project.due}</span>
-								<span class="status">{project.status}</span>
+	<div class="projects-content">
+		{#if showProjectNavigator}
+			<ProjectNavigator />
+		{:else}
+			<div class="projects-grid">
+				{#each filteredProjects as project}
+					<div class="project-card">
+						<div class="project-header">
+							<div class="project-title">{project.name}</div>
+							<span class={`status-badge ${getStatusColor(project.status)}`}>
+								{project.status}
+							</span>
+						</div>
+						
+						<div class="project-client">
+							👤 {project.client}
+						</div>
+						
+						<div class="project-description">
+							{project.description}
+						</div>
+						
+						<div class="project-meta">
+							<div class="project-date">
+								📅 {formatDate(project.startDate)} - {project.endDate ? formatDate(project.endDate) : 'Ongoing'}
 							</div>
-							<div class="progress-bar">
-								<div class="progress-fill" style="width: {project.progress}%"></div>
+							<div class="project-budget">
+								💰 £{project.budget?.toLocaleString()}
+							</div>
+						</div>
+						
+						<div class="project-tags">
+							{#each project.tags as tag}
+								<span class="tag">{tag}</span>
+							{/each}
+						</div>
+						
+						<div class="progress-bar">
+							<div class="progress-fill" style="width: {project.progress}%">
 								<span class="progress-text">{project.progress}%</span>
 							</div>
 						</div>
-						<div class="project-actions">
-							<button class="btn-small" onclick={() => updateProgress(project.id, 10)}>+10%</button>
-							<button class="btn-small" onclick={() => console.log('Edit', project.id)}>Edit</button>
-						</div>
 					</div>
 				{/each}
 			</div>
-			<div class="add-project">
-				<input
-					type="text"
-					bind:value={newProjectName}
-					placeholder="Project name"
-				/>
-				<input
-					type="text"
-					bind:value={newProjectClient}
-					placeholder="Client"
-				/>
-				<button class="btn" onclick={addProject}>Add Project</button>
-			</div>
-		</div>
-
-		<div class="card">
-			<h2>📊 Project Status Overview</h2>
-			<div class="status-overview">
-				{#each ['active', 'planning', 'pending', 'completed'] as status}
-					<div class="status-item">
-						<div class="status-label">{status}</div>
-						<div class="status-count">{projects.filter(p => p.status === status).length}</div>
-					</div>
-				{/each}
-			</div>
-			<div class="upcoming">
-				<h3>Upcoming Deadlines</h3>
-				{#each projects.filter(p => p.status !== 'completed') as project}
-					<div class="deadline">
-						<div class="deadline-name">{project.name}</div>
-						<div class="deadline-date">{project.due}</div>
-					</div>
-				{/each}
-			</div>
-		</div>
+		{/if}
 	</div>
-</div>
+</main>
 
 <style>
-	.page {
-		padding: 2rem;
-	}
-	h1 {
-		font-size: 2.5rem;
-		font-weight: 700;
-		color: #111827;
-		margin-bottom: 0.5rem;
-	}
-	.subtitle {
-		color: #6b7280;
-		font-size: 1.125rem;
-		margin-bottom: 2rem;
-	}
-	.stats-row {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1rem;
-		margin-bottom: 2rem;
-	}
-	.stat-card {
-		background: white;
-		border-radius: 12px;
-		padding: 1.5rem;
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-		border-left: 4px solid #3b82f6;
-	}
-	.stat-icon {
-		font-size: 2rem;
-	}
-	.stat-content {
-		flex: 1;
-	}
-	.stat-value {
-		font-size: 1.75rem;
-		font-weight: 700;
-		color: #111827;
-		line-height: 1;
-	}
-	.stat-label {
-		font-size: 0.875rem;
-		color: #6b7280;
-		margin-top: 0.25rem;
-	}
-	.content-grid {
-		display: grid;
-		grid-template-columns: 2fr 1fr;
-		gap: 2rem;
-	}
-	.card {
-		background: white;
-		border-radius: 12px;
-		padding: 2rem;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-		border: 1px solid #e5e7eb;
-	}
-	.card h2 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: #111827;
-		margin-bottom: 1.5rem;
-	}
-	.project-list {
-		display: flex;
+.projects-page {
+	background: white;
+	min-height: 100vh;
+}
+
+.page-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 2rem;
+	padding: 0 1rem;
+}
+
+.page-header h1 {
+	margin: 0;
+	font-size: 2rem;
+	font-weight: 700;
+	color: #111827;
+}
+
+.page-header .subtitle {
+	margin: 0.5rem 0 0 0;
+	font-size: 1rem;
+	color: #6b7280;
+}
+
+.header-actions {
+	display: flex;
+	gap: 1rem;
+}
+
+.projects-content {
+	padding: 0 1rem 2rem 1rem;
+}
+
+.projects-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 1rem;
+}
+
+.project-card {
+	background: white;
+	border: 1px solid #e5e7eb;
+	border-radius: 0.5rem;
+	padding: 1rem;
+	transition: all 0.2s ease;
+}
+
+.project-card:hover {
+	border-color: #3b82f6;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.project-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 0.75rem;
+}
+
+.project-title {
+	font-size: 1rem;
+	font-weight: 600;
+	color: #111827;
+	flex: 1;
+	margin-right: 0.5rem;
+}
+
+.status-badge {
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.25rem;
+	font-size: 0.625rem;
+	font-weight: 500;
+}
+
+.project-client {
+	font-size: 0.875rem;
+	color: #6b7280;
+	margin-bottom: 0.5rem;
+}
+
+.project-description {
+	font-size: 0.875rem;
+	color: #374151;
+	line-height: 1.4;
+	margin-bottom: 0.75rem;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.project-meta {
+	display: flex;
+	gap: 1rem;
+	margin-bottom: 0.75rem;
+	font-size: 0.75rem;
+	color: #6b7280;
+}
+
+.project-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	margin-bottom: 0.75rem;
+}
+
+.tag {
+	background: #f3f4f6;
+	color: #374151;
+	padding: 0.125rem 0.375rem;
+	border-radius: 0.125rem;
+	font-size: 0.625rem;
+}
+
+.progress-bar {
+	background: #f3f4f6;
+	border-radius: 0.25rem;
+	height: 0.5rem;
+	overflow: hidden;
+	position: relative;
+}
+
+.progress-fill {
+	background: #3b82f6;
+	height: 100%;
+	transition: width 0.3s ease;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	padding-right: 0.25rem;
+}
+
+.progress-text {
+	color: white;
+	font-size: 0.5rem;
+	font-weight: 500;
+}
+
+.btn-primary, .btn-secondary {
+	padding: 0.75rem 1.5rem;
+	border-radius: 0.375rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	border: none;
+}
+
+.btn-primary {
+	background: #3b82f6;
+	color: white;
+}
+
+.btn-primary:hover {
+	background: #2563eb;
+}
+
+.btn-secondary {
+	background: #f3f4f6;
+	color: #374151;
+	border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+	background: #e5e7eb;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+	.page-header {
 		flex-direction: column;
 		gap: 1rem;
-		margin-bottom: 1.5rem;
 	}
-	.project-item {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		padding: 1.25rem;
-		border: 1px solid #e5e7eb;
-		border-radius: 10px;
-		transition: background 0.2s;
+
+	.header-actions {
+		width: 100%;
+		justify-content: stretch;
 	}
-	.project-item.status-active {
-		border-left: 4px solid #10b981;
-	}
-	.project-item.status-planning {
-		border-left: 4px solid #f59e0b;
-	}
-	.project-item.status-pending {
-		border-left: 4px solid #6b7280;
-	}
-	.project-item.status-completed {
-		border-left: 4px solid #8b5cf6;
-	}
-	.project-icon {
-		font-size: 1.5rem;
-	}
-	.project-details {
+
+	.btn-primary, .btn-secondary {
 		flex: 1;
 	}
-	.project-name {
-		font-weight: 600;
-		color: #111827;
-		margin-bottom: 0.25rem;
+
+	.projects-grid {
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
 	}
-	.project-client {
-		font-size: 0.875rem;
-		color: #6b7280;
-		margin-bottom: 0.5rem;
-	}
-	.project-meta {
-		display: flex;
-		gap: 1rem;
-		font-size: 0.75rem;
-		color: #4b5563;
-		margin-bottom: 0.75rem;
-	}
-	.budget {
-		font-weight: 600;
-		color: #065f46;
-	}
-	.due {
-		color: #92400e;
-	}
-	.status {
-		text-transform: uppercase;
-		font-weight: 600;
-		padding: 0.125rem 0.5rem;
-		border-radius: 9999px;
-		background: #e5e7eb;
-		color: #374151;
-	}
-	.progress-bar {
-		height: 8px;
-		background: #e5e7eb;
-		border-radius: 4px;
-		position: relative;
-		overflow: hidden;
-	}
-	.progress-fill {
-		height: 100%;
-		background: #3b82f6;
-		border-radius: 4px;
-		transition: width 0.3s;
-	}
-	.progress-text {
-		position: absolute;
-		top: -1.5rem;
-		right: 0;
-		font-size: 0.75rem;
-		color: #6b7280;
-	}
-	.project-actions {
-		display: flex;
-		gap: 0.5rem;
-	}
-	.btn-small {
-		background: #3b82f6;
-		color: white;
-		border: none;
-		border-radius: 6px;
-		padding: 0.375rem 0.75rem;
-		font-size: 0.75rem;
-		cursor: pointer;
-	}
-	.add-project {
-		display: flex;
-		gap: 0.5rem;
-		margin-top: 1.5rem;
-	}
-	.add-project input {
-		flex: 1;
+
+	.project-card {
 		padding: 0.75rem;
-		border: 1px solid #d1d5db;
-		border-radius: 8px;
-		font-size: 0.875rem;
 	}
-	.btn {
-		background: #3b82f6;
-		color: white;
-		border: none;
-		border-radius: 8px;
-		padding: 0.75rem 1.5rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background 0.2s;
+
+	.project-meta {
+		flex-direction: column;
+		gap: 0.25rem;
 	}
-	.btn:hover {
-		background: #2563eb;
-	}
-	.status-overview {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 1rem;
-		margin-bottom: 2rem;
-	}
-	.status-item {
-		background: #f9fafb;
-		border-radius: 8px;
-		padding: 1rem;
-		text-align: center;
-	}
-	.status-label {
-		font-size: 0.875rem;
-		color: #6b7280;
-		text-transform: capitalize;
-	}
-	.status-count {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #111827;
-	}
-	.upcoming h3 {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: #111827;
-		margin-bottom: 1rem;
-	}
-	.deadline {
-		display: flex;
-		justify-content: space-between;
-		padding: 0.75rem 0;
-		border-bottom: 1px solid #f3f4f6;
-	}
-	.deadline-name {
-		color: #4b5563;
-	}
-	.deadline-date {
-		font-weight: 600;
-		color: #111827;
-	}
+}
 </style>

@@ -1,6 +1,13 @@
-// Sync engine operations (pure functions)
+// Sync engine operations (pure functions) - Layer 2 Presentation
 import type { SyncMetadata } from './syncMetadata'
 import type { SyncResult } from './syncEngineTypes'
+import {
+  syncLocalToCloudCore,
+  syncCloudToLocalCore,
+  calculateSyncEfficiency,
+  formatSyncDuration,
+  generateSyncSummary
+} from './layer1/syncEngineOperationsCore'
 
 export async function syncLocalToCloud(
   getRecordsNeedingSync: () => Promise<Array<{
@@ -17,6 +24,8 @@ export async function syncLocalToCloud(
   updateRecord: (table: string, recordId: string, data: any) => Promise<any>,
   markAsSynced: (metadata: SyncMetadata) => SyncMetadata
 ): Promise<Omit<SyncResult, 'newRecords' | 'deletedRecords'>> {
+  // Delegate to Layer 1 pure core logic
+  return syncLocalToCloudCore(getRecordsNeedingSync, syncToCloud, updateRecord, markAsSynced)
   const result: Omit<SyncResult, 'newRecords' | 'deletedRecords'> = {
     success: true,
     syncedRecords: 0,
@@ -90,6 +99,8 @@ export async function syncCloudToLocal(
   storeRecord: (table: string, recordId: string, data: any) => Promise<any>,
   updateRecord: (table: string, recordId: string, data: any) => Promise<any>
 ): Promise<Pick<SyncResult, 'success' | 'syncedRecords' | 'failedRecords' | 'conflictedRecords' | 'newRecords' | 'updatedRecords' | 'deletedRecords' | 'errors' | 'duration'>> {
+  // Delegate to Layer 1 pure core logic
+  return syncCloudToLocalCore(tables, getCloudRecordsForTable, getRecord, createSyncMetadata, syncFromCloud, storeRecord, updateRecord)
   const result: Pick<SyncResult, 'success' | 'syncedRecords' | 'failedRecords' | 'conflictedRecords' | 'newRecords' | 'updatedRecords' | 'deletedRecords' | 'errors' | 'duration'> = {
     success: true,
     syncedRecords: 0,

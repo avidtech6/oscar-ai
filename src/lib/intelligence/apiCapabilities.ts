@@ -1,10 +1,17 @@
 /**
- * Intelligence API: Capabilities and summaries
- * 
+ * Intelligence API: Capabilities and summaries - Layer 2 Presentation
+ *
  * Functions that aggregate data for UI display.
+ *
+ * NOTE: Core implementation has been extracted to Layer 1 Core for purity.
+ * This file now re-exports the Layer 1 implementation to maintain compatibility.
  */
 
 import { getIntelligenceEngine } from './engine';
+import { createIntelligenceCapabilitiesCore, type IntelligenceCapabilitiesCore } from './layer1/intelligenceCapabilitiesCore';
+
+// Create core capabilities instance
+const capabilitiesCore: IntelligenceCapabilitiesCore = createIntelligenceCapabilitiesCore();
 
 /**
  * Get intelligence capabilities for dashboard display
@@ -22,36 +29,7 @@ export async function getIntelligenceCapabilities(): Promise<{
 	};
 }> {
 	const engine = await getIntelligenceEngine();
-	const metadata = engine.getAllMetadata();
-	const reportTypes = engine.getReportTypes();
-	const workflows = engine.getWorkflowDefinitions();
-	const schemaMappings = engine.getSchemaMappings();
-	
-	// Count execution prompts
-	const executionPrompts = metadata.filter(m => m.isExecutionPrompt).length;
-	
-	// Count report engines (phases 1-11)
-	const reportEngines = metadata.filter(m => m.phaseNumber >= 1 && m.phaseNumber <= 11).length;
-	
-	// Count integration points (phases 15-19)
-	const integrationPoints = metadata.filter(m => m.phaseNumber >= 15 && m.phaseNumber <= 19).length;
-	
-	return {
-		reportTypes,
-		workflows,
-		schemaMappings,
-		phases: metadata.map(m => ({
-			number: m.phaseNumber,
-			title: m.title,
-			category: m.category
-		})),
-		stats: {
-			totalPhases: metadata.length,
-			executionPrompts,
-			reportEngines,
-			integrationPoints
-		}
-	};
+	return capabilitiesCore.getIntelligenceCapabilities(engine);
 }
 
 /**
@@ -61,12 +39,5 @@ export async function getArchitectureSummaries(): Promise<
 	Array<{ phase: number; title: string; summary: string; keyPoints: string[] }>
 > {
 	const engine = await getIntelligenceEngine();
-	const metadata = engine.getAllMetadata();
-	
-	return metadata.slice(0, 5).map(m => ({
-		phase: m.phaseNumber,
-		title: m.title,
-		summary: m.summary,
-		keyPoints: m.objectives.slice(0, 3)
-	}));
+	return capabilitiesCore.getArchitectureSummaries(engine);
 }

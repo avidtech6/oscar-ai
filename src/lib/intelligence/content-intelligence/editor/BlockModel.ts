@@ -76,8 +76,37 @@ export function blockToHTML(block: Block): string {
 		case 'heading3':
 			return `<h3>${escapeHTML(block.text)}</h3>`;
 		case 'bulletList':
-			return `<ul>${block.listItems.map(item => `<li>${escapeHTML(item)}</li>`).'/text/html';
-	doc.body.childNodes.forEach(node => {
+			return `<ul>${block.listItems.map(item => `<li>${escapeHTML(item)}</li>`).join('')}</ul>`;
+		case 'numberedList':
+			return `<ol>${block.listItems.map(item => `<li>${escapeHTML(item)}</li>`).join('')}</ol>`;
+		case 'quote':
+			return `<blockquote>${escapeHTML(block.text)}</blockquote>`;
+		case 'divider':
+			return '<hr>';
+		case 'image':
+			return block.imageUrl 
+				? `<img src="${escapeHTML(block.imageUrl)}" alt="${escapeHTML(block.imageAlt || '')}">`
+				: '';
+		case 'video':
+			return block.videoUrl 
+				? `<video src="${escapeHTML(block.videoUrl)}"></video>`
+				: '';
+		case 'code':
+			const language = block.metadata.language || 'plaintext';
+			return `<pre><code class="language-${escapeHTML(language)}">${escapeHTML(block.text)}</code></pre>`;
+		default:
+			return '';
+	}
+}
+
+/**
+ * Convert HTML to blocks.
+ */
+export function htmlToBlocks(html: string): Block[] {
+	const doc = new DOMParser().parseFromString(html, 'text/html');
+	const blocks: Block[] = [];
+
+	doc.body.childNodes.forEach((node: Node) => {
 		if (node.nodeType === Node.ELEMENT_NODE) {
 			const el = node as HTMLElement;
 			if (el.tagName === 'P') {
@@ -122,6 +151,7 @@ export function blockToHTML(block: Block): string {
 			}
 		}
 	});
+
 	return blocks;
 }
 

@@ -1,12 +1,96 @@
 .reports-page {
 	max-width: 100%;
+	padding: 1rem;
 }
 
-.page-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-start;
-	margin-bottom: 2rem;
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+	.reports-page {
+		padding: 0.75rem;
+	}
+	
+	.page-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+	
+	.page-header h1 {
+		font-size: 1.5rem;
+	}
+	
+	.header-actions {
+		width: 100%;
+		flex-wrap: wrap;
+	}
+	
+	.btn-primary, .btn-secondary {
+		padding: 0.625rem 1rem;
+		font-size: 0.75rem;
+		flex: 1;
+		min-width: 120px;
+	}
+	
+	.reports-grid {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+		margin-bottom: 2rem;
+	}
+	
+	.empty-state {
+		padding: 2rem;
+		margin-bottom: 2rem;
+	}
+	
+	.empty-icon {
+		font-size: 2rem;
+		margin-bottom: 0.75rem;
+	}
+	
+	.empty-state h3 {
+		font-size: 1.25rem;
+	}
+	
+	.empty-state p {
+		font-size: 0.875rem;
+		margin-bottom: 1rem;
+	}
+	
+	.intelligence-section {
+		padding: 1.5rem;
+		margin-bottom: 2rem;
+	}
+	
+	.intelligence-section h2 {
+		font-size: 1.25rem;
+	}
+	
+	.intelligence-section p {
+		font-size: 0.875rem;
+		margin-bottom: 1rem;
+	}
+	
+	.intelligence-cards {
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
+	}
+	
+	.intelligence-card {
+		padding: 1rem;
+	}
+	
+	.intelligence-icon {
+		font-size: 1.25rem;
+	}
+	
+	.intelligence-content h4 {
+		font-size: 0.875rem;
+	}
+	
+	.intelligence-content p {
+		font-size: 0.75rem;
+	}
 }
 
 .page-header h1 {

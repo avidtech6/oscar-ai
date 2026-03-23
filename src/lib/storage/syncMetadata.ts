@@ -6,19 +6,8 @@ export { simpleMerge, intelligentMerge } from './syncMetadataMerge'
 export type { MergeResult }
 
 // Sync metadata interface
-export interface SyncMetadata {
-  id: string
-  tableName: string
-  recordId: string
-  lastSyncedAt: number | null
-  hash: string
-  deviceId: string
-  version: number
-  conflict: boolean
-  conflictResolution: 'local' | 'cloud' | 'merged' | null
-  createdAt: number
-  updatedAt: number
-}
+import type { SyncMetadata } from './layer1/syncMetadataCoreTypes'
+import type { BatchMetadataUpdate, SyncReport } from './layer1/syncMetadataCoreTypes'
 
 // Device ID management
 let deviceId: string | null = null
@@ -42,100 +31,60 @@ export function getDeviceId(): string {
 }
 
 // Generate hash for data
+import { generateHashCore } from './layer1/syncMetadataCoreUtils'
 export async function generateHash(data: any): Promise<string> {
-  const encoder = new TextEncoder()
-  const dataString = JSON.stringify(data)
-  const dataBuffer = encoder.encode(dataString)
-  
-  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  return generateHashCore(data)
 }
 
 // Create sync metadata
+import { createSyncMetadataCore } from './layer1/syncMetadataCoreUtils'
 export async function createSyncMetadata(
   tableName: string,
   recordId: string,
   data: any
 ): Promise<SyncMetadata> {
-  const hash = await generateHash(data)
-  const now = Date.now()
-  
-  const metadata: SyncMetadata = {
-    id: `${tableName}:${recordId}:${getDeviceId()}`,
-    tableName,
-    recordId,
-    lastSyncedAt: null,
-    hash,
-    deviceId: getDeviceId(),
-    version: 1,
-    conflict: false,
-    conflictResolution: null,
-    createdAt: now,
-    updatedAt: now
-  }
-  
-  return metadata
+  const deviceId = getDeviceId()
+  const coreMetadata = await createSyncMetadataCore(tableName, recordId, deviceId, data)
+  return coreMetadata
 }
 
 // Update sync metadata
+import { updateSyncMetadataCore } from './layer1/syncMetadataCoreUtils'
 export async function updateSyncMetadata(
   metadata: SyncMetadata,
   data: any
 ): Promise<SyncMetadata> {
-  const hash = await generateHash(data)
-  const now = Date.now()
-  
-  return {
-    ...metadata,
-    hash,
-    version: metadata.version + 1,
-    updatedAt: now,
-    lastSyncedAt: metadata.conflict ? metadata.lastSyncedAt : null
-  }
+  return updateSyncMetadataCore(metadata, data)
 }
 
 // Mark as synced
+import { markAsSyncedCore } from './layer1/syncMetadataCoreUtils'
 export function markAsSynced(metadata: SyncMetadata): SyncMetadata {
-  return {
-    ...metadata,
-    lastSyncedAt: Date.now(),
-    conflict: false,
-    conflictResolution: null,
-    updatedAt: Date.now()
-  }
+  return markAsSyncedCore(metadata)
 }
 
 // Mark as conflicted
+import { markAsConflictedCore } from './layer1/syncMetadataCoreUtils'
 export function markAsConflicted(metadata: SyncMetadata): SyncMetadata {
-  return {
-    ...metadata,
-    conflict: true,
-    updatedAt: Date.now()
-  }
+  return markAsConflictedCore(metadata)
 }
 
 // Resolve conflict
+import { resolveConflictCore } from './layer1/syncMetadataCoreUtils'
 export function resolveConflict(
   metadata: SyncMetadata,
   resolution: 'local' | 'cloud' | 'merged'
 ): SyncMetadata {
-  return {
-    ...metadata,
-    conflict: false,
-    conflictResolution: resolution,
-    updatedAt: Date.now()
-  }
+  return resolveConflictCore(metadata, resolution)
 }
 
 // Compare metadata for changes
+import { hasChangesCore } from './layer1/syncMetadataCoreUtils'
 export async function hasChanges(
   metadata: SyncMetadata,
   data: any
 ): Promise<boolean> {
-  const currentHash = await generateHash(data)
-  return currentHash !== metadata.hash
+  return hasChangesCore(metadata, data)
 }
 
 // Check if record needs sync
@@ -144,61 +93,17 @@ export function needsSync(metadata: SyncMetadata): boolean {
 }
 
 // Get sync status
+import { getSyncStatusCore } from './layer1/syncMetadataCoreUtils'
 export function getSyncStatus(metadata: SyncMetadata): 'synced' | 'pending' | 'conflict' | 'local' {
-  if (metadata.conflict) {
-    return 'conflict'
-  }
-  
-  if (metadata.lastSyncedAt === null) {
-    return 'local'
-  }
-  
-  // Check if synced within last 5 minutes
-  const fiveMinutesAgo = Date.now() - (5 * 60 * 1000)
-  if (metadata.lastSyncedAt < fiveMinutesAgo) {
-    return 'pending'
-  }
-  
-  return 'synced'
+  return getSyncStatusCore(metadata)
 }
 
 
-// Batch metadata operations
-export interface BatchMetadataUpdate {
-  tableName: string
-  recordId: string
-  metadata: Partial<SyncMetadata>
-}
-
-// Generate sync report
-export interface SyncReport {
-  totalRecords: number
-  syncedRecords: number
-  pendingRecords: number
-  conflictedRecords: number
-  localRecords: number
-  lastSyncTime: number | null
-  deviceId: string
-  tables: Record<string, {
-    total: number
-    synced: number
-    pending: number
-    conflicted: number
-  }>
-}
 
 // Create empty sync report
+import { createEmptySyncReportCore } from './layer1/syncMetadataCoreUtils'
 export function createEmptySyncReport(): SyncReport {
-  return {
-    totalRecords: 0,
-    syncedRecords: 0,
-    pendingRecords: 0,
-    conflictedRecords: 0,
-    localRecords: 0,
-    lastSyncTime: null,
-    deviceId: getDeviceId(),
-    tables: {}
-  }
+  return createEmptySyncReportCore(getDeviceId())
 }
 
 // Sync metadata store operations

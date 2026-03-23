@@ -9,6 +9,7 @@
 		getSchemaMappings
 	} from '$lib/intelligence/api';
 	import { intelligenceContext } from '$lib/stores/intelligence/intelligenceContext';
+	import { intelligenceStore } from '$lib/assistant/IntelligenceStore';
 	
 	import IntelligenceHeader from '$lib/components/intelligence/IntelligenceHeader.svelte';
 	import IntelligenceSection from '$lib/components/intelligence/IntelligenceSection.svelte';
@@ -23,13 +24,6 @@
 	let schemaMappings: string[] = [];
 	let isLoading = true;
 	let error: string | null = null;
-	
-	let expandedPanels = {
-		phases: true,
-		workflows: true,
-		engines: true,
-		integration: true
-	};
 	
 	onMount(async () => {
 		try {
@@ -95,17 +89,17 @@
 		</div>
 		
 		<div class="intelligence-grid">
-			<IntelligenceSection 
-				title="Phase Files" 
-				expanded={expandedPanels.phases}
+			<IntelligenceSection
+				title="Phase Files"
+				sectionKey="phases"
 				description="The authoritative architectural blueprint. These files define the complete system architecture and intelligence layers."
 			>
 				<PhaseFilesContent {architectureSummaries} />
 			</IntelligenceSection>
 			
-			<IntelligenceSection 
-				title="Workflows" 
-				expanded={expandedPanels.workflows}
+			<IntelligenceSection
+				title="Workflows"
+				sectionKey="workflows"
 				description="Defined workflows for report processing, schema learning, template generation, and compliance validation."
 			>
 				<div class="workflows-list">
@@ -134,9 +128,9 @@
 				</div>
 			</IntelligenceSection>
 			
-			<IntelligenceSection 
-				title="Report Types" 
-				expanded={expandedPanels.engines}
+			<IntelligenceSection
+				title="Report Types"
+				sectionKey="engines"
 				description="Supported report types from Phase 1: Report Type Registry. Each type has defined sections, compliance rules, and AI guidance."
 			>
 				<div class="engines-grid">
@@ -176,9 +170,9 @@
 				</div>
 			</IntelligenceSection>
 			
-			<IntelligenceSection 
-				title="Integration Status" 
-				expanded={expandedPanels.integration}
+			<IntelligenceSection
+				title="Integration Status"
+				sectionKey="integration"
 				description="Current integration status of the intelligence layer with the reconstructed UI."
 			>
 				<div class="integration-status">
@@ -221,9 +215,8 @@
 			<h2>Interactive Intelligence Panel</h2>
 			<p>Use the interactive panel below to explore the intelligence layer:</p>
 			
-			<IntelligencePanel 
-				title="Oscar AI V2 Intelligence Layer" 
-				expanded={true}
+			<IntelligencePanel
+				title="Oscar AI V2 Intelligence Layer"
 			/>
 		</div>
 		

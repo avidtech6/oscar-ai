@@ -1,6 +1,10 @@
-// Data fetching functions for sync engine
+// Data fetching functions for sync engine - Layer 2 Presentation
+// Core logic extracted to Layer 1 for purity and reusability
+
 import { TABLES, getAllRecords } from './localEncrypted'
-import { createSyncMetadata, needsSync, type SyncMetadata } from './syncMetadata'
+import { createSyncMetadata, needsSync } from './syncMetadata'
+import type { SyncMetadata } from './layer1/syncMetadataCoreTypes'
+import { getRecordsNeedingSyncCore, getCloudRecordsForTableCore } from './layer1/syncEngineDataCore'
 
 export async function getRecordsNeedingSync(): Promise<Array<{
   table: string
@@ -8,42 +12,20 @@ export async function getRecordsNeedingSync(): Promise<Array<{
   data: any
   metadata: SyncMetadata
 }>> {
-  const records: Array<{
-    table: string
-    recordId: string
-    data: any
-    metadata: SyncMetadata
-  }> = []
-
-  // For each table, get all records
-  for (const table of Object.values(TABLES)) {
-    try {
-      const tableRecords = await getAllRecords(table)
-
-      for (const record of tableRecords) {
-        // Create metadata for the record
-        const metadata = await createSyncMetadata(table, record.id, record.data)
-
-        // Check if record needs sync
-        if (needsSync(metadata)) {
-          records.push({
-            table,
-            recordId: record.id,
-            data: record.data,
-            metadata
-          })
-        }
-      }
-    } catch (error) {
-      console.error(`Error getting records from table ${table}:`, error)
-    }
-  }
-
-  return records
+  // Delegate to Layer 1 pure core logic
+  return getRecordsNeedingSyncCore(
+    getAllRecords,
+    createSyncMetadata,
+    needsSync,
+    Object.values(TABLES)
+  )
 }
 
 export async function getCloudRecordsForTable(table: string): Promise<any[]> {
-  // This would fetch from cloud
-  // For now, return empty array
-  return []
+  // Delegate to Layer 1 pure core logic
+  return getCloudRecordsForTableCore(() => {
+    // This would fetch from cloud
+    // For now, return empty array
+    return Promise.resolve([])
+  })
 }

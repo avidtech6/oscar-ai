@@ -36,38 +36,32 @@
 	.page {
 		padding: 2rem;
 	}
-	h1 {
-		font-size: 2.5rem;
-		font-weight: 700;
-		color: #111827;
-		margin-bottom: 0.5rem;
-	}
-	.subtitle {
-		color: #6b7280;
-		font-size: 1.125rem;
-		margin-bottom: 2rem;
-	}
-	.loading, .error {
-		padding: 2rem;
-		background: #f9fafb;
-		border-radius: 8px;
-		text-align: center;
-	}
-	.error {
-		color: #dc2626;
-	}
-	.phase-content {
-		background: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-		padding: 2rem;
-		overflow-x: auto;
-	}
-	pre {
-		margin: 0;
-		font-family: 'Courier New', monospace;
-		font-size: 0.875rem;
-		line-height: 1.5;
-		white-space: pre-wrap;
+
+	/* Mobile responsiveness */
+	@media (max-width: 768px) {
+		.page {
+			padding: 1rem;
+		}
+		
+		h1 {
+			font-size: 1.75rem;
+		}
+		
+		.subtitle {
+			font-size: 1rem;
+			margin-bottom: 1.5rem;
+		}
+		
+		.loading, .error {
+			padding: 1.5rem;
+		}
+		
+		.phase-content {
+			padding: 1.5rem;
+		}
+		
+		pre {
+			font-size: 0.75rem;
+		}
 	}
 </style>
