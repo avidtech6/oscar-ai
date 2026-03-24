@@ -48,6 +48,10 @@ export class ConsistencyDetector {
     const missingInfoIssues = this.detectMissingInformation(entities, relationships);
     issues.push(...missingInfoIssues);
 
+    // Detect duplicate entities
+    const duplicateEntityIssues = this.detectDuplicateEntities(entities);
+    issues.push(...duplicateEntityIssues);
+
     // Calculate statistics
     const issuesBySeverity = this.calculateIssuesBySeverity(issues);
     const healthScore = this.calculateHealthScore(issues);
@@ -360,6 +364,53 @@ export class ConsistencyDetector {
         sourceDocuments: relationshipsWithoutStrength.flatMap(r => r.sourceDocuments || []),
         detectedAt: new Date()
       });
+    }
+
+    return issues;
+  }
+
+  /**
+   * Detect duplicate entities
+   */
+  private detectDuplicateEntities(entities: KnowledgeEntity[]): ConsistencyIssue[] {
+    const issues: ConsistencyIssue[] = [];
+
+    // Group entities by normalized identifier
+    const entityGroups = new Map<string, KnowledgeEntity[]>();
+    for (const entity of entities) {
+      // Create a normalized identifier combining name, type, and aliases
+      const normalized = {
+        name: entity.name.toLowerCase().replace(/\s+/g, '_'),
+        type: entity.type,
+        aliases: entity.aliases?.map(a => a.toLowerCase().replace(/\s+/g, '_'))
+      };
+
+      const key = `${normalized.name}_${normalized.type}_${normalized.aliases?.join('_') || ''}`;
+      if (!entityGroups.has(key)) {
+        entityGroups.set(key, []);
+      }
+      entityGroups.get(key)!.push(entity);
+    }
+
+    // Check for duplicate groups
+    for (const [key, group] of entityGroups.entries()) {
+      if (group.length > 1) {
+        // Same entity characteristics but different IDs detected
+        const entityIds = group.map(e => e.id).join(', ');
+        const properties = group.map(e => e.properties).filter(p => p).join(', ');
+        
+        issues.push({
+          id: `duplicate_entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          type: 'duplicate',
+          severity: 'medium',
+          description: `Duplicate entity detected: ${group[0].name} (Type: ${group[0].type}) with ${group.length - 1} other entities having identical characteristics`,
+          affectedEntities: group.map(e => e.id),
+          affectedRelationships: undefined,
+          suggestedResolution: 'Merge duplicate entities or verify which entity is the correct representation',
+          sourceDocuments: group.flatMap(e => e.sourceDocuments || []),
+          detectedAt: new Date()
+        });
+      }
     }
 
     return issues;

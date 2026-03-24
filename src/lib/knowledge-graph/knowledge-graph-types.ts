@@ -1,6 +1,6 @@
 /**
  * Knowledge Graph Types
- * 
+
  * PHASE 32.5 — Knowledge Graph Layer
  * Type definitions for knowledge graph entities, relationships, and consistency detection.
  */
@@ -192,7 +192,7 @@ export interface ConsistencyIssue {
   /**
    * Issue type
    */
-  type: 'conflict' | 'inconsistency' | 'ambiguity' | 'missing';
+  type: 'conflict' | 'inconsistency' | 'ambiguity' | 'missing' | 'duplicate';
 
   /**
    * Severity level
