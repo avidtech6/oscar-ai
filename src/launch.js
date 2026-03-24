@@ -1,11 +1,11 @@
-const { spawn } = require('child_process');
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+﻿import { spawn } from 'child_process';
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 // ANSI color codes regex
-const ansiRegex = /[\u001B\u009B][[()#;?]*(?:[0-9]{1,2}(?:;[0-9]{1,2})?)?[\u0007\u000B\u000C\u001D\u00AD\u000E\u000F\f\n\r\t]+/g;
+const ansiRegex = /[\x1B\x9B][[()#;?]*(?:[0-9]{1,2}(?:;[0-9]{1,2})?)?[\x07\x0B\x0C\x1D\xAD\x0E\x0F\f\n\r\t]+/g;
 
 function stripAnsi(str) {
   return str.replace(ansiRegex, '');
@@ -64,10 +64,10 @@ function openBrowser(url) {
   
   if (osType === 'win32') {
     // For Windows, use start command
-    const process = require('child_process').spawn('start', [url]);
+    const process = spawn('start', [url]);
   } else {
     // For macOS and Linux
-    const process = require('child_process').spawn('open', [url]);
+    const process = spawn('open', [url]);
   }
 }
 
@@ -156,3 +156,4 @@ function launch() {
 }
 
 launch();
+
