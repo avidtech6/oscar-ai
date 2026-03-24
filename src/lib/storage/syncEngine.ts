@@ -311,7 +311,7 @@ export class SyncEngine {
   }
 }
 
-export async function initializeSyncEngine(deps) {
+export async function initializeSyncEngine(deps?: any) {
   const engine = new SyncEngine(deps);
   await engine.initialize();
   return engine;
