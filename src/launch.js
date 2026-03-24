@@ -16,13 +16,9 @@ function parsePortFromOutput(output) {
   for (const line of lines) {
     const stripped = stripAnsi(line);
     if (stripped.includes('Local:')) {
-      const match = stripped.match(/Local: (http(s)?:\/\/[^ ]+)/);
+      const match = stripped.match(/localhost:(\d+)\//);
       if (match) {
-        const url = match[1];
-        const portMatch = url.match(/:(\d+)/);
-        if (portMatch) {
-          return parseInt(portMatch[1]);
-        }
+        return parseInt(match[1]);
       }
     }
   }
@@ -84,16 +80,23 @@ function launch() {
   });
 
   let output = '';
+  const APP_ID = process.env.APP_ID || 'oscar-ai';
 
   viteProcess.stdout.on('data', (data) => {
     const dataStr = data.toString();
     output += dataStr;
-    console.log('[launcher] Vite output:', dataStr);
+    // Only log lines containing APP_ID
+    if (dataStr.includes(APP_ID)) {
+      console.log('[launcher] Vite output:', dataStr);
+    }
   });
 
   viteProcess.stderr.on('data', (data) => {
     const dataStr = data.toString();
-    console.error('[launcher] Vite error:', dataStr);
+    // Only log stderr lines containing APP_ID
+    if (dataStr.includes(APP_ID)) {
+      console.error('[launcher] Vite error:', dataStr);
+    }
   });
 
   viteProcess.on('close', (code) => {
