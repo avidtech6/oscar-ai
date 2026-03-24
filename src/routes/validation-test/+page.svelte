@@ -75,7 +75,7 @@
 			password: ['required', 'minLength:8'],
 			age: ['optional', 'number', 'min:18'],
 			website: ['optional', 'url'],
-			phone: ['optional', 'phone']
+			phone: ['optional', 'phone'];
 		};
 		
 		const formResult = validateForm(testData, formRules);
